@@ -1,0 +1,46 @@
+﻿spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:~/monitor
+    username: monitor
+    password: monitor
+  jpa:
+    database: h2
+    hibernate:
+      ddl-auto: update
+      use-new-id-generator-mappings: false
+    open-in-view: false
+  h2.console.enabled: true
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    com.idaoben: debug
+    com.idaoben.utils.dto_assembler.MappingClassGenerator: info
+    ControllerMethodLoggingAspect: debug
+
+upload:
+  root:
+    dir:
+  max:
+    size: 20
+  image:
+    extension: jpg,jpeg,bmp,gif,png
+  file:
+    extension: zip,rar,7z,doc,docx,xls,xlsx,ppt,pptx,pdf,txt,apk,jpg,jpeg,bmp,gif,png,mp4
+  url:
+    path: http://127.0.0.1:8080
+    append:
+      path: true
+
+auth:
+  auth-debug-enabled: true
+
+daoben:
+  framework:
+    file: true
+    url:
+      file: api/admin/file
+    captcha: true
+    captcha-disable: true
+    api-method-logging: true
