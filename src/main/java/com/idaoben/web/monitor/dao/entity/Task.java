@@ -18,7 +18,7 @@ public class Task extends IdentifiableObject {
     private ZonedDateTime startTime;
 
     @Description("结束时间")
-    @Column(nullable = false)
+    @Column
     private ZonedDateTime endTime;
 
     @Description("软件ID")

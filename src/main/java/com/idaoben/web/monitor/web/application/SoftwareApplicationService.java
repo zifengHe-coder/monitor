@@ -7,6 +7,7 @@ import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.FavoriteService;
 import com.idaoben.web.monitor.service.SoftwareService;
+import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.SoftwareAddCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
@@ -39,9 +40,7 @@ public class SoftwareApplicationService {
 
     public List<SoftwareDto> getSystemSoftware(){
         List<Favorite> favorites = favoriteService.findAll();
-
-        String osHome = System.getProperty("user.home").substring(0, 3);
-        String startMenuHome = osHome + "ProgramData\\Microsoft\\Windows\\Start Menu\\Programs";
+        String startMenuHome = SystemUtils.getOsHome() + "ProgramData\\Microsoft\\Windows\\Start Menu\\Programs";
         File startMenu = new File(startMenuHome);
         List<SoftwareDto> softwares = new ArrayList<>();
         if(startMenu.exists() && startMenu.isDirectory()){
@@ -123,5 +122,9 @@ public class SoftwareApplicationService {
         softwareDto.setId(String.valueOf(software.getId()));
         softwareDto.setFavorite(favorites.contains(softwareDto.getId()));
         return softwareDto;
+    }
+
+    public SoftwareDto getSoftwareInfo(String id){
+        return softwareMap.get(id);
     }
 }

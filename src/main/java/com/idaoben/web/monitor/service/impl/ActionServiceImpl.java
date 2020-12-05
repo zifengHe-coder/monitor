@@ -12,5 +12,5 @@ import org.springframework.stereotype.Service;
 * @author  Daoben Code Generator
 */
 @Service
-public class ActionServiceImpl extends BaseServiceImpl<Action, Long> implements ActionService {
+public class ActionServiceImpl extends BaseServiceImpl<Action, String> implements ActionService {
 }

@@ -66,11 +66,6 @@
             <version>${daoben-common.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.idaoben.web</groupId>
-            <artifactId>token-auth-autoconfigurer</artifactId>
-            <version>${daoben-common.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>

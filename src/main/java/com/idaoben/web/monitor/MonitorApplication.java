@@ -1,9 +1,9 @@
 package com.idaoben.web.monitor;
 
 import com.google.common.base.Predicates;
+import com.idaoben.web.common.dao.impl.BaseRepositoryImpl;
 import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.repository.ActionRepository;
-import com.idaoben.web.common.dao.impl.BaseRepositoryImpl;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -37,6 +37,5 @@ public class MonitorApplication {
                 .build();
         return docket;
     }
-
 
 }

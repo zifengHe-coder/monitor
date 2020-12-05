@@ -1,24 +1,40 @@
 package com.idaoben.web.monitor.dao.entity;
 
 import com.idaoben.web.common.entity.Description;
-import com.idaoben.web.common.entity.IdentifiableObject;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "t_action")
 @Description("应用行为")
-public class Action extends IdentifiableObject {
+public class Action {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "uuid", unique = true, nullable = false)
+    @Description("唯一标识符")
+    private String uuid;
+
+    @Description("日志时间戳")
+    @Column(nullable = false)
+    private ZonedDateTime timestamp;
+
+    @Description("本日志行是否有对应的附件")
+    @Column
+    private Boolean withAttachment;
 
     @Description("关联的任务ID")
     @Column(nullable = false)
     private Long taskId;
 
+    @Description("进程ID")
+    @Column(nullable = false)
+    private String pid;
+
     @Description("行为类型")
     @Column(length = 10, nullable = false)
-    private String type;
+    private Integer type;
 
     @Description("网络套接字描述符")
     @Column
@@ -96,6 +112,30 @@ public class Action extends IdentifiableObject {
     @Column
     private String commandLine;
 
+    public Boolean getWithAttachment() {
+        return withAttachment;
+    }
+
+    public void setWithAttachment(Boolean withAttachment) {
+        this.withAttachment = withAttachment;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public ZonedDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(ZonedDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public Long getTaskId() {
         return taskId;
     }
@@ -104,11 +144,19 @@ public class Action extends IdentifiableObject {
         this.taskId = taskId;
     }
 
-    public String getType() {
+    public String getPid() {
+        return pid;
+    }
+
+    public void setPid(String pid) {
+        this.pid = pid;
+    }
+
+    public Integer getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(Integer type) {
         this.type = type;
     }
 
