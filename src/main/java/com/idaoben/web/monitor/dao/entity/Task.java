@@ -25,6 +25,18 @@ public class Task extends IdentifiableObject {
     @Column(nullable = false)
     private String softwareId;
 
+    @Description("软件名称")
+    @Column
+    private String softwareName;
+
+    @Description("路径")
+    @Column
+    private String exePath;
+
+    @Description("pid列表，逗号分隔")
+    @Column
+    private String pids;
+
     @Description("是否已完成")
     @Column(nullable = false)
     private boolean complete;
@@ -51,6 +63,30 @@ public class Task extends IdentifiableObject {
 
     public void setSoftwareId(String softwareId) {
         this.softwareId = softwareId;
+    }
+
+    public String getSoftwareName() {
+        return softwareName;
+    }
+
+    public void setSoftwareName(String softwareName) {
+        this.softwareName = softwareName;
+    }
+
+    public String getPids() {
+        return pids;
+    }
+
+    public void setPids(String pids) {
+        this.pids = pids;
+    }
+
+    public String getExePath() {
+        return exePath;
+    }
+
+    public void setExePath(String exePath) {
+        this.exePath = exePath;
     }
 
     public boolean isComplete() {

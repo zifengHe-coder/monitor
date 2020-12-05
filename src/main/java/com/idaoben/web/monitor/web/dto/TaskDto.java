@@ -34,6 +34,18 @@ public interface TaskDto {
     @Mapping
     String getSoftwareId();
 
+    @ApiModelProperty("软件名称")
+    @Mapping
+    String getSoftwareName();
+
+    @ApiModelProperty("路径")
+    @Mapping
+    String getExePath();
+
+    @ApiModelProperty("pid列表，逗号分隔")
+    @Mapping
+    String getPids();
+
     @ApiModelProperty("是否已完成")
     @Mapping
     boolean isComplete();

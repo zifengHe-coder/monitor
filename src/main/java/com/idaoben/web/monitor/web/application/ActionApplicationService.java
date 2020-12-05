@@ -7,7 +7,6 @@ import com.idaoben.web.monitor.dao.entity.enums.ActionType;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.ActionJsonDto;
-import net.sf.ehcache.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +18,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class ActionApplicationService {
