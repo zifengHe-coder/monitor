@@ -3,18 +3,22 @@ package com.idaoben.web.monitor.web.application;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.monitor.dao.entity.Action;
+import com.idaoben.web.monitor.dao.entity.enums.ActionType;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.ActionJsonDto;
 import net.sf.ehcache.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 public class ActionApplicationService {
@@ -23,7 +27,7 @@ public class ActionApplicationService {
 
     private static final File ACTION_FOLDER = new File(SystemUtils.getOsHome() + "WinMonitor");
 
-    private static final File ACTION_FOLDER_DATA = new File(SystemUtils.getOsHome() + "WinMonitor" + System.getProperty("file.separator") + "data");
+    private static final String ACTION_BACKUP_FOLDER_PATH = SystemUtils.getOsHome() + "WinMonitor" + SystemUtils.FILE_SEPARATOR + "data" + SystemUtils.FILE_SEPARATOR + "%s" + SystemUtils.FILE_SEPARATOR + "%s";
 
     @Resource
     private ActionService actionService;
@@ -90,23 +94,30 @@ public class ActionApplicationService {
                         randomAccessFile.seek(skip);
                     }
                     String line = randomAccessFile.readLine();
+                    //判断当前文件是否读写完成，并且监听是否完成。 读写完成且监听也结束才结束
                     while (line != null || !thread.isFinish()){
                         if(line != null){
                             //处理当前行的json内容
                             //logger.info("正在处理第{}行记录", readLine);
-                            handleActionJson(line, pid, taskId, fileName);
+                            Action action = handleActionJson(line, pid, taskId, fileName);
                             //更新已处理文件指针
                             skip = randomAccessFile.getFilePointer();
                             actionSkipMap.put(pidFileName, skip);
+                            readLine ++;
+
+                            //如果发现action已结束，主动完成线程
+                            if(action != null && Objects.equals(action.getType(), ActionType.STOP.value())){
+                                thread.finish();
+                            }
                         } else {
                             //停n秒再读取
                             Thread.sleep(2000);
-                            logger.info("文件{}没有新内容，待下次读取", fileName);
+                            logger.info("文件{}没有新内容，当前读取{}行, 待下次读取", fileName, readLine);
                         }
                         line = randomAccessFile.readLine();
-                        readLine ++;
                     }
                     //设置已完成文件处理
+                    randomAccessFile.close();
                     logger.info("已完成{}文件本次的处理,处理到第{}行", fileName, readLine - 1);
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
@@ -114,7 +125,14 @@ public class ActionApplicationService {
             }
         }
         //将文件夹备份移除
-        pidFolder.renameTo(new File(ACTION_FOLDER_DATA, pid));
+        try {
+            File destFolder = new File(String.format(ACTION_BACKUP_FOLDER_PATH, taskId, pid));
+            logger.info("开始备份到文件夹{}", destFolder.getPath());
+            FileUtils.moveDirectory(pidFolder, destFolder);
+            logger.info("结束备份到文件夹{}", destFolder.getPath());
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
     }
 
     /**
@@ -122,7 +140,7 @@ public class ActionApplicationService {
      * @param json
      * @param pid
      */
-    private void handleActionJson(String json, String pid, Long taskId, String actionName){
+    private Action handleActionJson(String json, String pid, Long taskId, String actionName){
         try {
             ActionJsonDto actionJson = objectMapper.readValue(json, ActionJsonDto.class);
             Action action = actionJson.getAction();
@@ -131,9 +149,10 @@ public class ActionApplicationService {
             action.setWithAttachment(actionJson.getWithAttachment());
             action.setTaskId(taskId);
             action.setPid(pid);
-            actionService.save(action);
+            return actionService.save(action);
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }
+        return null;
     }
 }
