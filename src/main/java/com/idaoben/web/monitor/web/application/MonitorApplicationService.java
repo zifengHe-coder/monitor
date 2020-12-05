@@ -10,7 +10,6 @@ import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.command.TaskListCommand;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
 import com.idaoben.web.monitor.web.dto.TaskDto;
-import net.sf.ehcache.util.concurrent.ConcurrentHashMap;
 import org.apache.tomcat.util.buf.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +19,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class MonitorApplicationService {
