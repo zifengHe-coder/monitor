@@ -7,6 +7,7 @@ import com.idaoben.web.monitor.dao.entity.enums.ActionType;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.ActionJsonDto;
+import com.idaoben.web.monitor.web.dto.NetworkDto;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +40,8 @@ public class ActionApplicationService {
     private Map<String, ActionHanlderThread> handlingThreads = new ConcurrentHashMap<>();
 
     private Map<String, Long> actionSkipMap = new ConcurrentHashMap<>();
+
+    private Map<String, Map<String, NetworkDto>> networkMap = new HashMap<>();
 
     /**
      * 扫描进程的action文件
@@ -133,6 +137,9 @@ public class ActionApplicationService {
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
+
+        handlingThreads.remove(pid);
+        networkMap.remove(pid);
     }
 
     /**
@@ -149,10 +156,36 @@ public class ActionApplicationService {
             action.setWithAttachment(actionJson.getWithAttachment());
             action.setTaskId(taskId);
             action.setPid(pid);
+
+            //如果是发起网络链接的，缓存网络信息
+            setActionNetworkInfo(action, pid);
             return actionService.save(action);
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }
         return null;
+    }
+
+    private void setActionNetworkInfo(Action action, String pid){
+        if(Objects.equals(action.getType(), ActionType.NETWORK_OPEN)){
+            Map<String, NetworkDto> networkInfoMap = networkMap.get(pid);
+            if(networkInfoMap == null){
+                networkInfoMap = new HashMap<>();
+                networkMap.put(pid, networkInfoMap);
+            }
+            if(!networkInfoMap.containsKey(action.getSocketFd())){
+                networkInfoMap.put(action.getSocketFd(), new NetworkDto(action.getHost(), action.getPort()));
+            }
+        }
+        if(Objects.equals(action.getType(), ActionType.NETWORK_TCP_SEND)){
+            Map<String, NetworkDto> networkInfoMap = networkMap.get(pid);
+            if(networkInfoMap != null){
+                NetworkDto networkDto = networkInfoMap.get(action.getSocketFd());
+                if(networkDto != null){
+                    action.setHost(networkDto.getHost());
+                    action.setPort(networkDto.getPort());
+                }
+            }
+        }
     }
 }

@@ -40,7 +40,7 @@ public class MonitorApplicationService {
     @PostConstruct
     public void initTestData(){
         //TODO: 初始化测试数据，正式情况下去掉
-        List<String> pids = Arrays.asList("2556", "10160");
+        List<String> pids = Arrays.asList("8528");
         processMaps.put("123456", pids);
     }
 

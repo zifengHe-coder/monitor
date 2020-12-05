@@ -46,7 +46,7 @@ public class Action {
 
     @Description("目标端口")
     @Column
-    private String port;
+    private Integer port;
 
     @Description("参考字段")
     @Column
@@ -176,11 +176,11 @@ public class Action {
         this.host = host;
     }
 
-    public String getPort() {
+    public Integer getPort() {
         return port;
     }
 
-    public void setPort(String port) {
+    public void setPort(Integer port) {
         this.port = port;
     }
 

@@ -52,7 +52,7 @@ public interface ActionDto {
 
     @ApiModelProperty("目标端口")
     @Mapping
-    String getPort();
+    Integer getPort();
 
     @ApiModelProperty("参考字段")
     @Mapping
