@@ -53,7 +53,7 @@ public class SoftwareApplicationService {
                     //只搜索一层文件夹
                     for(File fileChild : file.listFiles()){
                         if(!fileChild.isDirectory()){
-                            if(checklnkFile(file)){
+                            if(checklnkFile(fileChild)){
                                 softwares.add(getSoftwareInfo(fileChild, favorites));
                             }
                         }
@@ -68,6 +68,7 @@ public class SoftwareApplicationService {
         }
         Map<String, SoftwareDto> tempMap = new ConcurrentHashMap<>();
         softwares.forEach(softwareDto -> {tempMap.put(softwareDto.getId(), softwareDto);});
+        softwareMap = tempMap;
         return softwares;
     }
 
@@ -107,9 +108,11 @@ public class SoftwareApplicationService {
         softwareDto.setId(lnkFile.getPath());
         softwareDto.setLnkPath(softwareDto.getId());
         softwareDto.setFavorite(favorites.contains(softwareDto.getId()));
+        softwareDto.setSoftwareName(lnkFile.getName().replace(".lnk", ""));
         try {
+            //TODO: 解析lnk文件
             String content = FileUtils.readFileToString(lnkFile);
-            logger.info(content);
+            System.out.println(content);
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
@@ -125,6 +128,9 @@ public class SoftwareApplicationService {
     }
 
     public SoftwareDto getSoftwareInfo(String id){
+        if(softwareMap == null){
+            getSystemSoftware();
+        }
         return softwareMap.get(id);
     }
 }
