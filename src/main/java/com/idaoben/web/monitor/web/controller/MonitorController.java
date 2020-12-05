@@ -1,11 +1,16 @@
 package com.idaoben.web.monitor.web.controller;
 
+import com.idaoben.web.common.api.bean.ApiPageRequest;
+import com.idaoben.web.common.api.bean.ApiPageResponse;
 import com.idaoben.web.common.api.bean.ApiRequest;
 import com.idaoben.web.common.api.bean.ApiResponse;
 import com.idaoben.web.monitor.web.application.MonitorApplicationService;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
+import com.idaoben.web.monitor.web.command.TaskListCommand;
+import com.idaoben.web.monitor.web.dto.TaskDto;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.data.domain.Page;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,5 +39,12 @@ public class MonitorController {
     public ApiResponse<Void> stopMonitor(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
         monitorApplicationService.stopMonitor(request.getPayload());
         return ApiResponse.createSuccess();
+    }
+
+    @ApiOperation("历史监控任务查询")
+    @PostMapping("/listTask")
+    public ApiPageResponse<TaskDto> listTask(@RequestBody @Validated ApiPageRequest<TaskListCommand> request) {
+        Page<TaskDto> result = monitorApplicationService.listTask(request.getPayload(), request.getPageable());
+        return ApiPageResponse.createPageSuccess(result);
     }
 }
