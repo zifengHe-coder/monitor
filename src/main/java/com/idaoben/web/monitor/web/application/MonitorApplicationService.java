@@ -6,13 +6,13 @@ import com.idaoben.web.monitor.dao.entity.Task;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.TaskService;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
-import net.sf.ehcache.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class MonitorApplicationService {

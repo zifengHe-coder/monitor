@@ -11,7 +11,6 @@ import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.SoftwareAddCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
-import net.sf.ehcache.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class SoftwareApplicationService {
