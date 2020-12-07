@@ -18,5 +18,5 @@ public class UtilityJni {
 
     public native int ReadBlock(int ref, byte[] buffer, int offset, int size);
 
-    public native int FreeBlock(int ref);
+    public native void FreeBlock(int ref);
 }

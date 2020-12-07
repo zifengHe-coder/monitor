@@ -41,7 +41,9 @@ public class ActionApplicationService {
 
     private Map<String, Long> actionSkipMap = new ConcurrentHashMap<>();
 
-    private Map<String, Map<String, NetworkDto>> networkMap = new HashMap<>();
+    private Map<String, Map<String, NetworkDto>> socketFdNetworkMap = new HashMap<>();
+
+    private Map<String, Map<String, NetworkDto>> refNetworkMap = new HashMap<>();
 
     /**
      * 扫描进程的action文件
@@ -93,7 +95,7 @@ public class ActionApplicationService {
                 try {
                     RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
                     long skip = actionSkipMap.getOrDefault(pidFileName, 0l);
-                    logger.info("开始从{}偏移值处理文件：{}", skip, fileName);
+                    logger.info("开始从{}偏移值处理文件：PID:{}，{}", skip, pid, fileName);
                     if(skip > 0){
                         randomAccessFile.seek(skip);
                     }
@@ -116,7 +118,7 @@ public class ActionApplicationService {
                         } else {
                             //停n秒再读取
                             Thread.sleep(2000);
-                            logger.info("文件{}没有新内容，当前读取{}行, 待下次读取", fileName, readLine);
+                            logger.info("PID:{}，文件{}没有新内容，当前读取{}行, 待下次读取", pid, fileName, readLine);
                         }
                         line = randomAccessFile.readLine();
                     }
@@ -139,7 +141,8 @@ public class ActionApplicationService {
         }
 
         handlingThreads.remove(pid);
-        networkMap.remove(pid);
+        socketFdNetworkMap.remove(pid);
+        refNetworkMap.remove(pid);
     }
 
     /**
@@ -168,22 +171,40 @@ public class ActionApplicationService {
 
     private void setActionNetworkInfo(Action action, String pid){
         if(Objects.equals(action.getType(), ActionType.NETWORK_OPEN)){
-            Map<String, NetworkDto> networkInfoMap = networkMap.get(pid);
-            if(networkInfoMap == null){
-                networkInfoMap = new HashMap<>();
-                networkMap.put(pid, networkInfoMap);
+            Map<String, NetworkDto> socketFdNetworkInfoMap = socketFdNetworkMap.get(pid);
+            if(socketFdNetworkInfoMap == null){
+                socketFdNetworkInfoMap = new HashMap<>();
+                socketFdNetworkMap.put(pid, socketFdNetworkInfoMap);
             }
-            if(!networkInfoMap.containsKey(action.getSocketFd())){
-                networkInfoMap.put(action.getSocketFd(), new NetworkDto(action.getHost(), action.getPort()));
+            if(!socketFdNetworkInfoMap.containsKey(action.getSocketFd())){
+                socketFdNetworkInfoMap.put(action.getSocketFd(), new NetworkDto(action.getHost(), action.getPort()));
+            }
+
+            Map<String, NetworkDto> refNetworkInfoMap = socketFdNetworkMap.get(pid);
+            if(refNetworkInfoMap == null){
+                refNetworkInfoMap = new HashMap<>();
+                socketFdNetworkMap.put(pid, refNetworkInfoMap);
+            }
+            if(!refNetworkInfoMap.containsKey(action.getRef())){
+                refNetworkInfoMap.put(action.getRef(), new NetworkDto(action.getHost(), action.getPort()));
             }
         }
         if(Objects.equals(action.getType(), ActionType.NETWORK_TCP_SEND)){
-            Map<String, NetworkDto> networkInfoMap = networkMap.get(pid);
-            if(networkInfoMap != null){
-                NetworkDto networkDto = networkInfoMap.get(action.getSocketFd());
+            Map<String, NetworkDto> socketFdNetworkInfoMap = socketFdNetworkMap.get(pid);
+            if(socketFdNetworkInfoMap != null){
+                NetworkDto networkDto = socketFdNetworkInfoMap.get(action.getSocketFd());
                 if(networkDto != null){
                     action.setHost(networkDto.getHost());
                     action.setPort(networkDto.getPort());
+                }
+            } else {
+                Map<String, NetworkDto> refNetworkInfoMap = socketFdNetworkMap.get(pid);
+                if(refNetworkInfoMap != null){
+                    NetworkDto networkDto = refNetworkInfoMap.get(action.getRef());
+                    if(networkDto != null){
+                        action.setHost(networkDto.getHost());
+                        action.setPort(networkDto.getPort());
+                    }
                 }
             }
         }
