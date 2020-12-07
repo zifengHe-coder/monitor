@@ -24,6 +24,7 @@ import javax.annotation.Resource;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -193,6 +194,10 @@ public class MonitorApplicationService {
             return monitoringTask.getErrorPids().contains(pid);
         }
         return false;
+    }
+
+    public Set<String> getMonitoringSoftwareIds(){
+        return monitoringSoftwareTaskMap.keySet();
     }
 
     public Page<TaskDto> listTask(TaskListCommand command, Pageable pageable){

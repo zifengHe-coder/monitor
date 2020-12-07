@@ -1,5 +1,6 @@
 package com.idaoben.web.monitor.web.dto;
 
+import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
 import io.swagger.annotations.ApiModelProperty;
 
 public class ProcessDto {
@@ -16,8 +17,8 @@ public class ProcessDto {
     @ApiModelProperty("内存使用量")
     private Float memory;
 
-    @ApiModelProperty("是否监控中")
-    private boolean monitoring;
+    @ApiModelProperty("监控状态")
+    private MonitorStatus monitorStatus;
 
     public String getPid() {
         return pid;
@@ -51,11 +52,11 @@ public class ProcessDto {
         this.memory = memory;
     }
 
-    public boolean isMonitoring() {
-        return monitoring;
+    public MonitorStatus getMonitorStatus() {
+        return monitorStatus;
     }
 
-    public void setMonitoring(boolean monitoring) {
-        this.monitoring = monitoring;
+    public void setMonitorStatus(MonitorStatus monitorStatus) {
+        this.monitorStatus = monitorStatus;
     }
 }

@@ -4,6 +4,7 @@ import com.idaoben.web.common.api.bean.ApiRequest;
 import com.idaoben.web.common.api.bean.ApiResponse;
 import com.idaoben.web.monitor.web.application.SoftwareApplicationService;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
+import com.idaoben.web.monitor.web.dto.SoftwareDetailDto;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -25,6 +26,13 @@ public class SoftwareController {
     @GetMapping("/getSystemSoftware")
     public ApiResponse<List<SoftwareDto>> getSystemSoftware() {
         List<SoftwareDto> result = softwareApplicationService.getSystemSoftware();
+        return ApiResponse.createSuccess(result);
+    }
+
+    @ApiOperation("软件详情")
+    @PostMapping("/detailSoftware")
+    public ApiResponse<SoftwareDetailDto> detailSoftware(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
+        SoftwareDetailDto result = softwareApplicationService.detailSoftware(request.getPayload());
         return ApiResponse.createSuccess(result);
     }
 

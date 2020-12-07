@@ -6,6 +6,7 @@ import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.monitor.dao.entity.Favorite;
 import com.idaoben.web.monitor.dao.entity.Software;
+import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.FavoriteService;
 import com.idaoben.web.monitor.service.JniService;
@@ -154,11 +155,20 @@ public class SoftwareApplicationService {
                 process.setName(processJson.getImageName());
                 //TODO：CPU使用时间待补充
                 process.setMemory(Float.parseFloat(processJson.getWsPrivateBytes()) / 1000);
-                process.setMonitoring(monitorApplicationService.isPidMonitoring(softwareDto.getId(), process.getPid()));
+                MonitorStatus monitorStatus;
+                if(monitorApplicationService.isPidMonitoring(softwareDto.getId(), process.getPid())){
+                    monitorStatus = MonitorStatus.MONITORING;
+                } else if(monitorApplicationService.isPidMonitoringError(softwareDto.getId(), process.getPid())){
+                    monitorStatus = MonitorStatus.ERROR;
+                } else {
+                    monitorStatus = MonitorStatus.NOT_MONITOR;
+                }
+                process.setMonitorStatus(monitorStatus);
                 processes.add(process);
             }
             detail.setProcesses(processes);
         }
+        detail.setMonitoring(monitorApplicationService.isMonitoring(softwareDto.getId()));
         return detail;
     }
 

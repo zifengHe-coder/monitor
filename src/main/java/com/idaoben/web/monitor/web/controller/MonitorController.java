@@ -12,12 +12,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.data.domain.Page;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.Set;
 
 @Api(tags="监控进程相关")
 @RestController
@@ -46,6 +44,13 @@ public class MonitorController {
     public ApiResponse<Void> startAndMonitor(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
         monitorApplicationService.startAndMonitor(request.getPayload());
         return ApiResponse.createSuccess();
+    }
+
+    @ApiOperation("获取当前正在监听的软件ID")
+    @GetMapping("/getMonitoringIds")
+    public ApiResponse<Set<String>> getMonitoringIds(){
+        Set<String> result = monitorApplicationService.getMonitoringSoftwareIds();
+        return ApiResponse.createSuccess(result);
     }
 
     @ApiOperation("历史监控任务查询")
