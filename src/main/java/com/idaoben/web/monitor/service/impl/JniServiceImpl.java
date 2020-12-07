@@ -53,8 +53,8 @@ public class JniServiceImpl implements JniService {
     }
 
     @Override
-    public boolean startProcessWithHooksA(String commandLine, String currentDirectory) {
-        return functionHookLoaderJni.StartProcessWithHooksA(commandLine, currentDirectory) == 0;
+    public int startProcessWithHooksA(String commandLine, String currentDirectory) {
+        return functionHookLoaderJni.StartProcessWithHooksA(commandLine, currentDirectory);
     }
 
 }

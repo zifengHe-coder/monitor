@@ -97,7 +97,7 @@ public class Action {
     private String valueType;
 
     @Description("值键值")
-    @Column
+    @Column(name = "data", columnDefinition = "MEDIUMTEXT COMMENT '值键值'")
     private String data;
 
     @Description("值键原类型")

@@ -57,12 +57,7 @@ public class MonitorApplicationService {
         }
 
         //查询当前软件是否还有未完全的监听任务，把任务置为完成
-        List<Task> tasks = taskService.findList(Filters.query().eq(Task::getSoftwareId, softwareId).eq(Task::isComplete, false), null);
-        for(Task task : tasks){
-            task.setEndTime(ZonedDateTime.now());
-            task.setComplete(true);
-            taskService.save(task);
-        }
+        setTaskComplete(softwareId);
 
         MonitoringTask monitoringTask = new MonitoringTask();
         monitoringTask.setSoftwareId(softwareId);
@@ -74,7 +69,7 @@ public class MonitorApplicationService {
         SoftwareDto softwareDto = softwareApplicationService.getSoftwareInfo(softwareId);
         if(softwareDto != null){
             task.setSoftwareName(softwareDto.getSoftwareName());
-            task.setExePath(softwareDto.getExecutePath());
+            task.setExePath(softwareDto.getCommandLine());
         }
         //启动所有pid的监听线程
         List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
@@ -135,17 +130,49 @@ public class MonitorApplicationService {
             }
         }
 
-        List<Task> tasks = taskService.findList(Filters.query().eq(Task::getSoftwareId, softwareId).eq(Task::isComplete, false), null);
-        for(Task task : tasks){
-            task.setEndTime(ZonedDateTime.now());
-            task.setComplete(true);
-            taskService.save(task);
-        }
+        //查询当前软件是否还有未完全的监听任务，把任务置为完成
+        setTaskComplete(softwareId);
         monitoringSoftwareTaskMap.remove(command.getId());
     }
 
     public void startAndMonitor(SoftwareIdCommand command){
+        String softwareId = command.getId();
+        if(monitoringSoftwareTaskMap.containsKey(softwareId)){
+            throw ServiceException.of(ErrorCode.MONITOR_ON_GOING);
+        }
+        //启动监听
+        if(!CollectionUtils.isEmpty(softwareApplicationService.getProcessPids(softwareId))){
+            throw ServiceException.of(ErrorCode.SOFTWARE_RUNING);
+        }
 
+        //查询当前软件是否还有未完全的监听任务，把任务置为完成
+        setTaskComplete(softwareId);
+
+        SoftwareDto software = softwareApplicationService.getSoftwareInfo(softwareId);
+        if(software == null){
+            throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
+        }
+        int pid = jniService.startProcessWithHooksA(software.getCommandLine(), software.getExecutePath());
+        if(pid > 0){
+            String pidStr = String.valueOf(pid);
+            Task task = new Task();
+            task.setStartTime(ZonedDateTime.now());
+            task.setSoftwareId(softwareId);
+            task.setSoftwareName(software.getSoftwareName());
+            task.setExePath(software.getCommandLine());
+            task.setPids(pidStr);
+            task = taskService.save(task);
+            MonitoringTask monitoringTask = new MonitoringTask();
+            monitoringTask.setSoftwareId(softwareId);
+            monitoringTask.getPids().add(pidStr);
+            monitoringSoftwareTaskMap.put(softwareId, monitoringTask);
+            monitoringTask.setTaskId(task.getId());
+
+            actionApplicationService.startActionScan(pidStr, task.getId());
+        } else {
+            logger.error("启动并监听进程错误，软件启动命令：{}", software.getCommandLine());
+            throw ServiceException.of(ErrorCode.START_AND_MONITOR_ERROR);
+        }
     }
 
     public boolean isMonitoring(String softwareId){
@@ -171,5 +198,15 @@ public class MonitorApplicationService {
     public Page<TaskDto> listTask(TaskListCommand command, Pageable pageable){
         Page<Task> tasks = taskService.findPage(Filters.query().likeFuzzy(Task::getPids, command.getPid()).ge(Task::getStartTime, command.getStartTime()).le(Task::getStartTime, command.getEndTime()), pageable);
         return DtoTransformer.asPage(TaskDto.class).apply(tasks);
+    }
+
+    private void setTaskComplete(String softwareId){
+        //查询当前软件是否还有未完全的监听任务，把任务置为完成
+        List<Task> tasks = taskService.findList(Filters.query().eq(Task::getSoftwareId, softwareId).eq(Task::isComplete, false), null);
+        for(Task task : tasks){
+            task.setEndTime(ZonedDateTime.now());
+            task.setComplete(true);
+            taskService.save(task);
+        }
     }
 }

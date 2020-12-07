@@ -41,6 +41,13 @@ public class MonitorController {
         return ApiResponse.createSuccess();
     }
 
+    @ApiOperation("开启并监听软件")
+    @PostMapping("/startAndMonitor")
+    public ApiResponse<Void> startAndMonitor(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
+        monitorApplicationService.startAndMonitor(request.getPayload());
+        return ApiResponse.createSuccess();
+    }
+
     @ApiOperation("历史监控任务查询")
     @PostMapping("/listTask")
     public ApiPageResponse<TaskDto> listTask(@RequestBody @Validated ApiPageRequest<TaskListCommand> request) {

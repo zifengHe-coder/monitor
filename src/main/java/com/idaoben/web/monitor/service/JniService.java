@@ -12,5 +12,5 @@ public interface JniService {
 
     boolean removeHooks(int pid);
 
-    boolean startProcessWithHooksA(String commandLine, String currentDirectory);
+    int startProcessWithHooksA(String commandLine, String currentDirectory);
 }
