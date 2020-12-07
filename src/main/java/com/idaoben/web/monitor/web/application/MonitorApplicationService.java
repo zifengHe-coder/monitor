@@ -9,10 +9,10 @@ import com.idaoben.web.monitor.service.JniService;
 import com.idaoben.web.monitor.service.TaskService;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.command.TaskListCommand;
-import com.idaoben.web.monitor.web.dto.ProcessJsonDto;
+import com.idaoben.web.monitor.web.dto.MonitoringTask;
+import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
 import com.idaoben.web.monitor.web.dto.TaskDto;
-import org.apache.tomcat.util.buf.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -22,10 +22,9 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Component
@@ -33,7 +32,7 @@ public class MonitorApplicationService {
 
     private static final Logger logger = LoggerFactory.getLogger(MonitorApplicationService.class);
 
-    private Map<String, List<String>> monitoringSoftwarePidMap = new HashMap<>();
+    private Map<String, MonitoringTask> monitoringSoftwareTaskMap = new ConcurrentHashMap<>();
 
     @Resource
     private SoftwareApplicationService softwareApplicationService;
@@ -49,7 +48,7 @@ public class MonitorApplicationService {
 
     public void startMonitor(SoftwareIdCommand command){
         String softwareId = command.getId();
-        if(monitoringSoftwarePidMap.containsKey(softwareId)){
+        if(monitoringSoftwareTaskMap.containsKey(softwareId)){
             throw ServiceException.of(ErrorCode.MONITOR_ON_GOING);
         }
         //启动监听
@@ -65,8 +64,9 @@ public class MonitorApplicationService {
             taskService.save(task);
         }
 
-        List<String> injectPids = new ArrayList<>();
-        monitoringSoftwarePidMap.put(softwareId, injectPids);
+        MonitoringTask monitoringTask = new MonitoringTask();
+        monitoringTask.setSoftwareId(softwareId);
+        monitoringSoftwareTaskMap.put(softwareId, monitoringTask);
         //创建一个监控任务
         Task task = new Task();
         task.setStartTime(ZonedDateTime.now());
@@ -77,32 +77,55 @@ public class MonitorApplicationService {
             task.setExePath(softwareDto.getExecutePath());
         }
         //启动所有pid的监听线程
-        List<ProcessJsonDto> processes = softwareApplicationService.getProcessPids(softwareId);
+        List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
         if(processes != null){
             List<Integer> pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
-
             for(Integer pid : pids){
                 logger.info("启动PID: {}的注入监听。", pid);
                 boolean result = jniService.attachAndInjectHooks(pid);
                 if(result){
-                    injectPids.add(String.valueOf(pid));
+                    monitoringTask.getPids().add(String.valueOf(pid));
                 } else {
+                    monitoringTask.getErrorPids().add(String.valueOf(pid));
                     logger.error("注入进程失败，SoftwareId: {}, PID：{}", softwareId, pid);
                 }
             }
-            task.setPids(StringUtils.join(injectPids, ','));
+            task.setPids(monitoringTask.getPids());
             task = taskService.save(task);
-            for(String pid : injectPids){
+            monitoringTask.setTaskId(task.getId());
+            for(String pid : monitoringTask.getPids()){
                 actionApplicationService.startActionScan(pid, task.getId());
             }
         }
     }
 
+    public void startMonitorPid(String softwareId, String pid){
+        MonitoringTask monitoringTask = monitoringSoftwareTaskMap.get(softwareId);
+        if(monitoringTask == null){
+            //当前软件未监听，不做处理
+            return;
+        }
+        logger.info("启动单个PID: {}的注入监听。", pid);
+        boolean result = jniService.attachAndInjectHooks(Integer.parseInt(pid));
+        if(result){
+            //注入成功，增加pid到监听缓存和更新task的监听进程
+            monitoringTask.getPids().add(pid);
+            actionApplicationService.startActionScan(pid, monitoringTask.getTaskId());
+            Task task = taskService.findStrictly(monitoringTask.getTaskId());
+            task.setPids(monitoringTask.getPids());
+            taskService.save(task);
+        } else {
+            monitoringTask.getErrorPids().add(pid);
+            logger.error("注入进程失败，SoftwareId: {}, PID：{}", softwareId, pid);
+        }
+
+    }
+
     public void stopMonitor(SoftwareIdCommand command){
         String softwareId = command.getId();
-        List<String> pids = monitoringSoftwarePidMap.get(softwareId);
-        if(pids != null){
-            for(String pid : pids){
+        MonitoringTask monitoringTask = monitoringSoftwareTaskMap.get(softwareId);
+        if(monitoringTask != null){
+            for(String pid : monitoringTask.getPids()){
                 boolean result = jniService.removeHooks(Integer.valueOf(pid));
                 if(result){
                     actionApplicationService.stopActionScan(pid);
@@ -118,12 +141,31 @@ public class MonitorApplicationService {
             task.setComplete(true);
             taskService.save(task);
         }
-        monitoringSoftwarePidMap.remove(command.getId());
-
+        monitoringSoftwareTaskMap.remove(command.getId());
     }
 
     public void startAndMonitor(SoftwareIdCommand command){
 
+    }
+
+    public boolean isMonitoring(String softwareId){
+        return monitoringSoftwareTaskMap.containsKey(softwareId);
+    }
+
+    public boolean isPidMonitoring(String softwareId, String pid){
+        MonitoringTask monitoringTask = monitoringSoftwareTaskMap.get(softwareId);
+        if(monitoringTask != null){
+            return monitoringTask.getPids().contains(pid);
+        }
+        return false;
+    }
+
+    public boolean isPidMonitoringError(String softwareId, String pid){
+        MonitoringTask monitoringTask = monitoringSoftwareTaskMap.get(softwareId);
+        if(monitoringTask != null){
+            return monitoringTask.getErrorPids().contains(pid);
+        }
+        return false;
     }
 
     public Page<TaskDto> listTask(TaskListCommand command, Pageable pageable){

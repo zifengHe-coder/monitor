@@ -6,7 +6,7 @@ import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.ActionType;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.utils.SystemUtils;
-import com.idaoben.web.monitor.web.dto.ActionJsonDto;
+import com.idaoben.web.monitor.web.dto.ActionJson;
 import com.idaoben.web.monitor.web.dto.NetworkDto;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -152,7 +152,7 @@ public class ActionApplicationService {
      */
     private Action handleActionJson(String json, String pid, Long taskId, String actionName){
         try {
-            ActionJsonDto actionJson = objectMapper.readValue(json, ActionJsonDto.class);
+            ActionJson actionJson = objectMapper.readValue(json, ActionJson.class);
             Action action = actionJson.getAction();
             action.setUuid(actionJson.getUuid());
             action.setTimestamp(actionJson.getTimestamp());

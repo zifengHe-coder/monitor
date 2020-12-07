@@ -4,13 +4,13 @@ import io.swagger.annotations.ApiModelProperty;
 
 public class ProcessDto {
 
-    @ApiModelProperty("进程号")
-    private int pid;
+    @ApiModelProperty("进程号PID")
+    private String pid;
 
     @ApiModelProperty("进程名称")
     private String name;
 
-    @ApiModelProperty("cpu实用率")
+    @ApiModelProperty("cpu使用率")
     private Float cpu;
 
     @ApiModelProperty("内存使用量")
@@ -19,11 +19,11 @@ public class ProcessDto {
     @ApiModelProperty("是否监控中")
     private boolean monitoring;
 
-    public int getPid() {
+    public String getPid() {
         return pid;
     }
 
-    public void setPid(int pid) {
+    public void setPid(String pid) {
         this.pid = pid;
     }
 

@@ -1,6 +1,6 @@
 package com.idaoben.web.monitor.web.dto;
 
-public class ProcessJsonDto {
+public class ProcessJson {
 
     private String cpuTime;
 

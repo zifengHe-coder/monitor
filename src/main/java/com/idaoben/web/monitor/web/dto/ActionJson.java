@@ -6,7 +6,7 @@ import com.idaoben.web.monitor.dao.entity.Action;
 
 import java.time.ZonedDateTime;
 
-public class ActionJsonDto {
+public class ActionJson {
 
     private String uuid;
 

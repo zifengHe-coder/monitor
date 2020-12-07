@@ -2,11 +2,13 @@ package com.idaoben.web.monitor.dao.entity;
 
 import com.idaoben.web.common.entity.Description;
 import com.idaoben.web.common.entity.IdentifiableObject;
+import org.apache.tomcat.util.buf.StringUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "t_task")
@@ -79,6 +81,10 @@ public class Task extends IdentifiableObject {
 
     public void setPids(String pids) {
         this.pids = pids;
+    }
+
+    public void setPids(List<String> pids){
+        this.pids = StringUtils.join(pids, ',');
     }
 
     public String getExePath() {

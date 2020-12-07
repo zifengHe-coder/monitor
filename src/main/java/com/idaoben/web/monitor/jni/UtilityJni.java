@@ -19,4 +19,6 @@ public class UtilityJni {
     public native int ReadBlock(int ref, byte[] buffer, int offset, int size);
 
     public native void FreeBlock(int ref);
+
+    public native int QueryLinkInfos(String links);
 }
