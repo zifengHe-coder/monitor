@@ -9,6 +9,7 @@ import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.ActionFileListCommand;
+import com.idaoben.web.monitor.web.command.ActionNetworkListCommand;
 import com.idaoben.web.monitor.web.command.ActionProcessListCommand;
 import com.idaoben.web.monitor.web.command.ActionRegistryListCommand;
 import com.idaoben.web.monitor.web.dto.*;
@@ -84,6 +85,14 @@ public class ActionApplicationService {
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionProcessDto.class).apply(actions);
+    }
+
+    public Page<ActionNetworkDto> listByNetworkType(ActionNetworkListCommand command, Pageable pageable){
+        Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.NETWORK).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
+                .likeFuzzy(Action::getHost, command.getHost()).eq(Action::getPort, command.getPort()).eq(Action::getType, command.getType())
+                .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        Page<Action> actions = actionService.findPage(filters, pageable);
+        return DtoTransformer.asPage(ActionNetworkDto.class).apply(actions);
     }
 
     /**
