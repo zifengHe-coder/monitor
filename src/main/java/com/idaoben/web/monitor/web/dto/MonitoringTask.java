@@ -1,7 +1,7 @@
 package com.idaoben.web.monitor.web.dto;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class MonitoringTask {
 
@@ -12,12 +12,12 @@ public class MonitoringTask {
     /**
      * 正在运行监听的PID
      */
-    private List<String> pids = new ArrayList<>();
+    private Set<String> pids = new CopyOnWriteArraySet<>();
 
     /**
      * 监听异常的PID
      */
-    private List<String> errorPids = new ArrayList<>();
+    private Set<String> errorPids = new CopyOnWriteArraySet<>();
 
     public Long getTaskId() {
         return taskId;
@@ -35,19 +35,12 @@ public class MonitoringTask {
         this.softwareId = softwareId;
     }
 
-    public List<String> getPids() {
+    public Set<String> getPids() {
         return pids;
     }
 
-    public void setPids(List<String> pids) {
-        this.pids = pids;
-    }
-
-    public List<String> getErrorPids() {
+    public Set<String> getErrorPids() {
         return errorPids;
     }
 
-    public void setErrorPids(List<String> errorPids) {
-        this.errorPids = errorPids;
-    }
 }

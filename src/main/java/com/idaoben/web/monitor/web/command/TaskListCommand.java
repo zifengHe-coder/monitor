@@ -6,6 +6,9 @@ import java.time.ZonedDateTime;
 
 public class TaskListCommand {
 
+    @ApiModelProperty("软件ID")
+    private String softwareId;
+
     @ApiModelProperty("进程PID")
     private String pid;
 
@@ -14,6 +17,14 @@ public class TaskListCommand {
 
     @ApiModelProperty("结束时间")
     private ZonedDateTime endTime;
+
+    public String getSoftwareId() {
+        return softwareId;
+    }
+
+    public void setSoftwareId(String softwareId) {
+        this.softwareId = softwareId;
+    }
 
     public String getPid() {
         return pid;

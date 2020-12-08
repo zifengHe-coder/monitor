@@ -22,6 +22,7 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,7 +71,7 @@ public class MonitorApplicationService {
         SoftwareDto softwareDto = softwareApplicationService.getSoftwareInfo(softwareId);
         if(softwareDto != null){
             task.setSoftwareName(softwareDto.getSoftwareName());
-            task.setExePath(softwareDto.getCommandLine());
+            task.setExePath(softwareDto.getExePath());
         }
         //启动所有pid的监听线程
         List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
@@ -121,14 +122,17 @@ public class MonitorApplicationService {
         String softwareId = command.getId();
         MonitoringTask monitoringTask = monitoringSoftwareTaskMap.get(softwareId);
         if(monitoringTask != null){
+            List<String> successPids = new ArrayList<>();
             for(String pid : monitoringTask.getPids()){
                 boolean result = jniService.removeHooks(Integer.valueOf(pid));
                 if(result){
                     actionApplicationService.stopActionScan(pid);
+                    successPids.add(pid);
                 } else {
                     logger.error("解除注入进程错误，SoftwareId: {}, PID：{}", softwareId, pid);
                 }
             }
+            monitoringTask.getPids().removeAll(successPids);
         }
 
         //查询当前软件是否还有未完全的监听任务，把任务置为完成
@@ -160,7 +164,7 @@ public class MonitorApplicationService {
             task.setStartTime(ZonedDateTime.now());
             task.setSoftwareId(softwareId);
             task.setSoftwareName(software.getSoftwareName());
-            task.setExePath(software.getCommandLine());
+            task.setExePath(software.getExePath());
             task.setPids(pidStr);
             task = taskService.save(task);
             MonitoringTask monitoringTask = new MonitoringTask();
@@ -201,7 +205,7 @@ public class MonitorApplicationService {
     }
 
     public Page<TaskDto> listTask(TaskListCommand command, Pageable pageable){
-        Page<Task> tasks = taskService.findPage(Filters.query().likeFuzzy(Task::getPids, command.getPid()).ge(Task::getStartTime, command.getStartTime()).le(Task::getStartTime, command.getEndTime()), pageable);
+        Page<Task> tasks = taskService.findPage(Filters.query().eq(Task::getSoftwareId, command.getSoftwareId()).likeFuzzy(Task::getPids, command.getPid()).ge(Task::getStartTime, command.getStartTime()).le(Task::getStartTime, command.getEndTime()), pageable);
         return DtoTransformer.asPage(TaskDto.class).apply(tasks);
     }
 

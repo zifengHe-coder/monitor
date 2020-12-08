@@ -22,11 +22,11 @@ public class SoftwareDto {
     @ApiModelProperty("可执行程序名称")
     private String exeName;
 
+    @ApiModelProperty("可执行文件路径")
+    private String exePath;
+
     @ApiModelProperty("BASE64格式的icon")
     private String base64Icon;
-
-    @ApiModelProperty("是否监听中")
-    private boolean monitoring;
 
     @ApiModelProperty("是否常用")
     private boolean favorite;
@@ -71,6 +71,14 @@ public class SoftwareDto {
         this.executePath = executePath;
     }
 
+    public String getExePath() {
+        return exePath;
+    }
+
+    public void setExePath(String exePath) {
+        this.exePath = exePath;
+    }
+
     public String getExeName() {
         return exeName;
     }
@@ -85,14 +93,6 @@ public class SoftwareDto {
 
     public void setBase64Icon(String base64Icon) {
         this.base64Icon = base64Icon;
-    }
-
-    public boolean isMonitoring() {
-        return monitoring;
-    }
-
-    public void setMonitoring(boolean monitoring) {
-        this.monitoring = monitoring;
     }
 
     public boolean isFavorite() {

@@ -8,7 +8,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.time.ZonedDateTime;
-import java.util.List;
+import java.util.Collection;
 
 @Entity
 @Table(name = "t_task")
@@ -83,7 +83,7 @@ public class Task extends IdentifiableObject {
         this.pids = pids;
     }
 
-    public void setPids(List<String> pids){
+    public void setPids(Collection<String> pids){
         this.pids = StringUtils.join(pids, ',');
     }
 

@@ -183,16 +183,14 @@ public class SoftwareApplicationService {
         softwareDto.setFavorite(favorites.contains(softwareDto.getId()));
         softwareDto.setSoftwareName(lnkFile.getName().replace(".lnk", ""));
         if(linkFileJson != null){
-            //TODO: 命令行需要exe+参数结合，需要具体测试确认
             File file = new File(linkFileJson.getPath());
-            softwareDto.setCommandLine(linkFileJson.getPath());
+            softwareDto.setCommandLine(linkFileJson.getPath() + linkFileJson.getArguments());
+            softwareDto.setExePath(linkFileJson.getPath());
             //TODO: 图标需要再处理
             softwareDto.setBase64Icon(linkFileJson.getIconLocation());
             softwareDto.setExecutePath(linkFileJson.getWorkingDirectory());
             softwareDto.setExeName(file.getName());
         }
-        //判断当前是否监控中
-        softwareDto.setMonitoring(monitorApplicationService.isMonitoring(softwareDto.getId()));
         return softwareDto;
     }
 
