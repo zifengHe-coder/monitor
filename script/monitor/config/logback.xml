@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xml>
+<!-- configuration file for LogBack (slf4J implementation)
+     See here for more details: http://gordondickens.com/wordpress/2013/03/27/sawing-through-the-java-loggers/ -->
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
+    <!-- To enable JMX Management -->
+    <jmxConfigurator/>
+
+    <property name="LOG_HOME" value="logs" />
+
+    <appender name="all" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/all.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_HOME}/%d{yyyy-MM-dd}.all.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+                <pattern>%d %-5level %logger{8} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <file>${LOG_HOME}/error.log</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_HOME}/%d{yyyy-MM-dd}.error.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+                <pattern>%d %-5level %logger{8} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <logger name="org.hibernate" level="info" />
+    <logger name="org.hibernate.SQL" level="info" />
+    <!-- 一般只在需要的时候开启这个 logger 
+            <logger name="org.hibernate.type" level="trace" />
+    -->
+    <logger name="org.springframework.web" level="info" />
+    <logger name="org.springframework.security" level="info" />
+    <logger name="ControllerMethodLoggingAspect" level="debug" />
+    <logger name="com.idaoben" level="trace" />
+
+    <root level="info">
+        <appender-ref ref="all" />
+        <appender-ref ref="error" />
+    </root>
+</configuration>
+

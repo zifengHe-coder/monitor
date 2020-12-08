@@ -1,0 +1,1 @@
+jlink.exe --module-path jmods --add-modules java.desktop,java.naming,java.management,java.sql,java.security.jgss,java.instrument --output jre
