@@ -21,3 +21,10 @@ dist/
 nbdist/
 .nb-gradle/
 **/.DS_Store
+
+node_modules
+public/images
+public/wms
+public/files
+db/
+dist
