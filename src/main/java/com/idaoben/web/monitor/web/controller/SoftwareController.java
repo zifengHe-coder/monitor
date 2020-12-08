@@ -3,7 +3,9 @@ package com.idaoben.web.monitor.web.controller;
 import com.idaoben.web.common.api.bean.ApiRequest;
 import com.idaoben.web.common.api.bean.ApiResponse;
 import com.idaoben.web.monitor.web.application.SoftwareApplicationService;
+import com.idaoben.web.monitor.web.command.FileListCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
+import com.idaoben.web.monitor.web.dto.FileDto;
 import com.idaoben.web.monitor.web.dto.SoftwareDetailDto;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
 import io.swagger.annotations.Api;
@@ -48,6 +50,13 @@ public class SoftwareController {
     public ApiResponse<Void> removeFavorite(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
         softwareApplicationService.removeFavorite(request.getPayload());
         return ApiResponse.createSuccess();
+    }
+
+    @ApiOperation("查询系统文件目录")
+    @PostMapping("/listFiles")
+    public ApiResponse<List<FileDto>> listFiles(@RequestBody @Validated ApiRequest<FileListCommand> request) {
+        List<FileDto> result = softwareApplicationService.listFiles(request.getPayload());
+        return ApiResponse.createSuccess(result);
     }
 
 }

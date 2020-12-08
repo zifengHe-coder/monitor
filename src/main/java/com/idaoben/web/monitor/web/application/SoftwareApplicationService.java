@@ -7,11 +7,13 @@ import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.monitor.dao.entity.Favorite;
 import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
+import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.FavoriteService;
 import com.idaoben.web.monitor.service.JniService;
 import com.idaoben.web.monitor.service.SoftwareService;
 import com.idaoben.web.monitor.utils.SystemUtils;
+import com.idaoben.web.monitor.web.command.FileListCommand;
 import com.idaoben.web.monitor.web.command.SoftwareAddCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.dto.*;
@@ -25,10 +27,7 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -261,5 +260,38 @@ public class SoftwareApplicationService {
 
     private String getSoftwareIdFromImageName(String imageName){
         return exeNameSoftwareIdMap.get(imageName.toLowerCase());
+    }
+
+    public List<FileDto> listFiles(FileListCommand command){
+        List<FileDto> files = new ArrayList<>();
+        File[] fileChildren;
+        if(StringUtils.isEmpty(command.getPath())){
+            fileChildren = File.listRoots();
+        } else {
+            File folder = new File(command.getPath());
+            fileChildren = folder.listFiles();
+        }
+        if(fileChildren != null){
+            for(File file : fileChildren){
+                //过滤文件后缀
+                if(SystemUtils.getSystemOs() == SystemOs.WINDOWS && !file.isDirectory() && !file.getName().endsWith(".exe")){
+                    continue;
+                }
+                FileDto fileDto = new FileDto();
+                fileDto.setName(file.getName());
+                fileDto.setPath(file.getPath());
+                fileDto.setDirectory(file.isDirectory());
+                files.add(fileDto);
+            }
+        }
+        Collections.sort(files, (f1, f2) -> {
+            if(f1.isDirectory() && !f2.isDirectory()){
+                return -1;
+            } else if(!f1.isDirectory() && f2.isDirectory()){
+                return 1;
+            }
+            return f1.getName().toLowerCase().compareTo(f2.getName().toLowerCase());
+        });
+        return files;
     }
 }
