@@ -9,10 +9,9 @@ import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.ActionFileListCommand;
-import com.idaoben.web.monitor.web.dto.ActionFileDto;
-import com.idaoben.web.monitor.web.dto.ActionJson;
-import com.idaoben.web.monitor.web.dto.FileInfo;
-import com.idaoben.web.monitor.web.dto.NetworkInfo;
+import com.idaoben.web.monitor.web.command.ActionProcessListCommand;
+import com.idaoben.web.monitor.web.command.ActionRegistryListCommand;
+import com.idaoben.web.monitor.web.dto.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -55,7 +54,7 @@ public class ActionApplicationService {
     private Map<String, Map<String, FileInfo>> fdFileMap = new HashMap<>();
 
     public Page<ActionFileDto> listByFileType(ActionFileListCommand command, Pageable pageable){
-        Filters filters = Filters.query().eq(Action::getTaskId, command.getTaskId()).eq(Action::getActionGroup, ActionGroup.FILE).eq(Action::getPid, command.getPid())
+        Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.FILE).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getFileName, command.getFileName()).eq(Action::getSensitivity, command.getSensitivity())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
         if(command.getOpType() != null){
@@ -69,6 +68,22 @@ public class ActionApplicationService {
         return DtoTransformer.asPage(ActionFileDto.class).apply(actions, (domain, dto) -> {
             dto.setOpType(domain.getType() == ActionType.FILE_WRITE ? FileOpType.WRITE : FileOpType.WRITE);
         });
+    }
+
+    public Page<ActionRegistryDto> listByRegistryType(ActionRegistryListCommand command, Pageable pageable){
+        Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.REGISTRY).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
+                .likeFuzzy(Action::getKey, command.getKey()).likeFuzzy(Action::getValueName, command.getValueName()).eq(Action::getValueType, command.getValueType())
+                .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        Page<Action> actions = actionService.findPage(filters, pageable);
+        return DtoTransformer.asPage(ActionRegistryDto.class).apply(actions);
+    }
+
+    public Page<ActionProcessDto> listByProcessType(ActionProcessListCommand command, Pageable pageable){
+        Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.PROCESS).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
+                .likeFuzzy(Action::getCommandLine, command.getCommandLine()).eq(Action::getType, command.getType())
+                .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        Page<Action> actions = actionService.findPage(filters, pageable);
+        return DtoTransformer.asPage(ActionProcessDto.class).apply(actions);
     }
 
     /**

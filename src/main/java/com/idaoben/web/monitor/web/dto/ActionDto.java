@@ -62,7 +62,7 @@ public interface ActionDto {
     @Mapping
     Long getBytes();
 
-    @ApiModelProperty("文件路径")
+    @ApiModelProperty("文件路径/如果创建远程线程时执行的thread")
     @Mapping
     String getPath();
 
@@ -102,7 +102,7 @@ public interface ActionDto {
     @Mapping
     String getValueType();
 
-    @ApiModelProperty("值键值")
+    @ApiModelProperty("值键值/发送数据(HEX编码)")
     @Mapping
     String getData();
 
@@ -117,4 +117,16 @@ public interface ActionDto {
     @ApiModelProperty("启动进程的完整命令行数据")
     @Mapping
     String getCommandLine();
+
+    @ApiModelProperty("创建远程线程时提供的入口函数地址 ")
+    @Mapping
+    String getThreadEntryAddress();
+
+    @ApiModelProperty("消息发送目标窗口的句柄")
+    @Mapping
+    String getDestHwnd();
+
+    @ApiModelProperty("消息发送源窗口的句柄")
+    @Mapping
+    String getSrcHwnd();
 }

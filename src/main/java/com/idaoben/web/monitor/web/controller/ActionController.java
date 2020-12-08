@@ -4,7 +4,11 @@ import com.idaoben.web.common.api.bean.ApiPageRequest;
 import com.idaoben.web.common.api.bean.ApiPageResponse;
 import com.idaoben.web.monitor.web.application.ActionApplicationService;
 import com.idaoben.web.monitor.web.command.ActionFileListCommand;
+import com.idaoben.web.monitor.web.command.ActionProcessListCommand;
+import com.idaoben.web.monitor.web.command.ActionRegistryListCommand;
 import com.idaoben.web.monitor.web.dto.ActionFileDto;
+import com.idaoben.web.monitor.web.dto.ActionProcessDto;
+import com.idaoben.web.monitor.web.dto.ActionRegistryDto;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.data.domain.Page;
@@ -25,10 +29,24 @@ public class ActionController {
     @Resource
     private ActionApplicationService actionApplicationService;
 
-    @ApiOperation("查询文件读写")
+    @ApiOperation("查询文件读写行为")
     @PostMapping("/listByFileType")
     public ApiPageResponse<ActionFileDto> listByFileType(@RequestBody @Validated ApiPageRequest<ActionFileListCommand> request) {
         Page<ActionFileDto> result = actionApplicationService.listByFileType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "timestamp")));
+        return ApiPageResponse.createPageSuccess(result);
+    }
+
+    @ApiOperation("查询注册表行为")
+    @PostMapping("/listByRegistryType")
+    public ApiPageResponse<ActionRegistryDto> listByRegistryType(@RequestBody @Validated ApiPageRequest<ActionRegistryListCommand> request) {
+        Page<ActionRegistryDto> result = actionApplicationService.listByRegistryType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "timestamp")));
+        return ApiPageResponse.createPageSuccess(result);
+    }
+
+    @ApiOperation("查询进程调用行为")
+    @PostMapping("/listByProcessType")
+    public ApiPageResponse<ActionProcessDto> listByProcessType(@RequestBody @Validated ApiPageRequest<ActionProcessListCommand> request) {
+        Page<ActionProcessDto> result = actionApplicationService.listByProcessType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "timestamp")));
         return ApiPageResponse.createPageSuccess(result);
     }
 }
