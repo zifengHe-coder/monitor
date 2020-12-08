@@ -115,13 +115,13 @@ public class SoftwareApplicationService {
         if(softwareService.exists(Filters.query().eq(Software::getExePath, command.getExePath()))){
             throw ServiceException.of(ErrorCode.SOFTWARE_ALREADY_EXISTS);
         }
+        File file = new File(command.getExePath());
         Software software = new Software();
-        //TODO: 参数需要正确设置
-        software.setSoftwareName(command.getExePath());
-        software.setCommandLine(command.getExePath());
-        software.setExeName(command.getExePath());
-        software.setExePath(command.getExePath());
-        software.setExeName(command.getExePath());
+        software.setSoftwareName(file.getName());
+        software.setCommandLine(file.getPath());
+        software.setExecutePath(file.getParent());
+        software.setExeName(file.getName());
+        software.setExePath(file.getPath());
         softwareService.save(software);
     }
 
@@ -269,6 +269,9 @@ public class SoftwareApplicationService {
             fileChildren = File.listRoots();
         } else {
             File folder = new File(command.getPath());
+            if(!folder.exists() || !folder.isDirectory()){
+                throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
+            }
             fileChildren = folder.listFiles();
         }
         if(fileChildren != null){
