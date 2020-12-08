@@ -23,8 +23,6 @@ logging:
 daoben:
   framework:
     file: false
-    url:
-      file: api/admin/file
     captcha: false
     captcha-disable: true
     api-method-logging: false
