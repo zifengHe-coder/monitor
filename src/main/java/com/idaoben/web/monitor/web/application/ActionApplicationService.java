@@ -2,15 +2,23 @@ package com.idaoben.web.monitor.web.application;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.idaoben.web.common.entity.Filters;
+import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
-import com.idaoben.web.monitor.dao.entity.enums.ActionType;
+import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.utils.SystemUtils;
+import com.idaoben.web.monitor.web.command.ActionFileListCommand;
+import com.idaoben.web.monitor.web.dto.ActionFileDto;
 import com.idaoben.web.monitor.web.dto.ActionJson;
-import com.idaoben.web.monitor.web.dto.NetworkDto;
+import com.idaoben.web.monitor.web.dto.FileInfo;
+import com.idaoben.web.monitor.web.dto.NetworkInfo;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -19,7 +27,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -41,9 +48,28 @@ public class ActionApplicationService {
 
     private Map<String, Long> actionSkipMap = new ConcurrentHashMap<>();
 
-    private Map<String, Map<String, NetworkDto>> socketFdNetworkMap = new HashMap<>();
+    private Map<String, Map<String, NetworkInfo>> socketFdNetworkMap = new HashMap<>();
 
-    private Map<String, Map<String, NetworkDto>> refNetworkMap = new HashMap<>();
+    private Map<String, Map<String, NetworkInfo>> refNetworkMap = new HashMap<>();
+
+    private Map<String, Map<String, FileInfo>> fdFileMap = new HashMap<>();
+
+    public Page<ActionFileDto> listByFileType(ActionFileListCommand command, Pageable pageable){
+        Filters filters = Filters.query().eq(Action::getTaskId, command.getTaskId()).eq(Action::getActionGroup, ActionGroup.FILE).eq(Action::getPid, command.getPid())
+                .likeFuzzy(Action::getFileName, command.getFileName()).eq(Action::getSensitivity, command.getSensitivity())
+                .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        if(command.getOpType() != null){
+            if(command.getOpType() == FileOpType.WRITE){
+                filters.eq(Action::getType, ActionType.FILE_WRITE);
+            } else {
+                filters.eq(Action::getType, ActionType.FILE_OPEN);
+            }
+        }
+        Page<Action> actions = actionService.findPage(filters, pageable);
+        return DtoTransformer.asPage(ActionFileDto.class).apply(actions, (domain, dto) -> {
+            dto.setOpType(domain.getType() == ActionType.FILE_WRITE ? FileOpType.WRITE : FileOpType.WRITE);
+        });
+    }
 
     /**
      * 扫描进程的action文件
@@ -112,7 +138,7 @@ public class ActionApplicationService {
                             readLine ++;
 
                             //如果发现action已结束，主动完成线程
-                            if(action != null && Objects.equals(action.getType(), ActionType.STOP.value())){
+                            if(action != null && action.getType() == ActionType.STOP){
                                 thread.finish();
                             }
                         } else {
@@ -139,10 +165,13 @@ public class ActionApplicationService {
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
+    }
 
+    private void clearPidCache(String pid){
         handlingThreads.remove(pid);
         socketFdNetworkMap.remove(pid);
         refNetworkMap.remove(pid);
+        fdFileMap.remove(pid);
     }
 
     /**
@@ -160,53 +189,136 @@ public class ActionApplicationService {
             action.setTaskId(taskId);
             action.setPid(pid);
 
-            //如果是发起网络链接的，缓存网络信息
-            setActionNetworkInfo(action, pid);
-            return actionService.save(action);
+            if(ActionType.isNetworkType(action.getType())){
+                //如果是发起网络链接的，缓存网络信息
+                setActionNetworkInfo(action, pid);
+            } else if(ActionType.isFileType(action.getType())){
+                //设置文件信息
+                action = setActionFileInfo(action, pid);
+            } else if(ActionType.isRegistryType(action.getType())){
+                setActionRegistryInfo(action, pid);
+            } else if(ActionType.isProcessType(action.getType())){
+                setActionProcessInfo(action, pid);
+            }
+
+            if(action != null){
+                return actionService.save(action);
+            }
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
         }
         return null;
     }
 
-    private void setActionNetworkInfo(Action action, String pid){
-        if(Objects.equals(action.getType(), ActionType.NETWORK_OPEN)){
-            Map<String, NetworkDto> socketFdNetworkInfoMap = socketFdNetworkMap.get(pid);
-            if(socketFdNetworkInfoMap == null){
-                socketFdNetworkInfoMap = new HashMap<>();
-                socketFdNetworkMap.put(pid, socketFdNetworkInfoMap);
-            }
-            if(!socketFdNetworkInfoMap.containsKey(action.getSocketFd())){
-                socketFdNetworkInfoMap.put(action.getSocketFd(), new NetworkDto(action.getHost(), action.getPort()));
-            }
+    private static final String FILE_TYPE_SEPARATOR = "\\??\\";
 
-            Map<String, NetworkDto> refNetworkInfoMap = socketFdNetworkMap.get(pid);
-            if(refNetworkInfoMap == null){
-                refNetworkInfoMap = new HashMap<>();
-                socketFdNetworkMap.put(pid, refNetworkInfoMap);
+    private Action setActionFileInfo(Action action, String pid){
+        if(action.getType() == ActionType.FILE_OPEN){
+            String path = action.getPath();
+            //获取path对应的文件名称
+            action.setFileName(StringUtils.substringAfterLast(path, SystemUtils.FILE_SEPARATOR));
+            //根据操作系统判断系统敏感性
+            if(path.startsWith(SystemUtils.getSensitivityPath())){
+                action.setSensitivity(FileSensitivity.HIGH);
             }
-            if(!refNetworkInfoMap.containsKey(action.getRef())){
-                refNetworkInfoMap.put(action.getRef(), new NetworkDto(action.getHost(), action.getPort()));
+            FileAccess fileAccess = getFileAccess(action);
+            //只有含写操作的才会记录到map中
+            if(fileAccess == FileAccess.WRITE || fileAccess == FileAccess.READ_AND_WRITE){
+                Map<String, FileInfo> fdFileInfoMap = fdFileMap.computeIfAbsent(pid, p -> new HashMap<>());
+                if(!fdFileInfoMap.containsKey(action.getFd())){
+                    fdFileInfoMap.put(action.getFd(), new FileInfo(action.getFd(), action.getFileName(), action.getPath(), action.getSensitivity()));
+                }
+            }
+            if(fileAccess == null){
+                return null;
             }
         }
-        if(Objects.equals(action.getType(), ActionType.NETWORK_TCP_SEND)){
-            Map<String, NetworkDto> socketFdNetworkInfoMap = socketFdNetworkMap.get(pid);
-            if(socketFdNetworkInfoMap != null){
-                NetworkDto networkDto = socketFdNetworkInfoMap.get(action.getSocketFd());
-                if(networkDto != null){
-                    action.setHost(networkDto.getHost());
-                    action.setPort(networkDto.getPort());
+        if(action.getType() == ActionType.FILE_WRITE){
+            Map<String, FileInfo> fdFileInfoMap = fdFileMap.get(pid);
+            if(fdFileInfoMap != null){
+                FileInfo fileInfo = fdFileInfoMap.get(action.getFd());
+                if(fileInfo != null){
+                    action.setFileName(fileInfo.getFileName());
+                    action.setSensitivity(fileInfo.getSensitivity());
+                    action.setPath(fileInfo.getPath());
+                } else {
+                    //找不到对应文件，不做记录
+                    return null;
                 }
             } else {
-                Map<String, NetworkDto> refNetworkInfoMap = socketFdNetworkMap.get(pid);
+                return null;
+            }
+        }
+
+        //设置正式的文件路径
+        String path = action.getPath();
+        if(path.startsWith(FILE_TYPE_SEPARATOR)){
+            path = StringUtils.substringAfter(path, FILE_TYPE_SEPARATOR);
+            action.setPath(path);
+            action.setActionGroup(ActionGroup.FILE);
+        } else {
+            //这不是一个文件，是一个设备
+            action.setActionGroup(ActionGroup.DEVICE);
+        }
+        return action;
+    }
+
+    private FileAccess getFileAccess(Action action){
+        String accessStr = action.getAccess();
+        if(accessStr != null){
+            long access = Long.parseLong(accessStr);
+            boolean read = access >> 31 == 1;
+            boolean write = access << 1 >> 31 == 1;
+            if(read && write){
+                return FileAccess.READ_AND_WRITE;
+            } else if(read){
+                return FileAccess.READ;
+            } else if(write){
+                return FileAccess.WRITE;
+            }
+        }
+        return null;
+    }
+
+    private void setActionNetworkInfo(Action action, String pid){
+        action.setActionGroup(ActionGroup.NETWORK);
+        if(action.getType() == ActionType.NETWORK_OPEN){
+            Map<String, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
+            if(!socketFdNetworkInfoMap.containsKey(action.getSocketFd())){
+                socketFdNetworkInfoMap.put(action.getSocketFd(), new NetworkInfo(action.getHost(), action.getPort()));
+            }
+
+            Map<String, NetworkInfo> refNetworkInfoMap = socketFdNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
+            if(!refNetworkInfoMap.containsKey(action.getRef())){
+                refNetworkInfoMap.put(action.getRef(), new NetworkInfo(action.getHost(), action.getPort()));
+            }
+        }
+        if(action.getType() == ActionType.NETWORK_TCP_SEND){
+            Map<String, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.get(pid);
+            if(socketFdNetworkInfoMap != null){
+                NetworkInfo networkInfo = socketFdNetworkInfoMap.get(action.getSocketFd());
+                if(networkInfo != null){
+                    action.setHost(networkInfo.getHost());
+                    action.setPort(networkInfo.getPort());
+                }
+            } else {
+                Map<String, NetworkInfo> refNetworkInfoMap = socketFdNetworkMap.get(pid);
                 if(refNetworkInfoMap != null){
-                    NetworkDto networkDto = refNetworkInfoMap.get(action.getRef());
-                    if(networkDto != null){
-                        action.setHost(networkDto.getHost());
-                        action.setPort(networkDto.getPort());
+                    NetworkInfo networkInfo = refNetworkInfoMap.get(action.getRef());
+                    if(networkInfo != null){
+                        action.setHost(networkInfo.getHost());
+                        action.setPort(networkInfo.getPort());
                     }
                 }
             }
         }
+    }
+
+    private void setActionRegistryInfo(Action action, String pid){
+        action.setActionGroup(ActionGroup.REGISTRY);
+    }
+
+    private void setActionProcessInfo(Action action, String pid){
+        action.setActionGroup(ActionGroup.PROCESS);
     }
 }

@@ -1,8 +1,14 @@
 package com.idaoben.web.monitor.dao.entity;
 
 import com.idaoben.web.common.entity.Description;
+import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
+import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
+import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.time.ZonedDateTime;
 
 @Entity
@@ -11,8 +17,7 @@ import java.time.ZonedDateTime;
 public class Action {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "uuid", unique = true, nullable = false)
+    @Column(name = "uuid", length = 50, unique = true, nullable = false)
     @Description("唯一标识符")
     private String uuid;
 
@@ -31,6 +36,11 @@ public class Action {
     @Description("进程ID")
     @Column(nullable = false)
     private String pid;
+
+    @Description("分类")
+    @Type(type = "com.idaoben.utils.valued_enum.hibernate.ValuedEnumType")
+    @Column
+    private ActionGroup actionGroup;
 
     @Description("行为类型")
     @Column(length = 10, nullable = false)
@@ -56,9 +66,18 @@ public class Action {
     @Column
     private Long bytes;
 
-    @Description("文件路径")
+    @Description("文件路径/如果创建远程线程时执行的thread")
     @Column
     private String path;
+
+    @Description("文件名称")
+    @Column
+    private String fileName;
+
+    @Description("文件敏感度")
+    @Type(type = "com.idaoben.utils.valued_enum.hibernate.ValuedEnumType")
+    @Column
+    private FileSensitivity sensitivity;
 
     @Description("打开文件时要求的访问权限")
     @Column
@@ -96,8 +115,8 @@ public class Action {
     @Column
     private String valueType;
 
-    @Description("值键值")
-    @Column(name = "data", columnDefinition = "MEDIUMTEXT COMMENT '值键值'")
+    @Description("值键值/发送数据(HEX编码)")
+    @Column(name = "data", columnDefinition = "MEDIUMTEXT COMMENT '数据'")
     private String data;
 
     @Description("值键原类型")
@@ -111,6 +130,18 @@ public class Action {
     @Description("启动进程的完整命令行数据")
     @Column
     private String commandLine;
+
+    @Description("创建远程线程时提供的入口函数地址 ")
+    @Column
+    private String threadEntryAddress;
+
+    @Description("消息发送目标窗口的句柄")
+    @Column
+    private String destHwnd;
+
+    @Description("消息发送源窗口的句柄")
+    @Column
+    private String srcHwnd;
 
     public Boolean getWithAttachment() {
         return withAttachment;
@@ -150,6 +181,14 @@ public class Action {
 
     public void setPid(String pid) {
         this.pid = pid;
+    }
+
+    public ActionGroup getActionGroup() {
+        return actionGroup;
+    }
+
+    public void setActionGroup(ActionGroup actionGroup) {
+        this.actionGroup = actionGroup;
     }
 
     public Integer getType() {
@@ -206,6 +245,22 @@ public class Action {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public FileSensitivity getSensitivity() {
+        return sensitivity;
+    }
+
+    public void setSensitivity(FileSensitivity sensitivity) {
+        this.sensitivity = sensitivity;
     }
 
     public String getAccess() {
@@ -310,5 +365,29 @@ public class Action {
 
     public void setCommandLine(String commandLine) {
         this.commandLine = commandLine;
+    }
+
+    public String getThreadEntryAddress() {
+        return threadEntryAddress;
+    }
+
+    public void setThreadEntryAddress(String threadEntryAddress) {
+        this.threadEntryAddress = threadEntryAddress;
+    }
+
+    public String getDestHwnd() {
+        return destHwnd;
+    }
+
+    public void setDestHwnd(String destHwnd) {
+        this.destHwnd = destHwnd;
+    }
+
+    public String getSrcHwnd() {
+        return srcHwnd;
+    }
+
+    public void setSrcHwnd(String srcHwnd) {
+        this.srcHwnd = srcHwnd;
     }
 }

@@ -1,12 +1,12 @@
 package com.idaoben.web.monitor.web.dto;
 
-public class NetworkDto {
+public class NetworkInfo {
 
     private String host;
 
     private Integer port;
 
-    public NetworkDto(String host, Integer port) {
+    public NetworkInfo(String host, Integer port) {
         this.host = host;
         this.port = port;
     }

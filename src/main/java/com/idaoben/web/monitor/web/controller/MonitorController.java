@@ -11,6 +11,7 @@ import com.idaoben.web.monitor.web.dto.TaskDto;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,7 +57,7 @@ public class MonitorController {
     @ApiOperation("历史监控任务查询")
     @PostMapping("/listTask")
     public ApiPageResponse<TaskDto> listTask(@RequestBody @Validated ApiPageRequest<TaskListCommand> request) {
-        Page<TaskDto> result = monitorApplicationService.listTask(request.getPayload(), request.getPageable());
+        Page<TaskDto> result = monitorApplicationService.listTask(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "startTime")));
         return ApiPageResponse.createPageSuccess(result);
     }
 }
