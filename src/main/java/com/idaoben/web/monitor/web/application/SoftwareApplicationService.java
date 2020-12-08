@@ -17,6 +17,7 @@ import com.idaoben.web.monitor.web.command.FileListCommand;
 import com.idaoben.web.monitor.web.command.SoftwareAddCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.dto.*;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.filechooser.FileSystemView;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,6 +56,8 @@ public class SoftwareApplicationService {
 
     @Resource
     private MonitorApplicationService monitorApplicationService;
+
+    private FileSystemView fileSystemView = FileSystemView.getFileSystemView();
 
     private Map<String, SoftwareDto> softwareMap;
 
@@ -189,12 +198,27 @@ public class SoftwareApplicationService {
             File file = new File(linkFileJson.getPath());
             softwareDto.setCommandLine(linkFileJson.getPath() + linkFileJson.getArguments());
             softwareDto.setExePath(linkFileJson.getPath());
-            //TODO: 图标需要再处理
-            softwareDto.setBase64Icon(linkFileJson.getIconLocation());
+            softwareDto.setBase64Icon(getIconBase64(file));
             softwareDto.setExecutePath(linkFileJson.getWorkingDirectory());
             softwareDto.setExeName(file.getName());
         }
         return softwareDto;
+    }
+
+    private String getIconBase64(File file){
+        //图标处理
+        ImageIcon icon = (ImageIcon) fileSystemView.getSystemIcon(file);
+        BufferedImage image = (BufferedImage) icon.getImage();
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(image, "png", os);
+            return String.format("data:image/png;base64,%s", Base64.getEncoder().encodeToString(os.toByteArray()));
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        } finally {
+            IOUtils.closeQuietly(os);
+        }
+        return null;
     }
 
     private SoftwareDto getSoftwareInfo(Software software, List<Favorite> favorites){
@@ -202,6 +226,7 @@ public class SoftwareApplicationService {
         BeanUtils.copyProperties(software, softwareDto, "id");
         softwareDto.setId(String.valueOf(software.getId()));
         softwareDto.setFavorite(favorites.contains(softwareDto.getId()));
+        softwareDto.setBase64Icon(getIconBase64(new File(software.getExePath())));
         return softwareDto;
     }
 
