@@ -180,6 +180,10 @@ public class MonitorApplicationService {
         }
     }
 
+    public MonitoringTask getMonitoringTask(String softwareId){
+        return monitoringSoftwareTaskMap.get(softwareId);
+    }
+
     public boolean isMonitoring(String softwareId){
         return monitoringSoftwareTaskMap.containsKey(softwareId);
     }

@@ -167,7 +167,11 @@ public class SoftwareApplicationService {
             }
             detail.setProcesses(processes);
         }
-        detail.setMonitoring(monitorApplicationService.isMonitoring(softwareDto.getId()));
+        MonitoringTask monitoringTask = monitorApplicationService.getMonitoringTask(softwareDto.getId());
+        detail.setMonitoring(monitoringTask == null ? false : true);
+        if(monitoringTask != null){
+            detail.setTaskId(monitoringTask.getTaskId());
+        }
         return detail;
     }
 
