@@ -31,7 +31,7 @@ module.exports = {
     notifyOnErrors: true,
     poll: false, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
 
-    
+
     /**
      * Source Maps
      */
@@ -49,12 +49,12 @@ module.exports = {
 
   build: {
     // Template for index.html
-    index: path.resolve(__dirname, '../../public/wms/index.html'),
+    index: path.resolve(__dirname, '../../src/main/resources/public/index.html'),
 
     // Paths
-    assetsRoot: path.resolve(__dirname, '../../public/wms'),
+    assetsRoot: path.resolve(__dirname, '../../src/main/resources/public'),
     assetsSubDirectory: 'static',
-    assetsPublicPath: './wms/',
+    assetsPublicPath: '/',
 
     /**
      * Source Maps

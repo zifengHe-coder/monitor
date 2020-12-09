@@ -4,7 +4,7 @@ let apiArr = [
 
   "monitor/startAndMonitor", // 开启并监听软件
   "monitor/startMonitor", // 监听软件
-  "monitor/stopMonitor", // 停止监控            
+  "monitor/stopMonitor", // 停止监控
   "monitor/listTask", // 历史监控任务查询
 
   "action/listByFileType", // 查询文件读写醒胃
@@ -41,7 +41,7 @@ apiArr.forEach((api) => {
       exportObj[tplApi.replace(/\/./g, char => char.substring(1).toUpperCase())] = `/api/${tplApi}`
     } else {
       // TOTEST: 地址更改： /ys2/ ===> /lis/
-      exportObj[tplApi.replace(/\/./g, char => char.substring(1).toUpperCase())] = `/lis/api/${tplApi}`
+      exportObj[tplApi.replace(/\/./g, char => char.substring(1).toUpperCase())] = `/api/${tplApi}`
     }
   } else {
     exportObj[api.replace(/\/./g, char => char.substring(1).toUpperCase())] = api
