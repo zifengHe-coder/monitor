@@ -6,7 +6,7 @@
         <div class="softwareName">
           <img :src="softwareData.iconUrl" alt="" />
           <span>{{ softwareData.softwareName }}</span>
-          <span>{{ softwareStatus === 1 ? "未监听" : "监听中" }}</span>
+          <span>{{ softwareData.monitoring ? "监听中" : "未监听" }}</span>
         </div>
         <p>
           <span>文件夹路径</span>
@@ -25,29 +25,29 @@
         <el-button
           plain
           class="softwareBtn"
-          @click="openSoftware"
-          v-show="processList.length === 0 && btnStatus"
+          @click="openSoftware(softwareData.id)"
+          v-show="!softwareData.processes"
           >打开程序</el-button
         >
         <el-button
           plain
           class="softwareBtn"
-          @click="startMonitor"
-          v-show="processList.length >= 1 && softwareStatus == 1"
+          @click="startMonitor(softwareData.id)"
+          v-show="softwareData.processes && !softwareData.monitoring"
           >开始监听</el-button
         >
         <el-button
           plain
           class="softwareBtn"
           @click="stopMonitor"
-          v-show="processList.length >= 1 && softwareStatus == 0"
+          v-show="softwareData.monitoring"
           >停止监听</el-button
         >
         <el-button
           plain
           class="softwareBtn"
           @click="goDetail"
-          v-show="processList.length > 1"
+          v-show="softwareData.monitoring"
           >查看详情</el-button
         >
         <el-button plain class="softwareBtn" @click="goHistory"
@@ -85,7 +85,6 @@
 export default {
   data() {
     return {
-      softwareStatus: 1,
       btnStatus: true,
       itemKey: 0,
       index: 1,
@@ -111,7 +110,7 @@ export default {
         },
         {
           type: "image",
-          prop: "iconUrl",
+          prop: "processName",
           label: "进程名称"
         },
         {
@@ -139,7 +138,8 @@ export default {
       preProcess: [],
       preAllTime: 0,
       pidArr: [],
-      processTimer: null
+      processTimer: null,
+      monitorStatus: ['未监听','监听中','监听失败']
     };
   },
   filters: {
@@ -165,15 +165,25 @@ export default {
     }
     // sessionStorage为防止刷新时无数据
     let res = JSON.parse(sessionStorage.getItem(this.$route.query.t));
-    console.log(res)
     if (res) {
       let arr = res.exePath.split("\\");
       this.exeName = arr.pop();
-      for (let key in res) {
-        this.softwareData[key] = res[key];
-      }
+      // 获取软件基本信息
+      this.$http({
+        url: this.$api.softwareDetailSoftware,
+        method: "POST",
+        data:{data:{id:res.id}}
+      }).then(r => {
+        console.log(r)
+        if(r.code === '0'){
+          if(!r.data.processes)(this.btnStatus = true)
+          for(let k in r.data){
+            this.$set(this.softwareData,k,r.data[k])
+          }
+        }
+      })
     }
-    // this.getData();
+    this.getData();
   },
   methods: {
     //获取进程列表
@@ -188,55 +198,35 @@ export default {
     },
     //根据程序名获取所有关联进程
     getData() {
-      return new Promise((res, rej) => {
+      let res = JSON.parse(sessionStorage.getItem(this.$route.query.t));
+      return new Promise((resolve, reject) => {
         if (this.exeName) {
           this.$http({
-            url: this.$api.apiFileOperationGetProcessList,
+            url: this.$api.softwareDetailSoftware,
             method: "POST",
-            data: {
-              data: {
-                imageName: this.exeName,
-                programName: this.softwareData.name
-              }
-            }
+            data:{data:{id:res.id}}
           }).then(r => {
-            let cputime = 0;
-            let pidAll = [];
-            this.processList = r.data.filter((v, index) => {
-              pidAll.push(v.pid);
-              v.wsPrivateBytes = Number(v.wsPrivateBytes) / 1024;
-              v.id =
-                Number(index) > 8
-                  ? Number(index) + 1
-                  : "0" + (Number(index) + 1);
-              if (this.preProcess.length > 0) {
-                v.cpu = (0).toFixed(2);
-                this.preProcess.forEach(el => {
-                  if (v.pid == el.pid) {
-                    v.cpu = (
-                      ((v.cpuTime - el.cpuTime) /
-                        (r.allTime - this.preAllTime)) *
-                      100
-                    ).toFixed(2);
-                    cputime = Number(cputime) + Number(v.cpu);
-                  }
-                });
-              } else {
-                v.cpu = (0).toFixed(2);
+            console.log(r)
+            if(r.code === '0'){
+              if(!r.data.processes)(this.btnStatus = true)
+              for(let k in r.data){
+                this.$set(this.softwareData,k,r.data[k])
               }
-              return v;
-            });
-            console.log(cputime.toFixed(2));
-            this.timeStamp++;
-            this.preProcess = this.processList;
-            this.preAllTime = r.allTime;
-            this.pidArr = pidAll;
-            this.softwareStatus = r.status;
-            if (this.processList.length == 0) {
-              this.btnStatus = true;
+              if(r.data.processes){
+                this.processList = r.data.processes.map((item,index)=>{
+                  let obj = {};
+                  obj.id = Number(index) > 9 ? Number(index)+1 : '0'+(Number(index)+1);
+                  obj.processName = item.name;
+                  obj.pid = item.pid;
+                  obj.wsPrivateBytes = Math.floor(item.memory);
+                  obj.cpu = (0).toFixed(2);
+                  obj.status = this.monitorStatus[item.monitorStatus - 1];
+                  return obj;
+                })
+              }
+              resolve();
             }
-            res(true);
-          });
+          })
         }
       });
     },
@@ -252,34 +242,23 @@ export default {
     },
     //跳转历史监控页
     goHistory() {
-      this.$store
-        .dispatch("getSoftwareDetail", +this.softwareData.id)
-        .then(res => {
-          this.$router.push({
-            path: `/monitoringHistory/${this.softwareData.id}`,
-            params: {
-              data: {
-                name: this.softwareData.name,
-                id: this.softwareData.id,
-                path: this.softwareData.path,
-                groupName: this.softwareData.groupName,
-                bytes: this.softwareData.bytes,
-                iconUrl: this.softwareData.iconUrl,
-                createTime: this.softwareData.createTime
-              }
-            }
-          });
-        });
+      this.$router.push({
+        path: `/monitoringHistory/${this.softwareData.id}`,
+        params: {
+          data: {
+            id: this.softwareData.id,
+          }
+        }
+      });
     },
     //打开程序
-    openSoftware() {
-      if (this.softwareData.path) {
+    openSoftware(id) {
+      if (id) {
         this.$http({
-          url: this.$api.apiActionsLogOpenSoftwareMonitor,
+          url: this.$api.monitorStartAndMonitor,
           method: "POST",
           data: {
-            path: this.softwareData.path,
-            name: this.softwareData.name
+            data:{id}
           }
         }).then(r => {
           console.log(r);
@@ -291,15 +270,14 @@ export default {
       }
     },
     //开始监控程序所有进程
-    startMonitor() {
-      console.log(this.pidArr);
+    startMonitor(id) {
       this.$http({
-        url: this.$api.apiProcessMonitorSoftware,
+        url: this.$api.monitorStartMonitor,
         method: "POST",
         data: {
-          path: this.softwareData.path,
-          name: this.softwareData.name,
-          pidArr: JSON.stringify(this.pidArr)
+          data: {
+            id
+          }
         }
       }).then(r => {
         console.log(r);
@@ -309,19 +287,16 @@ export default {
             type: "success"
           });
           this.$store.dispatch('resetSoftwareList')
-          this.softwareStatus = 0;
         }
       });
     },
     //停止监控程序所有进程
     stopMonitor() {
-      console.log(this.pidArr);
       this.$http({
-        url: this.$api.apiProcessStopMonitorSoftware,
+        url: this.$api.monitorStopMonitor,
         method: "POST",
         data: {
-          name: this.softwareData.name,
-          pidArr: JSON.stringify(this.pidArr)
+          data: {id: this.softwareData.id }
         }
       }).then(r => {
         console.log(r);
@@ -331,7 +306,6 @@ export default {
             type: "success"
           });
           this.$store.dispatch('resetSoftwareList')
-          this.softwareStatus = 1;
         }
       });
     }
