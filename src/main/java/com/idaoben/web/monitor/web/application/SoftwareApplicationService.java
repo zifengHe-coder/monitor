@@ -1,7 +1,5 @@
 package com.idaoben.web.monitor.web.application;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.monitor.dao.entity.Favorite;
@@ -10,8 +8,8 @@ import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
 import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.FavoriteService;
-import com.idaoben.web.monitor.service.JniService;
 import com.idaoben.web.monitor.service.SoftwareService;
+import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.FileListCommand;
 import com.idaoben.web.monitor.web.command.SoftwareAddCommand;
@@ -42,13 +40,10 @@ public class SoftwareApplicationService {
     private FavoriteService favoriteService;
 
     @Resource
-    private JniService jniService;
-
-    @Resource
-    private ObjectMapper objectMapper;
-
-    @Resource
     private MonitorApplicationService monitorApplicationService;
+
+    @Resource
+    private SystemOsService systemOsService;
 
     private Map<String, SoftwareDto> softwareMap;
 
@@ -57,53 +52,21 @@ public class SoftwareApplicationService {
     private Map<String, List<ProcessJson>> processMaps = new HashMap();
 
     public List<SoftwareDto> getSystemSoftware(){
-        List<Favorite> favorites = favoriteService.findAll();
-        String startMenuHome = SystemUtils.getOsHome() + "ProgramData\\Microsoft\\Windows\\Start Menu\\Programs";
-        File startMenu = new File(startMenuHome);
-        List<SoftwareDto> softwares = new ArrayList<>();
-        List<File> linkFiles = new ArrayList<>();
-        if(startMenu.exists() && startMenu.isDirectory()){
-            for(File file : startMenu.listFiles()){
-                if(!file.isDirectory()){
-                    if(checklnkFile(file)){
-                        linkFiles.add(file);
-                    }
-                } else {
-                    //只搜索一层文件夹
-                    for(File fileChild : file.listFiles()){
-                        if(!fileChild.isDirectory()){
-                            if(checklnkFile(fileChild)){
-                                linkFiles.add(fileChild);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        List<String> linkPaths = linkFiles.stream().map(File::getPath).collect(Collectors.toList());
-        String content = jniService.queryLinkInfos(linkPaths);
-        Map<String, LinkFileJson> linkFileJsonMap = new HashMap<>();
-        try {
-            LinkListJson linkListJson = objectMapper.readValue(content, LinkListJson.class);
-            linkListJson.getDetails().forEach(linkFileJson -> linkFileJsonMap.put(linkFileJson.getLinkPath(), linkFileJson));
-        } catch (JsonProcessingException e) {
-            logger.error(e.getMessage(), e);
-        }
-        for(File linkFile : linkFiles){
-            softwares.add(getSoftwareInfo(linkFile, favorites, linkFileJsonMap.get(linkFile.getPath())));
-        }
+        List<String> favoriteSoftwareIds = favoriteService.findAll().stream().map(Favorite::getSoftwareId).collect(Collectors.toList());
 
+        List<SoftwareDto> softwares = systemOsService.getSystemSoftware();
         //增加添加到数据库的软件
         List<Software> softwareDbs = softwareService.findAll();
         for(Software software : softwareDbs){
-            softwares.add(getSoftwareInfo(software, favorites));
+            softwares.add(getSoftwareInfo(software));
         }
         Map<String, SoftwareDto> tempSoftwareMap = new HashMap<>();
         Map<String, String> tempExeNameSoftwareIdMap = new HashMap<>();
-        softwares.forEach(softwareDto -> {
-            tempSoftwareMap.put(softwareDto.getId(), softwareDto);
-            if(StringUtils.isNotEmpty(softwareDto.getExeName())){
-                tempExeNameSoftwareIdMap.put(softwareDto.getExeName().toLowerCase(), softwareDto.getId());
+        softwares.forEach(software -> {
+            software.setFavorite(favoriteSoftwareIds.contains(software.getId()));
+            tempSoftwareMap.put(software.getId(), software);
+            if(StringUtils.isNotEmpty(software.getExeName())){
+                tempExeNameSoftwareIdMap.put(software.getExeName().toLowerCase(), software.getId());
             }
         });
         softwareMap = tempSoftwareMap;
@@ -175,33 +138,11 @@ public class SoftwareApplicationService {
         return detail;
     }
 
-    private boolean checklnkFile(File file){
-        return file.getName().endsWith(".lnk");
-    }
-
-    private SoftwareDto getSoftwareInfo(File lnkFile, List<Favorite> favorites, LinkFileJson linkFileJson){
-        SoftwareDto softwareDto = new SoftwareDto();
-        softwareDto.setId(lnkFile.getPath());
-        softwareDto.setLnkPath(softwareDto.getId());
-        softwareDto.setFavorite(favorites.contains(softwareDto.getId()));
-        softwareDto.setSoftwareName(lnkFile.getName().replace(".lnk", ""));
-        if(linkFileJson != null){
-            File file = new File(linkFileJson.getPath());
-            softwareDto.setCommandLine(linkFileJson.getPath() + linkFileJson.getArguments());
-            softwareDto.setExePath(linkFileJson.getPath());
-            //TODO: 图标需要再处理
-            softwareDto.setBase64Icon(linkFileJson.getIconLocation());
-            softwareDto.setExecutePath(linkFileJson.getWorkingDirectory());
-            softwareDto.setExeName(file.getName());
-        }
-        return softwareDto;
-    }
-
-    private SoftwareDto getSoftwareInfo(Software software, List<Favorite> favorites){
+    private SoftwareDto getSoftwareInfo(Software software){
         SoftwareDto softwareDto = new SoftwareDto();
         BeanUtils.copyProperties(software, softwareDto, "id");
         softwareDto.setId(String.valueOf(software.getId()));
-        softwareDto.setFavorite(favorites.contains(softwareDto.getId()));
+        softwareDto.setBase64Icon(systemOsService.getIconBase64(new File(software.getExePath())));
         return softwareDto;
     }
 
@@ -222,43 +163,38 @@ public class SoftwareApplicationService {
             //先做一次软件列表初始化
             getSystemSoftware();
         }
-        String processContent = jniService.listAllProcesses();
-        try {
-            ProcessListJson processListJson = objectMapper.readValue(processContent, ProcessListJson.class);
-            Map<String, List<ProcessJson>> tempProcessMaps = new HashMap<>();
-            if(processListJson != null && processListJson.getProcesses() != null){
-                Map<Integer, ProcessJson> pidProcessMap = new HashMap<>();
-                processListJson.getProcesses().forEach(processJsonDto -> pidProcessMap.put(processJsonDto.getPid(), processJsonDto));
-                //把所有进程组装到对应的软件中
-                for(ProcessJson processJson : processListJson.getProcesses()){
-                    //先找父对象是否存在，存在父对象时直接挂到父对象的进程列表中
-                    ProcessJson parentProcess = pidProcessMap.get(processJson.getParentPid());
-                    String softwareId;
-                    if(parentProcess != null){
-                        softwareId = getSoftwareIdFromImageName(parentProcess.getImageName());
-                    } else {
-                        //无父对象，则单独添加
-                        softwareId = getSoftwareIdFromImageName(processJson.getImageName());
+        List<ProcessJson> processJsons = systemOsService.listAllProcesses();
+        Map<String, List<ProcessJson>> tempProcessMaps = new HashMap<>();
+        if(!CollectionUtils.isEmpty(processJsons)){
+            Map<Integer, ProcessJson> pidProcessMap = new HashMap<>();
+            processJsons.forEach(processJsonDto -> pidProcessMap.put(processJsonDto.getPid(), processJsonDto));
+            //把所有进程组装到对应的软件中
+            for(ProcessJson processJson : processJsons){
+                //先找父对象是否存在，存在父对象时直接挂到父对象的进程列表中
+                ProcessJson parentProcess = pidProcessMap.get(processJson.getParentPid());
+                String softwareId;
+                if(parentProcess != null){
+                    softwareId = getSoftwareIdFromImageName(parentProcess.getImageName());
+                } else {
+                    //无父对象，则单独添加
+                    softwareId = getSoftwareIdFromImageName(processJson.getImageName());
+                }
+                if(softwareId != null){
+                    List<ProcessJson> softwareProcesses = tempProcessMaps.get(softwareId);
+                    if(softwareProcesses == null){
+                        softwareProcesses = new ArrayList<>();
+                        tempProcessMaps.put(softwareId, softwareProcesses);
                     }
-                    if(softwareId != null){
-                        List<ProcessJson> softwareProcesses = tempProcessMaps.get(softwareId);
-                        if(softwareProcesses == null){
-                            softwareProcesses = new ArrayList<>();
-                            tempProcessMaps.put(softwareId, softwareProcesses);
-                        }
-                        softwareProcesses.add(processJson);
+                    softwareProcesses.add(processJson);
 
-                        //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
-                        String pidStr = String.valueOf(processJson.getPid());
-                        if(monitorApplicationService.isMonitoring(softwareId) && !monitorApplicationService.isPidMonitoringError(softwareId, pidStr) && !monitorApplicationService.isPidMonitoring(softwareId, pidStr)){
-                            monitorApplicationService.startMonitorPid(softwareId, pidStr);
-                        }
+                    //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
+                    String pidStr = String.valueOf(processJson.getPid());
+                    if(monitorApplicationService.isMonitoring(softwareId) && !monitorApplicationService.isPidMonitoringError(softwareId, pidStr) && !monitorApplicationService.isPidMonitoring(softwareId, pidStr)){
+                        monitorApplicationService.startMonitorPid(softwareId, pidStr);
                     }
                 }
-                processMaps = tempProcessMaps;
             }
-        } catch (JsonProcessingException e) {
-            logger.error(e.getMessage(), e);
+            processMaps = tempProcessMaps;
         }
     }
 
