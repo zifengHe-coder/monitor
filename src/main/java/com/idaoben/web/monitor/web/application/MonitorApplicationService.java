@@ -5,7 +5,7 @@ import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Task;
 import com.idaoben.web.monitor.exception.ErrorCode;
-import com.idaoben.web.monitor.service.JniService;
+import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.TaskService;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.command.TaskListCommand;
@@ -46,7 +46,7 @@ public class MonitorApplicationService {
     private TaskService taskService;
 
     @Resource
-    private JniService jniService;
+    private SystemOsService systemOsService;
 
     public void startMonitor(SoftwareIdCommand command){
         String softwareId = command.getId();
@@ -79,7 +79,7 @@ public class MonitorApplicationService {
             List<Integer> pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
             for(Integer pid : pids){
                 logger.info("启动PID: {}的注入监听。", pid);
-                boolean result = jniService.attachAndInjectHooks(pid);
+                boolean result = systemOsService.attachAndInjectHooks(pid);
                 if(result){
                     monitoringTask.getPids().add(String.valueOf(pid));
                 } else {
@@ -103,7 +103,7 @@ public class MonitorApplicationService {
             return;
         }
         logger.info("启动单个PID: {}的注入监听。", pid);
-        boolean result = jniService.attachAndInjectHooks(Integer.parseInt(pid));
+        boolean result = systemOsService.attachAndInjectHooks(Integer.parseInt(pid));
         if(result){
             //注入成功，增加pid到监听缓存和更新task的监听进程
             monitoringTask.getPids().add(pid);
@@ -124,7 +124,7 @@ public class MonitorApplicationService {
         if(monitoringTask != null){
             List<String> successPids = new ArrayList<>();
             for(String pid : monitoringTask.getPids()){
-                boolean result = jniService.removeHooks(Integer.valueOf(pid));
+                boolean result = systemOsService.removeHooks(Integer.valueOf(pid));
                 if(result){
                     actionApplicationService.stopActionScan(pid);
                     successPids.add(pid);
@@ -157,7 +157,7 @@ public class MonitorApplicationService {
         if(software == null){
             throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
         }
-        int pid = jniService.startProcessWithHooksA(software.getCommandLine(), software.getExecutePath());
+        int pid = systemOsService.startProcessWithHooks(software.getCommandLine(), software.getExecutePath());
         if(pid > 0){
             String pidStr = String.valueOf(pid);
             Task task = new Task();

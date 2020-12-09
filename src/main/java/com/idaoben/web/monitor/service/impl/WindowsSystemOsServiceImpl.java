@@ -33,8 +33,13 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     private FileSystemView fileSystemView = FileSystemView.getFileSystemView();
 
     @Override
+    public String getActionFolderPath() {
+        return SystemUtils.getOsHome() + "\\WinMonitor";
+    }
+
+    @Override
     public List<SoftwareDto> getSystemSoftware() {
-        String startMenuHome = SystemUtils.getOsHome() + "ProgramData\\Microsoft\\Windows\\Start Menu\\Programs";
+        String startMenuHome = SystemUtils.getOsHome() + "\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs";
         File startMenu = new File(startMenuHome);
         List<SoftwareDto> softwares = new ArrayList<>();
         List<File> linkFiles = new ArrayList<>();
@@ -120,5 +125,20 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
             logger.error(e.getMessage(), e);
         }
         return null;
+    }
+
+    @Override
+    public int startProcessWithHooks(String commandLine, String currentDirectory) {
+        return jniService.startProcessWithHooksA(commandLine, currentDirectory);
+    }
+
+    @Override
+    public boolean attachAndInjectHooks(int pid) {
+        return jniService.attachAndInjectHooks(pid);
+    }
+
+    @Override
+    public boolean removeHooks(int pid) {
+        return jniService.removeHooks(pid);
     }
 }

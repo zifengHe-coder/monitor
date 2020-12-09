@@ -9,6 +9,12 @@ import java.util.List;
 public interface SystemOsService {
 
     /**
+     * Get the action folder path
+     * @return
+     */
+    String getActionFolderPath();
+
+    /**
      * 获取系统已安装软件
      * @return
      */
@@ -26,4 +32,26 @@ public interface SystemOsService {
      * @return
      */
     List<ProcessJson> listAllProcesses();
+
+    /**
+     * Start process with hook
+     * @param commandLine
+     * @param currentDirectory
+     * @return
+     */
+    int startProcessWithHooks(String commandLine, String currentDirectory);
+
+    /**
+     * Attach and inject hooks
+     * @param pid
+     * @return
+     */
+    boolean attachAndInjectHooks(int pid);
+
+    /**
+     * Remove hooks
+     * @param pid
+     * @return
+     */
+    boolean removeHooks(int pid);
 }

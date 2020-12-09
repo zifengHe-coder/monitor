@@ -6,6 +6,8 @@ public class SystemUtils {
 
     private static String osHome;
 
+    private static String userHome;
+
     private static SystemOs systemOs;
 
     private static String sensitivityPath;
@@ -14,9 +16,20 @@ public class SystemUtils {
 
     public static String getOsHome(){
         if(osHome == null){
-            osHome = System.getProperty("user.home").substring(0, 3);
+            if(getSystemOs() == SystemOs.WINDOWS){
+                osHome = System.getProperty("user.home").substring(0, 2);
+            } else {
+                osHome = "/";
+            }
         }
         return osHome;
+    }
+
+    public static String getUserHome(){
+        if(userHome == null){
+            userHome = System.getProperty("user.home");
+        }
+        return userHome;
     }
 
     public static SystemOs getSystemOs(){
@@ -29,7 +42,7 @@ public class SystemUtils {
     public static String getSensitivityPath(){
         if(sensitivityPath == null){
             if(getSystemOs() == SystemOs.WINDOWS){
-                sensitivityPath = getOsHome() + "WINDOWS\\";
+                sensitivityPath = getOsHome() + "\\WINDOWS\\";
             } else {
                 //TODO: 待补充Linux的敏感目录
             }
