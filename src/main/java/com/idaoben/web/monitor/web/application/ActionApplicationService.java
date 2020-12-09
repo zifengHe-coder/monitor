@@ -7,6 +7,7 @@ import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.service.ActionService;
+import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.ActionFileListCommand;
 import com.idaoben.web.monitor.web.command.ActionNetworkListCommand;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
@@ -34,15 +36,18 @@ public class ActionApplicationService {
 
     private static final Logger logger = LoggerFactory.getLogger(ActionApplicationService.class);
 
-    private static final File ACTION_FOLDER = new File(SystemUtils.getOsHome() + "\\WinMonitor");
+    private File ACTION_FOLDER;
 
-    private static final String ACTION_BACKUP_FOLDER_PATH = SystemUtils.getOsHome() + "\\WinMonitor" + SystemUtils.FILE_SEPARATOR + "data" + SystemUtils.FILE_SEPARATOR + "%s" + SystemUtils.FILE_SEPARATOR + "%s";
+    private String ACTION_BACKUP_FOLDER_PATH;
 
     @Resource
     private ActionService actionService;
 
     @Resource
     private ObjectMapper objectMapper;
+
+    @Resource
+    private SystemOsService systemOsService;
 
     private Map<String, ActionHanlderThread> handlingThreads = new ConcurrentHashMap<>();
 
@@ -53,6 +58,12 @@ public class ActionApplicationService {
     private Map<String, Map<String, NetworkInfo>> refNetworkMap = new HashMap<>();
 
     private Map<String, Map<String, FileInfo>> fdFileMap = new HashMap<>();
+
+    @PostConstruct
+    public void init(){
+        ACTION_FOLDER = new File(systemOsService.getActionFolderPath());
+        ACTION_BACKUP_FOLDER_PATH = systemOsService.getActionFolderPath() + SystemUtils.FILE_SEPARATOR + "data" + SystemUtils.FILE_SEPARATOR + "%s" + SystemUtils.FILE_SEPARATOR + "%s";
+    }
 
     public Page<ActionFileDto> listByFileType(ActionFileListCommand command, Pageable pageable){
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.FILE).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
