@@ -19,7 +19,6 @@ import javax.swing.filechooser.FileSystemView;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -96,13 +95,14 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
 
     public String getIconBase64(File file){
         //图标处理
-        ImageIcon icon = (ImageIcon) fileSystemView.getSystemIcon(file);
-        BufferedImage image = (BufferedImage) icon.getImage();
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        ByteArrayOutputStream os = null;
         try {
+            ImageIcon icon = (ImageIcon) fileSystemView.getSystemIcon(file);
+            BufferedImage image = (BufferedImage) icon.getImage();
+            os = new ByteArrayOutputStream();
             ImageIO.write(image, "png", os);
             return String.format("data:image/png;base64,%s", Base64.getEncoder().encodeToString(os.toByteArray()));
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {
             IOUtils.closeQuietly(os);
