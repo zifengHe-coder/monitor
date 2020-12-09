@@ -3,7 +3,7 @@
     <div class="progressDetail">
       <div>
         <img v-if="detailOnff" :src="softwareDetail.iconUrl" class="icon"/>
-        <span class="name" v-if="detailOnff">{{softwareDetail.name}}</span>
+        <span class="name" v-if="detailOnff">{{softwareDetail.softwareName}}</span>
         <span class="status" :style="{color: historyDetail.status === 1 ? '#f7d666' : '#0cab51'}">{{historyDetail.statusWord}}</span>
       </div>
 
@@ -109,7 +109,9 @@ export default {
       progressDetail: null,
       progressDetailKey: 'progressDetail',
       softwareDetail: {},
-      processList: []
+      processList: [],
+      opTypeLists: ['读','写'],
+      sensitivityLists: ['低','中','高'],
     }
   },
   created(){
@@ -137,32 +139,14 @@ export default {
       return true
     },
     async initData(){
-      this.$store.dispatch('getSoftwareDetail', +this.$route.params.programId).then((res) => {
+      await this.$store.dispatch('getSoftwareDetail',this.$route.params.programId).then((res) => {
         this.softwareDetail = res;
-        this.$store.dispatch('getProcessList', this.softwareDetail).then((res) => {
-          this.processList = res;
-          if(this.processList.length > 0)
-            this.showMonitorBtn = true;
-        });
       });
       if(this.$route.name === 'programProgressFromIndex'){
-        // detail.pid = +detail.pid;
-        // this.progressDetail = detail;
         this.detailOnff = true;
         this.tabContentOnff = true;
       }else{
-        this.getHistoryLatestOne().then(res => {
-          // if(!this.showMonitorBtn && res.status === 0){
-          //   this.changeStateInHistory(res.id);
-          // }
-        //TODO: 获取历史
-          // this.progressDetail = { 
-          //   pid: res.pid,
-          //   imageName: res.name
-          // }
-          this.detailOnff = true;
-          this.tabContentOnff = true;
-        })
+
       }
       this.updateList();
     },
@@ -224,7 +208,7 @@ export default {
         case 2:
           this.searchLabels=[{
             type: 'input',
-            prop: 'readAndWriteType',
+            prop: 'opType',
             label: '读写类型'
           },{
             type: 'input',
@@ -232,7 +216,7 @@ export default {
             label: '文件名称'
           },{
             type: 'input',
-            prop: 'documentSensitivity',
+            prop: 'sensitivity',
             label: '文件敏感度'
           },{
             type: 'datePicker',
@@ -243,7 +227,7 @@ export default {
           }]
           this.tableLabels=[{
             type: 'timestamp',
-            prop: 'timeEnd',
+            prop: 'timestamp',
             columnOperable: 'none',
             label: '读写时间'
           },{
@@ -252,15 +236,15 @@ export default {
             label: '文件名称'
           },{
             type: 'word',
-            prop: 'fileLocation',
+            prop: 'path',
             label: '文件位置'
           },{
             type: 'word',
-            prop: 'readAndWriteType',
+            prop: 'opType',
             label: '读写类型'
           },{
             type: 'word',
-            prop: 'documentSensitivity',
+            prop: 'sensitivity',
             label: '文件敏感度'
           }]
           this.hasOperation = true;
@@ -430,40 +414,64 @@ export default {
       }) 
     },
     updateList(){
-      this.getHistoryLatestOne().then((res) => {
-        if(res.status === 0 || res.writeStatus === 0){
-          let params = JSON.parse(
-            sessionStorage.getItem(`${this.comData.id}Page`)
-          );
-          this.getList(params).then((res) => {
-            clearTimeout(timer)
-            timer = setTimeout(() => {
-              this.updateList();
-            }, 2000)
-          })
-        }
+      let params = JSON.parse(
+        sessionStorage.getItem(`${this.comData.id}Page`)
+      );
+      this.getList(params).then((res) => {
+        clearTimeout(timer)
+        timer = setTimeout(() => {
+          this.updateList();
+        }, 2000)
       })
     },
     getList(params){
-      params.data['type'] = +this.currentTab;
-      params.data['softwareHistoryId'] = +this.$route.params.historyId;
-      if(params.data.operatingTimeStart){
-        delete params.data.operatingTimeStart
+      console.log(params)
+      if(params.data.opType){
+        if(params.data.opType === '读'){
+          params.data.opType = 1
+        }else if(params.data.opType === '写'){
+          params.data.opType = 2
+        }else{
+          this.$message.error('请输入正确的读写类型');
+          return
+        }
+      }
+      if(params.data.sensitivity){
+        if(params.data.sensitivity === '低'){
+          params.data.sensitivity = 1;
+        }else if(params.data.sensitivity === '中'){
+          params.data.sensitivity = 2;
+        }else if(params.data.sensitivity === '高'){
+          params.data.sensitivity = 3;
+        }else{
+          this.$message.error('请输入正确的文件敏感度');
+          return;
+        }
       }
       if(params.data.operatingTime_date){
-        params.data.operatingTimeStart=this.$utils.funcData.formDateGMT(params.data.operatingTime_date[0],'yyyy-MM-dd hh:mm:ss')
-        params.data.operatingTimeEnd=this.$utils.funcData.formDateGMT(params.data.operatingTime_date[1],'yyyy-MM-dd hh:mm:ss')
-        delete params.data.operatingTime_date
+          params.data.startTime = this.$utils.funcData.formDateGMT(params.data.operatingTime_date[0]);
+          params.data.endTime = this.$utils.funcData.formDateGMT(params.data.operatingTime_date[1]);
+          delete params.data.operatingTimeStart;
+          delete params.data.operatingTime_date;
       }
-      console.log(params);
+      if(this.softwareDetail && this.softwareDetail.taskId){
+        params.data.taskId = this.softwareDetail.taskId
+      }
       return new Promise((res, rej) => {
         this.$http({
-          url: this.$api.apiMonitorRecordSearch,
+          url: this.$api.actionListByFileType,
           method: 'POST',
           data: params
         }).then((r) => {
+          // console.log(r)
           if (r.code === '0') {
+            r.data.type = this.opTypeLists[r.data.opType -1];
+            r.data.sensitivity = this.sensitivityLists[r.data.sensitivity-1];
             this.tableData = r.data;
+            this.tableData.forEach(item => {
+              item.opType = item.opType ? this.opTypeLists[item.opType -1] : '--';
+              item.sensitivity = item.sensitivity ? this.sensitivityLists[item.sensitivity - 1] : '--';
+            })
             this.totalItems = r.totalItems;
             res(r.data);
           }

@@ -6,6 +6,11 @@ let apiArr = [
   "monitor/startMonitor", // 监听软件
   "monitor/stopMonitor", // 停止监控            
   "monitor/listTask", // 历史监控任务查询
+
+  "action/listByFileType", // 查询文件读写醒胃
+  "action/listByNetworkType", // 查询网络访问行为
+  "action/listByProcessType", // 查询进程调用形成
+  "action/listByRegistryType", // 查询注册表行为
 ];
 
 const exportObj = {};

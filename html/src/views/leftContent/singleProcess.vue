@@ -27,9 +27,9 @@
     <div class="processList" v-if="processListOnff">
       <p style="margin-top: 0;">相关进程名称</p>
       <div>
-        <div v-for="itemInPL in processList" :key="itemInPL.id" class='processItem'>
+        <div v-for="itemInPL in detail.processes" :key="itemInPL.pid" class='processItem'>
           <img :src="itemInPL.iconUrl" />
-          <span>{{itemInPL.imageName}} ({{itemInPL.pid}})</span>
+          <span>{{itemInPL.name}} ({{itemInPL.pid}})</span>
         </div>
       </div>
     </div>
@@ -67,10 +67,7 @@ export default {
       this.$store.dispatch('getSoftwareDetail',this.$route.params.programId).then((res) => {
         // console.log(res)
         this.detail = res;
-        // TOTEST: 注释获取相关进程
-        // this.$store.dispatch('getProcessList', res).then((res) => {
-        //   this.processList = res;
-        // });
+        console.log(JSON.parse(JSON.stringify(this.detail)))
         if(this.$route.name !== 'monitoringHistory'){
           this.title='程序进程'
         }else{

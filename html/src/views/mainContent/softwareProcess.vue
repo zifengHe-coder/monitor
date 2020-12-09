@@ -174,7 +174,6 @@ export default {
         method: "POST",
         data:{data:{id:res.id}}
       }).then(r => {
-        console.log(r)
         if(r.code === '0'){
           if(!r.data.processes)(this.btnStatus = true)
           for(let k in r.data){
@@ -206,7 +205,6 @@ export default {
             method: "POST",
             data:{data:{id:res.id}}
           }).then(r => {
-            console.log(r)
             if(r.code === '0'){
               if(!r.data.processes)(this.btnStatus = true)
               for(let k in r.data){
@@ -233,10 +231,10 @@ export default {
     //跳转详情页
     goDetail() {
       this.$store
-        .dispatch("getSoftwareDetail", +this.softwareData.id)
+        .dispatch("getSoftwareDetail", this.softwareData.id)
         .then(res => {
           this.$router.push({
-            path: `/programProgress/${this.softwareData.id}/${this.processList[0].softwareHistoryId}`
+            path: `/programProgress/${this.softwareData.id}`
           });
         });
     },
