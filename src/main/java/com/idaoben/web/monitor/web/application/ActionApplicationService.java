@@ -34,9 +34,9 @@ public class ActionApplicationService {
 
     private static final Logger logger = LoggerFactory.getLogger(ActionApplicationService.class);
 
-    private static final File ACTION_FOLDER = new File(SystemUtils.getOsHome() + "WinMonitor");
+    private static final File ACTION_FOLDER = new File(SystemUtils.getOsHome() + "\\WinMonitor");
 
-    private static final String ACTION_BACKUP_FOLDER_PATH = SystemUtils.getOsHome() + "WinMonitor" + SystemUtils.FILE_SEPARATOR + "data" + SystemUtils.FILE_SEPARATOR + "%s" + SystemUtils.FILE_SEPARATOR + "%s";
+    private static final String ACTION_BACKUP_FOLDER_PATH = SystemUtils.getOsHome() + "\\WinMonitor" + SystemUtils.FILE_SEPARATOR + "data" + SystemUtils.FILE_SEPARATOR + "%s" + SystemUtils.FILE_SEPARATOR + "%s";
 
     @Resource
     private ActionService actionService;

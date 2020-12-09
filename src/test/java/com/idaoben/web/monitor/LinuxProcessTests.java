@@ -26,4 +26,15 @@ public class LinuxProcessTests {
         List<ProcessJson> processJsons = systemOsService.listAllProcesses();
         processJsons.forEach(processJson -> logger.info(processJson.toString()));
     }
+
+    @Test
+    public void testStartProcessWithHooks(){
+        int pid = systemOsService.startProcessWithHooks("firefox -new-window", null);
+        logger.info("PID: {}", pid);
+    }
+
+    @Test
+    public void testGetActionFolderPath(){
+        logger.info("Action folder: {}", systemOsService.getActionFolderPath());
+    }
 }
