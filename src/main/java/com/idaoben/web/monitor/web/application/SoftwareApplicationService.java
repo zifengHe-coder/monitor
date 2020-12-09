@@ -1,7 +1,5 @@
 package com.idaoben.web.monitor.web.application;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.monitor.dao.entity.Favorite;
@@ -10,7 +8,6 @@ import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
 import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.FavoriteService;
-import com.idaoben.web.monitor.service.JniService;
 import com.idaoben.web.monitor.service.SoftwareService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
@@ -41,12 +38,6 @@ public class SoftwareApplicationService {
 
     @Resource
     private FavoriteService favoriteService;
-
-    @Resource
-    private JniService jniService;
-
-    @Resource
-    private ObjectMapper objectMapper;
 
     @Resource
     private MonitorApplicationService monitorApplicationService;
@@ -172,43 +163,38 @@ public class SoftwareApplicationService {
             //先做一次软件列表初始化
             getSystemSoftware();
         }
-        String processContent = jniService.listAllProcesses();
-        try {
-            ProcessListJson processListJson = objectMapper.readValue(processContent, ProcessListJson.class);
-            Map<String, List<ProcessJson>> tempProcessMaps = new HashMap<>();
-            if(processListJson != null && processListJson.getProcesses() != null){
-                Map<Integer, ProcessJson> pidProcessMap = new HashMap<>();
-                processListJson.getProcesses().forEach(processJsonDto -> pidProcessMap.put(processJsonDto.getPid(), processJsonDto));
-                //把所有进程组装到对应的软件中
-                for(ProcessJson processJson : processListJson.getProcesses()){
-                    //先找父对象是否存在，存在父对象时直接挂到父对象的进程列表中
-                    ProcessJson parentProcess = pidProcessMap.get(processJson.getParentPid());
-                    String softwareId;
-                    if(parentProcess != null){
-                        softwareId = getSoftwareIdFromImageName(parentProcess.getImageName());
-                    } else {
-                        //无父对象，则单独添加
-                        softwareId = getSoftwareIdFromImageName(processJson.getImageName());
+        List<ProcessJson> processJsons = systemOsService.listAllProcesses();
+        Map<String, List<ProcessJson>> tempProcessMaps = new HashMap<>();
+        if(!CollectionUtils.isEmpty(processJsons)){
+            Map<Integer, ProcessJson> pidProcessMap = new HashMap<>();
+            processJsons.forEach(processJsonDto -> pidProcessMap.put(processJsonDto.getPid(), processJsonDto));
+            //把所有进程组装到对应的软件中
+            for(ProcessJson processJson : processJsons){
+                //先找父对象是否存在，存在父对象时直接挂到父对象的进程列表中
+                ProcessJson parentProcess = pidProcessMap.get(processJson.getParentPid());
+                String softwareId;
+                if(parentProcess != null){
+                    softwareId = getSoftwareIdFromImageName(parentProcess.getImageName());
+                } else {
+                    //无父对象，则单独添加
+                    softwareId = getSoftwareIdFromImageName(processJson.getImageName());
+                }
+                if(softwareId != null){
+                    List<ProcessJson> softwareProcesses = tempProcessMaps.get(softwareId);
+                    if(softwareProcesses == null){
+                        softwareProcesses = new ArrayList<>();
+                        tempProcessMaps.put(softwareId, softwareProcesses);
                     }
-                    if(softwareId != null){
-                        List<ProcessJson> softwareProcesses = tempProcessMaps.get(softwareId);
-                        if(softwareProcesses == null){
-                            softwareProcesses = new ArrayList<>();
-                            tempProcessMaps.put(softwareId, softwareProcesses);
-                        }
-                        softwareProcesses.add(processJson);
+                    softwareProcesses.add(processJson);
 
-                        //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
-                        String pidStr = String.valueOf(processJson.getPid());
-                        if(monitorApplicationService.isMonitoring(softwareId) && !monitorApplicationService.isPidMonitoringError(softwareId, pidStr) && !monitorApplicationService.isPidMonitoring(softwareId, pidStr)){
-                            monitorApplicationService.startMonitorPid(softwareId, pidStr);
-                        }
+                    //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
+                    String pidStr = String.valueOf(processJson.getPid());
+                    if(monitorApplicationService.isMonitoring(softwareId) && !monitorApplicationService.isPidMonitoringError(softwareId, pidStr) && !monitorApplicationService.isPidMonitoring(softwareId, pidStr)){
+                        monitorApplicationService.startMonitorPid(softwareId, pidStr);
                     }
                 }
-                processMaps = tempProcessMaps;
             }
-        } catch (JsonProcessingException e) {
-            logger.error(e.getMessage(), e);
+            processMaps = tempProcessMaps;
         }
     }
 

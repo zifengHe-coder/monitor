@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.monitor.service.JniService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
-import com.idaoben.web.monitor.web.dto.LinkFileJson;
-import com.idaoben.web.monitor.web.dto.LinkListJson;
-import com.idaoben.web.monitor.web.dto.SoftwareDto;
+import com.idaoben.web.monitor.web.dto.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,6 +104,20 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
             logger.error(e.getMessage(), e);
         } finally {
             IOUtils.closeQuietly(os);
+        }
+        return null;
+    }
+
+    @Override
+    public List<ProcessJson> listAllProcesses() {
+        String processContent = jniService.listAllProcesses();
+        try {
+            ProcessListJson processListJson = objectMapper.readValue(processContent, ProcessListJson.class);
+            if(processListJson != null){
+                return processListJson.getProcesses();
+            }
+        } catch (JsonProcessingException e) {
+            logger.error(e.getMessage(), e);
         }
         return null;
     }
