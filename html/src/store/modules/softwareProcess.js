@@ -15,7 +15,6 @@ export default {
       let list = state.softwareList;
       let totalArr = [];
       let letterArr = [];
-      let otherArr = [];
       state.softwareList = {};
       for (let i = 0; i < data.data.length; i++) {
         data.data[i].firstLetter = data.data[i].softwareName.slice(0, 1).toUpperCase();
@@ -35,6 +34,7 @@ export default {
           return -1
         }
       });
+      list['常用程序'] = [];
       letterArr.forEach(item => {
         list[item] = [];
       })
@@ -44,6 +44,14 @@ export default {
           list[data.data[i].firstLetter].push(data.data[i])
         }else{
           list['其他'].push(data.data[i])
+        }
+      }
+      for(let k in list){
+        for(let j=0;j<list[k].length;j++){
+          if(list[k][j].favorite === true){
+            list['常用程序'].push(list[k][j])
+            list[k].splice(j,1);
+          }
         }
       }
       state.softwareList = list;
