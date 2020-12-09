@@ -51,4 +51,15 @@ public class ProcessJson {
     public void setWsPrivateBytes(String wsPrivateBytes) {
         this.wsPrivateBytes = wsPrivateBytes;
     }
+
+    @Override
+    public String toString() {
+        return "ProcessJson{" +
+                "cpuTime='" + cpuTime + '\'' +
+                ", imageName='" + imageName + '\'' +
+                ", parentPid=" + parentPid +
+                ", pid=" + pid +
+                ", wsPrivateBytes='" + wsPrivateBytes + '\'' +
+                '}';
+    }
 }

@@ -1,8 +1,10 @@
 package com.idaoben.web.monitor.service.impl;
 
+import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.jni.FunctionHookLoaderJni;
 import com.idaoben.web.monitor.jni.UtilityJni;
 import com.idaoben.web.monitor.service.JniService;
+import com.idaoben.web.monitor.utils.SystemUtils;
 import org.apache.tomcat.util.buf.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +20,10 @@ public class JniServiceImpl implements JniService {
 
     @PostConstruct
     public void init(){
-        utilityJni = new UtilityJni();
-        functionHookLoaderJni = new FunctionHookLoaderJni();
+        if(SystemUtils.getSystemOs() == SystemOs.WINDOWS){
+            utilityJni = new UtilityJni();
+            functionHookLoaderJni = new FunctionHookLoaderJni();
+        }
     }
 
     @Override
