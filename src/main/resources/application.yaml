@@ -18,11 +18,3 @@ logging:
     org.hibernate.SQL: info
     com.idaoben: debug
     com.idaoben.utils.dto_assembler.MappingClassGenerator: info
-    ControllerMethodLoggingAspect: debug
-
-daoben:
-  framework:
-    file: false
-    captcha: false
-    captcha-disable: true
-    api-method-logging: false
