@@ -71,7 +71,6 @@ export default {
             method: 'GET',
           }).then((r) => {
             if (r.code == '0') {
-              // console.log(r)
               commit('setSoftwareList', r);
               if (params.pageNo < r.totalPage) {
                 ++params.pageNo;

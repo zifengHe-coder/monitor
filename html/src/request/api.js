@@ -1,5 +1,11 @@
 let apiArr = [
   "software/getSystemSoftware", //获取软件列表
+  "software/detailSoftware", // 软件详情
+
+  "monitor/startAndMonitor", // 开启并监听软件
+  "monitor/startMonitor", // 监听软件
+  "monitor/stopMonitor", // 停止监控            
+  "monitor/listTask", // 历史监控任务查询
 ];
 
 const exportObj = {};

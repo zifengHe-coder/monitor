@@ -20,10 +20,10 @@ export default {
           res(state.softwareDetail[id]);
         }else{
           http({
-            url: api.apiSoftwareDetail,
+            url: api.softwareDetailSoftware,
             method: 'POST',
             data: {
-              id,
+              data:{id}
             }
           }).then((r) => {
             if(r.code == '0'){

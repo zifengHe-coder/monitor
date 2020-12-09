@@ -6,11 +6,11 @@
         <div class="detailList">
           <div style="align-items: center;">
             <img :src="detail.iconUrl" class="logo"/>
-            <span class="exeName">{{detail.name}}</span>
+            <span class="exeName">{{detail.softwareName}}</span>
           </div>
           <div>
             <span class="label">文件夹路径</span>
-            <span class="value">{{detail.path | urlHandle}}</span>
+            <span class="value">{{detail.exePath}}</span>
           </div>
           <div>
             <span class="label">文件大小</span>
@@ -45,15 +45,15 @@ export default {
       title:null
     }
   },
-  filters:{
-    //把exe路径的\左右添加空格，让字符能换行
-    urlHandle(val){
-      if(val){
-        val = val.replace(/\\/g,' \\ ')
-      }
-      return val
-    }
-  },
+  // filters:{
+  //   //把exe路径的\左右添加空格，让字符能换行
+  //   urlHandle(val){
+  //     if(val){
+  //       val = val.replace(/\\/g,' \\ ')
+  //     }
+  //     return val
+  //   }
+  // },
   created(){
     this.initCom()
   },
@@ -64,11 +64,13 @@ export default {
   },
   methods:{
     initCom(){
-      this.$store.dispatch('getSoftwareDetail', +this.$route.params.programId).then((res) => {
+      this.$store.dispatch('getSoftwareDetail',this.$route.params.programId).then((res) => {
+        // console.log(res)
         this.detail = res;
-        this.$store.dispatch('getProcessList', res).then((res) => {
-          this.processList = res;
-        });
+        // TOTEST: 注释获取相关进程
+        // this.$store.dispatch('getProcessList', res).then((res) => {
+        //   this.processList = res;
+        // });
         if(this.$route.name !== 'monitoringHistory'){
           this.title='程序进程'
         }else{

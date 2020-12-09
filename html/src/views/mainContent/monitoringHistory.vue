@@ -58,14 +58,15 @@ export default {
       tableLabels: [{
         type:'word',
         prop:'order',
-        label:'序号'
+        label:'序号',
+        width: '50'
       },{
         type: 'word',
         prop: 'softwareName',
         label: '软件名称'
       },{
         type: 'word',
-        prop: 'pid',
+        prop: 'pids',
         label: 'PID'
       },{
         type: 'word',
@@ -78,43 +79,34 @@ export default {
         prop: 'endTime',
         label: '结束时间'
       },{
-        type: 'select',
+        type: 'word',
         columnOperable: 'none',
         prop: 'status',
         label: '监控状态',
-        options: [{
-          label: '监控中',
-          value: 0
-        },{
-          label: '已完成',
-          value: 1
-        }]
       },{
         type: 'word',
         prop: 'exePath',
         label: '路径'
       }],
-      totalItems: 12
+      softwareId: null,
+      totalItems: 0
     }
   },
   created(){
-    //在页面加载时读取sessionStorage里的状态信息
-    if (sessionStorage.getItem(`historyProgramDetail${this.$route.params.programId}`)) {
-        this.$store.dispatch('replaceState',JSON.parse(sessionStorage.getItem(`historyProgramDetail${this.$route.params.programId}`)))
-    } 
-
-    //在页面刷新时将vuex里的信息保存到sessionStorage里
-    window.addEventListener("beforeunload",e => this.beforeunloadFun(e))
-  },
-  destroyed(){
-    window.removeEventListener('beforeunload', e => this.beforeunloadFun(e))
-  },
-  computed: {
-    programData: function(){
-      let detail=this.$store.state.softwareDetail.softwareDetail[Number(this.$route.params.programId)]
-      return detail
+    if(this.$route.params.programId){
+      this.softwareId = this.$route.params.programId
     }
+    //在页面加载时读取sessionStorage里的状态信息
+    // if (sessionStorage.getItem(`historyProgramDetail${this.$route.params.programId}`)) {
+    //     this.$store.dispatch('replaceState',JSON.parse(sessionStorage.getItem(`historyProgramDetail${this.$route.params.programId}`)))
+    // } 
+
+    // //在页面刷新时将vuex里的信息保存到sessionStorage里
+    // window.addEventListener("beforeunload",e => this.beforeunloadFun(e))
   },
+  // destroyed(){
+  //   window.removeEventListener('beforeunload', e => this.beforeunloadFun(e))
+  // },
   methods:{
     // 刷新事件
     beforeunloadFun(e){
@@ -122,25 +114,14 @@ export default {
     },
     // 搜索记录
     searchHistoryList(params){
-      /* name:【string】 程序名称
-      *  keyword:【string】 程序名称
-      *  startTime:【string】 开始时间
-      *  endTime:【string】 结束时间 
-      * sessionStorage.setItem(`${this.comData.id}Page`, JSON.stringify({
-        data: {},
-        pageNo: 0,
-        pageSize: 10,
-      }))
-      * */
       params.pageSize=JSON.parse(sessionStorage.getItem(`${this.comData.id}Page`)).pageSize
-      params.data.programName=this.programData.name
       if(this.search.dateTime){
         params.data.startTime=this.$utils.funcData.formatTime(this.search.dateTime[0],'yyyy-MM-dd hh:mm:ss')
         params.data.endTime=this.$utils.funcData.formatTime(this.search.dateTime[1],'yyyy-MM-dd hh:mm:ss')
       }
-      params.data.keyword=this.search.keyword
+      params.data.softwareId = this.softwareId;
       this.$http({
-        url: this.$api.apiHistorySearch,
+        url: this.$api.monitorListTask,
         method: 'POST',
         data: params
       }).then((r) => {
@@ -148,9 +129,9 @@ export default {
           this.historyList = r.data;
           this.historyList.forEach((item,index)=>{
             item.order=r.pageNo*r.pageSize+index+1
-            item.pid=JSON.parse(item.pidArr).toString()
             item.startTime=this.$utils.funcData.formDateGMT(item.startTime)
             item.endTime=this.$utils.funcData.formDateGMT(item.endTime)
+            item.status = item.complete? '已完成':'未完成'
           })
           this.totalItems = r.totalItems;
         }
