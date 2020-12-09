@@ -108,6 +108,11 @@ public class SoftwareApplicationService {
         }
         SoftwareDetailDto detail = new SoftwareDetailDto();
         BeanUtils.copyProperties(softwareDto, detail);
+        MonitoringTask monitoringTask = monitorApplicationService.getMonitoringTask(softwareDto.getId());
+        detail.setMonitoring(monitoringTask == null ? false : true);
+        if(monitoringTask != null){
+            detail.setTaskId(monitoringTask.getTaskId());
+        }
         List<ProcessJson> processJsons = processMaps.get(softwareDto.getId());
         if(!CollectionUtils.isEmpty(processJsons)){
             List<ProcessDto> processes = new ArrayList<>();
@@ -117,23 +122,24 @@ public class SoftwareApplicationService {
                 process.setName(processJson.getImageName());
                 //TODO：CPU使用时间待补充
                 process.setMemory(Float.parseFloat(processJson.getWsPrivateBytes()) / 1000);
-                MonitorStatus monitorStatus;
-                if(monitorApplicationService.isPidMonitoring(softwareDto.getId(), process.getPid())){
-                    monitorStatus = MonitorStatus.MONITORING;
-                } else if(monitorApplicationService.isPidMonitoringError(softwareDto.getId(), process.getPid())){
-                    monitorStatus = MonitorStatus.ERROR;
+                if(systemOsService.isAutoMonitorChildProcess()){
+                    //需要自动监听子进程的，则根据具体的当前监听进程判断
+                    MonitorStatus monitorStatus;
+                    if(monitorApplicationService.isPidMonitoring(softwareDto.getId(), process.getPid())){
+                        monitorStatus = MonitorStatus.MONITORING;
+                    } else if(monitorApplicationService.isPidMonitoringError(softwareDto.getId(), process.getPid())){
+                        monitorStatus = MonitorStatus.ERROR;
+                    } else {
+                        monitorStatus = MonitorStatus.NOT_MONITOR;
+                    }
+                    process.setMonitorStatus(monitorStatus);
                 } else {
-                    monitorStatus = MonitorStatus.NOT_MONITOR;
+                    //只要判断当前主进程是否正在监听即可
+                    process.setMonitorStatus(detail.isMonitoring() ? MonitorStatus.MONITORING : MonitorStatus.NOT_MONITOR);
                 }
-                process.setMonitorStatus(monitorStatus);
                 processes.add(process);
             }
             detail.setProcesses(processes);
-        }
-        MonitoringTask monitoringTask = monitorApplicationService.getMonitoringTask(softwareDto.getId());
-        detail.setMonitoring(monitoringTask == null ? false : true);
-        if(monitoringTask != null){
-            detail.setTaskId(monitoringTask.getTaskId());
         }
         return detail;
     }
@@ -187,10 +193,12 @@ public class SoftwareApplicationService {
                     }
                     softwareProcesses.add(processJson);
 
-                    //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
-                    String pidStr = String.valueOf(processJson.getPid());
-                    if(monitorApplicationService.isMonitoring(softwareId) && !monitorApplicationService.isPidMonitoringError(softwareId, pidStr) && !monitorApplicationService.isPidMonitoring(softwareId, pidStr)){
-                        monitorApplicationService.startMonitorPid(softwareId, pidStr);
+                    if(systemOsService.isAutoMonitorChildProcess()){
+                        //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
+                        String pidStr = String.valueOf(processJson.getPid());
+                        if(monitorApplicationService.isMonitoring(softwareId) && !monitorApplicationService.isPidMonitoringError(softwareId, pidStr) && !monitorApplicationService.isPidMonitoring(softwareId, pidStr)){
+                            monitorApplicationService.startMonitorPid(softwareId, pidStr);
+                        }
                     }
                 }
             }

@@ -39,6 +39,14 @@ public class SystemUtils {
         return systemOs;
     }
 
+    public static boolean isWindows(){
+        return getSystemOs() == SystemOs.WINDOWS;
+    }
+
+    public static boolean isLinux(){
+        return getSystemOs() == SystemOs.LINUX;
+    }
+
     public static String getSensitivityPath(){
         if(sensitivityPath == null){
             if(getSystemOs() == SystemOs.WINDOWS){

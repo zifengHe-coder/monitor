@@ -141,4 +141,9 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     public boolean removeHooks(int pid) {
         return jniService.removeHooks(pid);
     }
+
+    @Override
+    public boolean isAutoMonitorChildProcess() {
+        return true;
+    }
 }

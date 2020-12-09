@@ -132,4 +132,9 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
         }
         return true;
     }
+
+    @Override
+    public boolean isAutoMonitorChildProcess() {
+        return false;
+    }
 }
