@@ -8,9 +8,9 @@ import {
 if (process.env.NODE_ENV === 'development') {
   axios.defaults.baseURL = '/api/'
 } else if (process.env.NODE_ENV === 'test') {
-  axios.defaults.baseURL = '/'
+  axios.defaults.baseURL = '/api/'
 } else {
-  axios.defaults.baseURL = '/'
+  axios.defaults.baseURL = '/api/'
 }
 
 // 创建axios实例

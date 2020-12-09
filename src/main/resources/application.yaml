@@ -18,3 +18,6 @@ logging:
     org.hibernate.SQL: info
     com.idaoben: debug
     com.idaoben.utils.dto_assembler.MappingClassGenerator: info
+
+monitor:
+  auto-open-browser: false
