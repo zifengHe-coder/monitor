@@ -42,7 +42,7 @@ export default {
       detail: {},
       processList: [],
       processListOnff: false,
-      title:null
+      title:null,
     }
   },
   // filters:{
@@ -55,7 +55,7 @@ export default {
   //   }
   // },
   created(){
-    this.initCom()
+    this.initCom();
   },
   watch: {
     $route(to, from){
@@ -65,7 +65,6 @@ export default {
   methods:{
     initCom(){
       this.$store.dispatch('getSoftwareDetail',this.$route.params.programId).then((res) => {
-        console.log(res)
         this.detail = res;
         if(this.$route.name !== 'monitoringHistory'){
           this.title='程序进程'
@@ -73,7 +72,11 @@ export default {
           this.title='监听历史'
         }
       });
-      this.processListOnff = this.$route.path.includes('/programProgress') ? true : false;
+      if(this.$route.query.isFromIndex == 'true'){
+        this.processListOnff = true
+      }else{
+        this.processListOnff = false
+      }
     },
     goPage(detail){
       this.$router.replace({ 

@@ -5,7 +5,7 @@
         <img v-if="detailOnff" :src="softwareDetail.base64Icon" class="icon" />
         <span class="name" v-if="detailOnff">{{softwareDetail.softwareName}}</span>
         <span class="status"
-          :style="{color: softwareDetail.status === '已完成' ? '#f7d666' : '#0cab51'}">{{softwareDetail.status}}</span>
+          :style="{color: progressStatus === '已完成' ? '#f7d666' : '#0cab51'}">{{progressStatus}}</span>
       </div>
 
       <div v-if="showMonitorBtn">
@@ -122,6 +122,7 @@
           24576: '修改对象安全描述符'
         },// 操作类型code---text
         buttonText: '', // 按钮文案
+        progressStatus: null,
       }
     },
     created() {
@@ -152,8 +153,13 @@
       async initData() {
         await this.$store.dispatch('getSoftwareDetail', this.$route.params.programId).then((res) => {
           this.softwareDetail = res;
-          this.$route.query.data && (this.softwareDetail.status = JSON.parse(this.$route.query.data).status);
         });
+        // 判断状态
+        if(this.$route.query.isFromIndex == 'true'){
+          this.progressStatus = '监听中';
+        }else{
+          this.progressStatus = JSON.parse(this.$route.query.data).status;
+        }
         if (this.$route.name === 'programProgressFromIndex' || this.$route.name === 'programProgressFromHistory') {
           this.detailOnff = true;
           this.tabContentOnff = true;
@@ -233,17 +239,34 @@
             this.funcApi = this.$api.actionListByFileType;
             this.buttonText = '打开文件'
             this.searchLabels = [{
-              type: 'input',
+              type: 'select',
               prop: 'opType',
-              label: '读写类型'
+              label: '读写类型',
+              options: [{
+                label: '读',
+                value: 1
+              },{
+                label: '写',
+                value: 2
+              }]
             }, {
               type: 'input',
               prop: 'fileName',
               label: '文件名称'
             }, {
-              type: 'input',
+              type: 'select',
               prop: 'sensitivity',
-              label: '文件敏感度'
+              label: '文件敏感度',
+              options: [{
+                label: '低',
+                value: 1
+              },{
+                label: '中',
+                value: 2
+              },{
+                label: '高',
+                value: 3
+              }]
             }, {
               type: 'datePicker',
               prop: 'operatingTime',
@@ -388,7 +411,7 @@
             }, {
               type: 'word',
               prop: 'destHwnd',
-              label: '消息目表句柄'
+              label: '消息目标句柄'
             }, {
               type: 'word',
               prop: 'srcHwnd',
@@ -495,28 +518,6 @@
             // 网络请求
           case 'softwareDetail_2':
             // 文件读写
-            if (params.data.opType) {
-              if (params.data.opType === '读') {
-                params.data.opType = 1
-              } else if (params.data.opType === '写') {
-                params.data.opType = 2
-              } else {
-                this.$message.error('请输入正确的读写类型');
-                return
-              }
-            }
-            if (params.data.sensitivity) {
-              if (params.data.sensitivity === '低') {
-                params.data.sensitivity = 1;
-              } else if (params.data.sensitivity === '中') {
-                params.data.sensitivity = 2;
-              } else if (params.data.sensitivity === '高') {
-                params.data.sensitivity = 3;
-              } else {
-                this.$message.error('请输入正确的文件敏感度');
-                return;
-              }
-            }
             return params;
           case 'softwareDetail_3':
             // 注册表

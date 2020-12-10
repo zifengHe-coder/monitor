@@ -16,9 +16,9 @@ export default {
   actions: {
     getSoftwareDetail({ commit, state }, id) {
       return new Promise((res, rej) => {
-        if(state.softwareDetail[id]){
-          res(state.softwareDetail[id]);
-        }else{
+        // if(state.softwareDetail[id]){
+        //   res(state.softwareDetail[id]);
+        // }else{
           http({
             url: api.softwareDetailSoftware,
             method: 'POST',
@@ -26,7 +26,6 @@ export default {
               data:{id}
             }
           }).then((r) => {
-            console.log(r)
             if(r.code == '0'){
               commit('setSoftwareDetail', r.data);
               res(r.data);
@@ -34,7 +33,7 @@ export default {
           }).catch(err => {
             rej(err);
           })
-        }
+        // }
       })
     },
     getProcessList({ commit, state }, softwareData) {
