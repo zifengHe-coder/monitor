@@ -94,7 +94,7 @@ public class Action {
 
     @Description("文件描述符")
     @Column
-    private Long fd;
+    private String fd;
 
     @Description("写入数据偏移量")
     @Transient
@@ -300,11 +300,11 @@ public class Action {
         this.backup = backup;
     }
 
-    public Long getFd() {
+    public String getFd() {
         return fd;
     }
 
-    public void setFd(Long fd) {
+    public void setFd(String fd) {
         this.fd = fd;
     }
 

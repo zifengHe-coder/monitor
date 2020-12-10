@@ -58,11 +58,9 @@ public class ActionApplicationService {
 
     private Map<String, Map<Integer, NetworkInfo>> socketFdNetworkMap = new ConcurrentHashMap<>();
 
-    private Map<String, Map<Integer, NetworkInfo>> refNetworkMap = new ConcurrentHashMap<>();
+    private Map<String, Map<String, FileInfo>> fdFileMap = new ConcurrentHashMap<>();
 
-    private Map<String, Map<Long, FileInfo>> fdFileMap = new ConcurrentHashMap<>();
-
-    private Map<String, Map<Long, Action>> writeFileMap = new ConcurrentHashMap<>();
+    private Map<String, Map<String, Action>> writeFileMap = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init(){
@@ -225,7 +223,6 @@ public class ActionApplicationService {
     private void clearPidCache(String pid){
         handlingThreads.remove(pid);
         socketFdNetworkMap.remove(pid);
-        refNetworkMap.remove(pid);
         fdFileMap.remove(pid);
         writeFileMap.remove(pid);
     }
@@ -282,7 +279,7 @@ public class ActionApplicationService {
             FileAccess fileAccess = getFileAccess(action);
             //只有含写操作的才会记录到map中
             if(fileAccess == FileAccess.WRITE || fileAccess == FileAccess.READ_AND_WRITE){
-                Map<Long, FileInfo> fdFileInfoMap = fdFileMap.computeIfAbsent(pid, p -> new HashMap<>());
+                Map<String, FileInfo> fdFileInfoMap = fdFileMap.computeIfAbsent(pid, p -> new HashMap<>());
                 if(!fdFileInfoMap.containsKey(action.getFd())){
                     fdFileInfoMap.put(action.getFd(), new FileInfo(action.getFd(), action.getFileName(), action.getPath(), action.getSensitivity()));
                 }
@@ -292,12 +289,12 @@ public class ActionApplicationService {
             }
         }
         if(action.getType() == ActionType.FILE_WRITE){
-            Map<Long, FileInfo> fdFileInfoMap = fdFileMap.get(pid);
+            Map<String, FileInfo> fdFileInfoMap = fdFileMap.get(pid);
             if(fdFileInfoMap != null){
                 FileInfo fileInfo = fdFileInfoMap.get(action.getFd());
                 if(fileInfo != null){
                     //查下是否有对上一个相同FD写入记录，有记录的话只做更新操作
-                    Map<Long, Action> actionMap = writeFileMap.computeIfAbsent(pid, p -> new HashMap<>());
+                    Map<String, Action> actionMap = writeFileMap.computeIfAbsent(pid, p -> new HashMap<>());
                     Action originAction = actionMap.get(action.getFd());
                     if(originAction == null){
                         originAction = action;
@@ -355,15 +352,10 @@ public class ActionApplicationService {
 
     private void setActionNetworkInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.NETWORK);
-        if(action.getType() == ActionType.NETWORK_OPEN){
-            Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
-            if(!socketFdNetworkInfoMap.containsKey(action.getSocketFd())){
+        if(action.getType() == ActionType.NETWORK_TCP_SEND){
+            if(StringUtils.isNotEmpty(action.getHost())){
+                Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
                 socketFdNetworkInfoMap.put(action.getSocketFd(), new NetworkInfo(action.getHost(), action.getPort()));
-            }
-
-            Map<Integer, NetworkInfo> refNetworkInfoMap = refNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
-            if(!refNetworkInfoMap.containsKey(action.getRef())){
-                refNetworkInfoMap.put(action.getRef(), new NetworkInfo(action.getHost(), action.getPort()));
             }
         }
         if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
@@ -373,15 +365,6 @@ public class ActionApplicationService {
                 if(networkInfo != null){
                     action.setHost(networkInfo.getHost());
                     action.setPort(networkInfo.getPort());
-                }
-            } else {
-                Map<Integer, NetworkInfo> refNetworkInfoMap = refNetworkMap.get(pid);
-                if(refNetworkInfoMap != null){
-                    NetworkInfo networkInfo = refNetworkInfoMap.get(action.getSocketFd());
-                    if(networkInfo != null){
-                        action.setHost(networkInfo.getHost());
-                        action.setPort(networkInfo.getPort());
-                    }
                 }
             }
         }
