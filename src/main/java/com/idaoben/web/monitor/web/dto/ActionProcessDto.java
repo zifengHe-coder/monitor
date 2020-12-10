@@ -33,7 +33,7 @@ public interface ActionProcessDto {
 
     @ApiModelProperty("启动进程的完整命令行数据")
     @Mapping
-    String getCommandLine();
+    String getCmdLine();
 
     @ApiModelProperty("创建远程线程时提供的入口函数地址 ")
     @Mapping
