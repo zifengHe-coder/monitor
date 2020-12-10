@@ -17,6 +17,12 @@ public class ActionType {
     //TCP数据接收
     public static final int NETWORK_TCP_RECEIVE = 4098;
 
+    //UDP数据发送
+    public static final int NETWORK_UDP_SEND = 4099;
+
+    //UDP数据接收
+    public static final int NETWORK_UDP_RECEIVE = 4100;
+
     //文件打开
     public static final int FILE_OPEN = 8192;
 
@@ -49,7 +55,7 @@ public class ActionType {
     }
 
     public static boolean isNetworkType(int access){
-        return access == NETWORK_OPEN || access == NETWORK_TCP_SEND || access == NETWORK_TCP_RECEIVE;
+        return access == NETWORK_OPEN || access == NETWORK_TCP_SEND || access == NETWORK_TCP_RECEIVE || access == NETWORK_UDP_SEND || access == NETWORK_UDP_RECEIVE;
     }
 
     public static boolean isRegistryType(int access){
