@@ -2,6 +2,7 @@ package com.idaoben.web.monitor.web.application;
 
 import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
+import com.idaoben.web.common.util.DateTimeUtils;
 import com.idaoben.web.monitor.dao.entity.Favorite;
 import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
@@ -25,6 +26,8 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -64,6 +67,13 @@ public class SoftwareApplicationService {
         Map<String, String> tempExeNameSoftwareIdMap = new HashMap<>();
         softwares.forEach(software -> {
             software.setFavorite(favoriteSoftwareIds.contains(software.getId()));
+            if(StringUtils.isNotEmpty(software.getExePath())){
+                File exeFile = new File(software.getExePath());
+                if(exeFile.exists()){
+                    software.setFileSize(new BigDecimal(exeFile.length()).divide(new BigDecimal(1048576), 2, RoundingMode.HALF_UP));
+                    software.setFileCreationTime(DateTimeUtils.convertZonedDateTime(new Date(exeFile.lastModified())));
+                }
+            }
             tempSoftwareMap.put(software.getId(), software);
             if(StringUtils.isNotEmpty(software.getExeName())){
                 tempExeNameSoftwareIdMap.put(software.getExeName().toLowerCase(), software.getId());
@@ -108,6 +118,11 @@ public class SoftwareApplicationService {
         }
         SoftwareDetailDto detail = new SoftwareDetailDto();
         BeanUtils.copyProperties(softwareDto, detail);
+        MonitoringTask monitoringTask = monitorApplicationService.getMonitoringTask(softwareDto.getId());
+        detail.setMonitoring(monitoringTask == null ? false : true);
+        if(monitoringTask != null){
+            detail.setTaskId(monitoringTask.getTaskId());
+        }
         List<ProcessJson> processJsons = processMaps.get(softwareDto.getId());
         if(!CollectionUtils.isEmpty(processJsons)){
             List<ProcessDto> processes = new ArrayList<>();
@@ -116,24 +131,25 @@ public class SoftwareApplicationService {
                 process.setPid(String.valueOf(processJson.getPid()));
                 process.setName(processJson.getImageName());
                 //TODO：CPU使用时间待补充
-                process.setMemory(Float.parseFloat(processJson.getWsPrivateBytes()) / 1000);
-                MonitorStatus monitorStatus;
-                if(monitorApplicationService.isPidMonitoring(softwareDto.getId(), process.getPid())){
-                    monitorStatus = MonitorStatus.MONITORING;
-                } else if(monitorApplicationService.isPidMonitoringError(softwareDto.getId(), process.getPid())){
-                    monitorStatus = MonitorStatus.ERROR;
+                process.setMemory(Float.parseFloat(processJson.getWsPrivateBytes()) / 1024);
+                if(systemOsService.isAutoMonitorChildProcess()){
+                    //需要自动监听子进程的，则根据具体的当前监听进程判断
+                    MonitorStatus monitorStatus;
+                    if(monitorApplicationService.isPidMonitoring(softwareDto.getId(), process.getPid())){
+                        monitorStatus = MonitorStatus.MONITORING;
+                    } else if(monitorApplicationService.isPidMonitoringError(softwareDto.getId(), process.getPid())){
+                        monitorStatus = MonitorStatus.ERROR;
+                    } else {
+                        monitorStatus = MonitorStatus.NOT_MONITOR;
+                    }
+                    process.setMonitorStatus(monitorStatus);
                 } else {
-                    monitorStatus = MonitorStatus.NOT_MONITOR;
+                    //只要判断当前主进程是否正在监听即可
+                    process.setMonitorStatus(detail.isMonitoring() ? MonitorStatus.MONITORING : MonitorStatus.NOT_MONITOR);
                 }
-                process.setMonitorStatus(monitorStatus);
                 processes.add(process);
             }
             detail.setProcesses(processes);
-        }
-        MonitoringTask monitoringTask = monitorApplicationService.getMonitoringTask(softwareDto.getId());
-        detail.setMonitoring(monitoringTask == null ? false : true);
-        if(monitoringTask != null){
-            detail.setTaskId(monitoringTask.getTaskId());
         }
         return detail;
     }
@@ -187,10 +203,12 @@ public class SoftwareApplicationService {
                     }
                     softwareProcesses.add(processJson);
 
-                    //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
-                    String pidStr = String.valueOf(processJson.getPid());
-                    if(monitorApplicationService.isMonitoring(softwareId) && !monitorApplicationService.isPidMonitoringError(softwareId, pidStr) && !monitorApplicationService.isPidMonitoring(softwareId, pidStr)){
-                        monitorApplicationService.startMonitorPid(softwareId, pidStr);
+                    if(systemOsService.isAutoMonitorChildProcess()){
+                        //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
+                        String pidStr = String.valueOf(processJson.getPid());
+                        if(monitorApplicationService.isMonitoring(softwareId) && !monitorApplicationService.isPidMonitoringError(softwareId, pidStr) && !monitorApplicationService.isPidMonitoring(softwareId, pidStr)){
+                            monitorApplicationService.startMonitorPid(softwareId, pidStr);
+                        }
                     }
                 }
             }

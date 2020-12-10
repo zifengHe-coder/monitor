@@ -78,7 +78,7 @@ public class ActionApplicationService {
         }
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionFileDto.class).apply(actions, (domain, dto) -> {
-            dto.setOpType(domain.getType() == ActionType.FILE_WRITE ? FileOpType.WRITE : FileOpType.WRITE);
+            dto.setOpType(domain.getType() == ActionType.FILE_WRITE ? FileOpType.WRITE : FileOpType.READ);
         });
     }
 

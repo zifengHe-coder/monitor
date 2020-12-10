@@ -2,6 +2,9 @@ package com.idaoben.web.monitor.web.dto;
 
 import io.swagger.annotations.ApiModelProperty;
 
+import java.math.BigDecimal;
+import java.time.ZonedDateTime;
+
 public class SoftwareDto {
 
     @ApiModelProperty("唯一识别码")
@@ -30,6 +33,12 @@ public class SoftwareDto {
 
     @ApiModelProperty("是否常用")
     private boolean favorite;
+
+    @ApiModelProperty("文件大小")
+    private BigDecimal fileSize;
+
+    @ApiModelProperty("文件创建时间")
+    private ZonedDateTime fileCreationTime;
 
     public String getId() {
         return id;
@@ -101,5 +110,21 @@ public class SoftwareDto {
 
     public void setFavorite(boolean favorite) {
         this.favorite = favorite;
+    }
+
+    public BigDecimal getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(BigDecimal fileSize) {
+        this.fileSize = fileSize;
+    }
+
+    public ZonedDateTime getFileCreationTime() {
+        return fileCreationTime;
+    }
+
+    public void setFileCreationTime(ZonedDateTime fileCreationTime) {
+        this.fileCreationTime = fileCreationTime;
     }
 }

@@ -54,4 +54,10 @@ public interface SystemOsService {
      * @return
      */
     boolean removeHooks(int pid);
+
+    /**
+     * 是否需要自动监听子进程，暂时只有windows需要应用层自动监听子进程
+     * @return
+     */
+    boolean isAutoMonitorChildProcess();
 }

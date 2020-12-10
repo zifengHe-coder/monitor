@@ -23,8 +23,6 @@ nbdist/
 **/.DS_Store
 
 node_modules
-public/images
-public/wms
-public/files
+src/main/resources/public/**
 db/
 dist
