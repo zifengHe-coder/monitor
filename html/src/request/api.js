@@ -1,4 +1,5 @@
 let apiArr = [
+  "software/listFiles", // 获取系统文件目录
   "software/getSystemSoftware", //获取软件列表
   "software/detailSoftware", // 软件详情
   "software/addFavorite", // 添加收藏

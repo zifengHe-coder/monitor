@@ -7,12 +7,12 @@
         添加程序
       </el-button>
     </div>
-    <!-- <BaseFileList 
+    <BaseFileList 
       title="选择程序" 
       :visible.sync="dialogVisible" 
       @ensure='chooseExe' 
       @cancel='dialogVisible = false'>
-    </BaseFileList> -->
+    </BaseFileList>
     <div class="softwareList" v-infinite-scroll="getList">
       <div v-for="(itemInSL, key) in $store.state.softwareProcess.softwareList" :key="key">
         <p class="groupName">{{key === '1' ? '常用程序' : key}}</p>

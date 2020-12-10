@@ -12,13 +12,14 @@
         <el-breadcrumb separator-class="el-icon-arrow-right">
           <el-breadcrumb-item
             ><a href="javascript:;" @click="getDisk"
+              style="cursor:pointer;"
               >此电脑</a
             ></el-breadcrumb-item
           >
           <el-breadcrumb-item v-for="(item, index) in path" :key="index"
-            ><a href="javascript:;" @click="goList(item.path, item.name)">{{
-              item.name
-            }}</a></el-breadcrumb-item
+            ><a href="javascript:;" @click="goList(item.path, item.name)" style="cursor:pointer;">
+              {{item.path}}
+            </a></el-breadcrumb-item
           >
         </el-breadcrumb>
       </div>
@@ -33,7 +34,7 @@
           <div>
             <img :src="item.isDirectory?iconUrl[0]:iconUrl[1]" width="40px" height="40px">
           </div>
-          <div class="title">{{ item.name }}</div>
+          <div class="title">{{ item.path }}</div>
         </div>
       </div>
     </div>
@@ -72,16 +73,20 @@ export default {
       this.path = [];
       this.selectItem = {};
       this.$http({
-        url: this.$api.apiFileOperationRootList,
-        method: "GET",
+        url: this.$api.softwareListFiles,
+        method: "POST",
+        data: {
+          data: {}
+        }
       }).then((r) => {
+        console.log(r)
         if (r.code == "0") {
           this.fileList = [];
           r.data.forEach((item) => {
             this.fileList.push({
-              path: item,
-              name: item,
-              isDirectory: true,
+              path: item.path,
+              name: item.name,
+              isDirectory: item.directory,
             });
           });
         }
@@ -92,18 +97,20 @@ export default {
       this.selectItem = {
         path: item.path,
         name: item.name,
-        isDirectory: item.isDirectory,
+        isDirectory: item.directory,
       };
     },
     // 获取当前目录下的文件列表
     getList(path, name) {
+      console.log(JSON.parse(JSON.stringify(path)))
       this.$http({
-        url: this.$api.apiFileOperationFileList,
+        url: this.$api.softwareListFiles,
         method: "POST",
         data: {
-          path: path,
+          data:{path: path,}
         },
       }).then((r) => {
+        console.log(r)
         if (r.code == "0") {
           this.path.push({
             path: path,
@@ -115,7 +122,7 @@ export default {
             this.fileList.push({
               path:item.path,
               name:item.name,
-              isDirectory:item.isDirectory
+              isDirectory:item.directory
             })
           });
         }
@@ -131,10 +138,10 @@ export default {
         }
       }
       this.$http({
-        url: this.$api.apiFileOperationFileList,
+        url: this.$api.softwareListFiles,
         method: "POST",
         data: {
-          path: path,
+          data:{path: path,}
         },
       }).then((r) => {
         if (r.code == "0") {
@@ -143,7 +150,7 @@ export default {
             this.fileList.push({
               path: item.path,
               name: item.name,
-              isDirectory: item.isDirectory,
+              isDirectory: item.directory,
             });
           });
         }

@@ -2,10 +2,10 @@
   <div id="monitoringRecords">
     <div class="progressDetail">
       <div>
-        <img v-if="detailOnff" :src="softwareDetail.iconUrl" class="icon" />
+        <img v-if="detailOnff" :src="softwareDetail.base64Icon" class="icon" />
         <span class="name" v-if="detailOnff">{{softwareDetail.softwareName}}</span>
         <span class="status"
-          :style="{color: historyDetail.status === 1 ? '#f7d666' : '#0cab51'}">{{historyDetail.statusWord}}</span>
+          :style="{color: softwareDetail.status === '已完成' ? '#f7d666' : '#0cab51'}">{{softwareDetail.status}}</span>
       </div>
 
       <div v-if="showMonitorBtn">
@@ -102,6 +102,11 @@
         opTypeLists: ['读', '写'],
         sensitivityLists: ['低', '中', '高'],
         funcApi: null, // 对应的tabs的列表的接口
+        processType: {
+          16384: '启动进程',
+          20480: '进程注入',
+          20481: '消息通讯',
+        }
       }
     },
     created() {
@@ -131,9 +136,11 @@
       async initData() {
         await this.$store.dispatch('getSoftwareDetail', this.$route.params.programId).then((res) => {
           this.softwareDetail = res;
+          this.softwareDetail.status = JSON.parse(this.$route.query.data).status;
+          console.log(JSON.parse(this.$route.query.data))
           console.log(JSON.parse(JSON.stringify(this.softwareDetail)))
         });
-        if (this.$route.name === 'programProgressFromIndex') {
+        if (this.$route.name === 'programProgressFromIndex' || this.$route.name === 'programProgressFromHistory') {
           this.detailOnff = true;
           this.tabContentOnff = true;
         } else {
@@ -351,10 +358,30 @@
               label: '调用时间'
             }, {
               type: 'word',
-              prop: 'commandLine',
+              prop: 'type',
+              label: '调用类型'
+            }, {
+              type: 'word',
+              prop: 'threadEntryAddress',
+              label: '函数地址'
+            }, {
+              type: 'word',
+              prop: 'path',
+              label: '注入dll'
+            }, {
+              type: 'word',
+              prop: 'destHwnd',
+              label: '消息目表句柄'
+            }, {
+              type: 'word',
+              prop: 'srcHwnd',
+              label: '消息源句柄'
+            }, {
+              type: 'word',
+              prop: 'cmdLine',
               label: '命令行'
             }]
-            this.hasOperation = false
+            this.hasOperation = true
             this.labelWidth = 60;
             break;
             break;
@@ -433,7 +460,6 @@
         })
       },
       updateList() {
-        // console.log(this.comData.id)
         let params = JSON.parse(
           sessionStorage.getItem(`${this.comData.id}Page`)
         );
@@ -504,6 +530,9 @@
             return data;
           case 'softwareDetail_4':
             // 进程调用
+            data.forEach(item => {
+              item.type = this.processType[item.type];
+            })
             return data;
           case 'softwareDetail_5':
         }
@@ -518,8 +547,8 @@
           delete postParams.data.operatingTime_date;
         }
         // 添加taskId
-        if (this.softwareDetail && this.softwareDetail.taskId) {
-          postParams.data.taskId = this.softwareDetail.taskId
+        if(this.$route.params && this.$route.params.historyId){
+          postParams.data.taskId = Number(this.$route.params.historyId)
         }
         return new Promise((res, rej) => {
           this.$http({
@@ -527,7 +556,6 @@
             method: 'POST',
             data: postParams
           }).then((r) => {
-            // console.log(r)
             if (r.code === '0') {
               this.tableData = this.handleResult(r.data);
               this.totalItems = r.totalItems;
