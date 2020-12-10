@@ -239,17 +239,34 @@
             this.funcApi = this.$api.actionListByFileType;
             this.buttonText = '打开文件'
             this.searchLabels = [{
-              type: 'input',
+              type: 'select',
               prop: 'opType',
-              label: '读写类型'
+              label: '读写类型',
+              options: [{
+                label: '读',
+                value: 1
+              },{
+                label: '写',
+                value: 2
+              }]
             }, {
               type: 'input',
               prop: 'fileName',
               label: '文件名称'
             }, {
-              type: 'input',
+              type: 'select',
               prop: 'sensitivity',
-              label: '文件敏感度'
+              label: '文件敏感度',
+              options: [{
+                label: '低',
+                value: 1
+              },{
+                label: '中',
+                value: 2
+              },{
+                label: '高',
+                value: 3
+              }]
             }, {
               type: 'datePicker',
               prop: 'operatingTime',
@@ -501,28 +518,6 @@
             // 网络请求
           case 'softwareDetail_2':
             // 文件读写
-            if (params.data.opType) {
-              if (params.data.opType === '读') {
-                params.data.opType = 1
-              } else if (params.data.opType === '写') {
-                params.data.opType = 2
-              } else {
-                this.$message.error('请输入正确的读写类型');
-                return
-              }
-            }
-            if (params.data.sensitivity) {
-              if (params.data.sensitivity === '低') {
-                params.data.sensitivity = 1;
-              } else if (params.data.sensitivity === '中') {
-                params.data.sensitivity = 2;
-              } else if (params.data.sensitivity === '高') {
-                params.data.sensitivity = 3;
-              } else {
-                this.$message.error('请输入正确的文件敏感度');
-                return;
-              }
-            }
             return params;
           case 'softwareDetail_3':
             // 注册表
