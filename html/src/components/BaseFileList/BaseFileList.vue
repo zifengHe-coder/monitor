@@ -18,7 +18,7 @@
           >
           <el-breadcrumb-item v-for="(item, index) in path" :key="index"
             ><a href="javascript:;" @click="goList(item.path, item.name)" style="cursor:pointer;">
-              {{item.path}}
+              {{item.name}}
             </a></el-breadcrumb-item
           >
         </el-breadcrumb>
@@ -79,7 +79,7 @@ export default {
           data: {}
         }
       }).then((r) => {
-        console.log(r)
+        // console.log(r)
         if (r.code == "0") {
           this.fileList = [];
           r.data.forEach((item) => {

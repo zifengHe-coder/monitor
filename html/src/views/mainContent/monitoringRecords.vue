@@ -136,9 +136,7 @@
       async initData() {
         await this.$store.dispatch('getSoftwareDetail', this.$route.params.programId).then((res) => {
           this.softwareDetail = res;
-          this.softwareDetail.status = JSON.parse(this.$route.query.data).status;
-          console.log(JSON.parse(this.$route.query.data))
-          console.log(JSON.parse(JSON.stringify(this.softwareDetail)))
+          this.$route.query.data && (this.softwareDetail.status = JSON.parse(this.$route.query.data).status);
         });
         if (this.$route.name === 'programProgressFromIndex' || this.$route.name === 'programProgressFromHistory') {
           this.detailOnff = true;
@@ -547,8 +545,12 @@
           delete postParams.data.operatingTime_date;
         }
         // 添加taskId
-        if(this.$route.params && this.$route.params.historyId){
+        if(this.$route.params.historyId){
+          // 从历史进去，taskId是historyId
           postParams.data.taskId = Number(this.$route.params.historyId)
+        }else{
+          // 如果没有historyId，就用软件详情的taskId
+          postParams.data.taskId = this.softwareDetail.taskId
         }
         return new Promise((res, rej) => {
           this.$http({
