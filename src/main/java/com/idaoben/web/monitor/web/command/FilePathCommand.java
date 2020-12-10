@@ -4,10 +4,10 @@ import io.swagger.annotations.ApiModelProperty;
 
 import javax.validation.constraints.NotNull;
 
-public class FolderOpenCommand {
+public class FilePathCommand {
 
     @NotNull
-    @ApiModelProperty("打开文件位置的路径")
+    @ApiModelProperty("文件路径")
     private String path;
 
     public String getPath() {
