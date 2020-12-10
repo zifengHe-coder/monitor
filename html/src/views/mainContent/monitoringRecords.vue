@@ -32,7 +32,7 @@
           <template v-slot:operationBtn="data">
             <el-button v-if="showBtn(data.scope.row)" size="mini" type="primary"
               @click="data.scope.row.readAndWriteType=='write'?downloadChangeFileDetail(data):downloadFile(data)">
-              {{data.scope.row.readAndWriteType=='write'?'写入详情':operationName}}</el-button>
+              {{buttonText}}</el-button>
           </template>
         </BaseTableCom>
       </div>
@@ -102,11 +102,26 @@
         opTypeLists: ['读', '写'],
         sensitivityLists: ['低', '中', '高'],
         funcApi: null, // 对应的tabs的列表的接口
-        processType: {
+        typeLists:{
+          0: '监控开始',
+          4095: '监控结束',
+          4096: '发起网络连接',
+          4097: 'TCP数据发送',
+          4098: 'TCP数据接收',
+          4099: 'UDP数据发送',
+          4100: 'UDP数据接收',
+          8192: '文件打开',
+          8193: '文件写入',
+          12288: '注册表打开或创建键',
+          12290: '注册表删除键',
+          12291: '注册表删除值键',
+          12294: '注册表设置值键',
           16384: '启动进程',
-          20480: '进程注入',
-          20481: '消息通讯',
-        }
+          20480: '创建远程线程',
+          20481: 'WM_COPYDATA发送',
+          24576: '修改对象安全描述符'
+        },// 操作类型code---text
+        buttonText: '', // 按钮文案
       }
     },
     created() {
@@ -123,15 +138,16 @@
     },
     methods: {
       showBtn(row) {
-        switch (row.mode) {
-          case 5:
-          case 10:
-            if (!row.bytes || row.bytes <= 0) {
-              return false
-            }
-            break;
+        const arr = ['1','2','4']
+        if(arr.includes(this.currentTab)){
+          if(this.currentTab === '4' && row.type !== this.typeLists[20481]){
+            return false;
+          }else{
+            return true;
+          }
+        }else{
+          return false;
         }
-        return true
       },
       async initData() {
         await this.$store.dispatch('getSoftwareDetail', this.$route.params.programId).then((res) => {
@@ -153,6 +169,7 @@
         switch (type) {
           case 1:
             this.funcApi = this.$api.actionListByNetworkType;
+            this.buttonText = '下载网络包'
             this.searchLabels = [{
               type: 'input',
               prop: 'host',
@@ -189,7 +206,7 @@
               label: '访问时间'
             }, {
               type: 'word',
-              prop: 'linkType',
+              prop: 'type',
               label: '链接类型'
             }, {
               type: 'word',
@@ -214,6 +231,7 @@
             break;
           case 2:
             this.funcApi = this.$api.actionListByFileType;
+            this.buttonText = '打开文件'
             this.searchLabels = [{
               type: 'input',
               prop: 'opType',
@@ -324,6 +342,7 @@
             break;
           case 4:
             this.funcApi = this.$api.actionListByProcessType;
+            this.buttonText = '查看';
             this.searchLabels = [{
               type: 'input',
               prop: 'commandLine',
@@ -514,6 +533,9 @@
       handleResult(data) {
         switch (this.comData.id) {
           case 'softwareDetail_1':
+            data.forEach(item => {
+              item.type = item.type ? this.typeLists[item.type] : '--';
+            })
             // 网络访问
             return data;
           case 'softwareDetail_2':
@@ -525,11 +547,14 @@
             return data;
           case 'softwareDetail_3':
             // 注册表
+            data.forEach(item => {
+              item.type = item.type ? this.typeLists[item.type] : '--';
+            })
             return data;
           case 'softwareDetail_4':
             // 进程调用
             data.forEach(item => {
-              item.type = this.processType[item.type];
+              item.type = this.typeLists[item.type];
             })
             return data;
           case 'softwareDetail_5':
