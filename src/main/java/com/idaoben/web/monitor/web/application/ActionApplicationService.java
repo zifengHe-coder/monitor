@@ -92,7 +92,7 @@ public class ActionApplicationService {
 
     public Page<ActionProcessDto> listByProcessType(ActionProcessListCommand command, Pageable pageable){
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.PROCESS).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
-                .likeFuzzy(Action::getCommandLine, command.getCommandLine()).eq(Action::getType, command.getType())
+                .likeFuzzy(Action::getCmdLine, command.getCmdLine()).eq(Action::getType, command.getType())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionProcessDto.class).apply(actions);

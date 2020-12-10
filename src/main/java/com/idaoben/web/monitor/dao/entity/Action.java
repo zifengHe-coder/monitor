@@ -129,7 +129,7 @@ public class Action {
 
     @Description("启动进程的完整命令行数据")
     @Column
-    private String commandLine;
+    private String cmdLine;
 
     @Description("创建远程线程时提供的入口函数地址 ")
     @Column
@@ -359,12 +359,12 @@ public class Action {
         this.oldData = oldData;
     }
 
-    public String getCommandLine() {
-        return commandLine;
+    public String getCmdLine() {
+        return cmdLine;
     }
 
-    public void setCommandLine(String commandLine) {
-        this.commandLine = commandLine;
+    public void setCmdLine(String cmdLine) {
+        this.cmdLine = cmdLine;
     }
 
     public String getThreadEntryAddress() {

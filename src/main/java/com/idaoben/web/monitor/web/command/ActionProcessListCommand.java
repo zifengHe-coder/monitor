@@ -13,7 +13,7 @@ public class ActionProcessListCommand {
     private String pid;
 
     @ApiModelProperty("命令行")
-    private String commandLine;
+    private String cmdLine;
 
     @ApiModelProperty("进程调用类型：16384:启动进程, 20480:进程注入, 20481：消息通讯")
     private Integer type;
@@ -40,12 +40,12 @@ public class ActionProcessListCommand {
         this.pid = pid;
     }
 
-    public String getCommandLine() {
-        return commandLine;
+    public String getCmdLine() {
+        return cmdLine;
     }
 
-    public void setCommandLine(String commandLine) {
-        this.commandLine = commandLine;
+    public void setCmdLine(String cmdLine) {
+        this.cmdLine = cmdLine;
     }
 
     public Integer getType() {
