@@ -67,7 +67,6 @@ export default {
       this.$store.dispatch('getSoftwareDetail',this.$route.params.programId).then((res) => {
         // console.log(res)
         this.detail = res;
-        console.log(JSON.parse(JSON.stringify(this.detail)))
         if(this.$route.name !== 'monitoringHistory'){
           this.title='程序进程'
         }else{

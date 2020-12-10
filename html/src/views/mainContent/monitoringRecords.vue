@@ -131,6 +131,7 @@
       async initData() {
         await this.$store.dispatch('getSoftwareDetail', this.$route.params.programId).then((res) => {
           this.softwareDetail = res;
+          console.log(JSON.parse(JSON.stringify(this.softwareDetail)))
         });
         if (this.$route.name === 'programProgressFromIndex') {
           this.detailOnff = true;
@@ -509,7 +510,6 @@
       },
       getList(params) {
         let postParams = this.handleParams(params);
-        console.log(postParams)
         // 处理时间
         if (params.data.operatingTime_date) {
           postParams.data.startTime = this.$utils.funcData.formDateGMT(params.data.operatingTime_date[0]);

@@ -26,6 +26,7 @@ export default {
               data:{id}
             }
           }).then((r) => {
+            console.log(r)
             if(r.code == '0'){
               commit('setSoftwareDetail', r.data);
               res(r.data);
