@@ -5,7 +5,7 @@
       <div style="margin-top: 32px;">
         <div class="detailList">
           <div style="align-items: center;">
-            <img :src="detail.iconUrl" class="logo"/>
+            <img :src="detail.base64Icon" class="logo"/>
             <span class="exeName">{{detail.softwareName}}</span>
           </div>
           <div>
@@ -14,11 +14,11 @@
           </div>
           <div>
             <span class="label">文件大小</span>
-            <span class="value">{{(detail.bytes / (1024 * 1024)).toFixed(2)}}M</span>
+            <span class="value">{{detail.fileSize}}M</span>
           </div>
           <div>
             <span class="label">创建时间</span>
-            <span v-convertStr:timestamp="detail.createTime" class="value"></span>
+            <span v-convertStr:timestamp="detail.fileCreationTime" class="value"></span>
           </div>
         </div>
       </div>
@@ -28,7 +28,7 @@
       <p style="margin-top: 0;">相关进程名称</p>
       <div>
         <div v-for="itemInPL in detail.processes" :key="itemInPL.pid" class='processItem'>
-          <img :src="itemInPL.iconUrl" />
+          <img :src="detail.base64Icon" />
           <span>{{itemInPL.name}} ({{itemInPL.pid}})</span>
         </div>
       </div>
@@ -65,7 +65,7 @@ export default {
   methods:{
     initCom(){
       this.$store.dispatch('getSoftwareDetail',this.$route.params.programId).then((res) => {
-        // console.log(res)
+        console.log(res)
         this.detail = res;
         if(this.$route.name !== 'monitoringHistory'){
           this.title='程序进程'
