@@ -147,7 +147,8 @@ export default {
     },
     // 跳转历史记录详情
     goDetail(data){
-      this.$router.push({path: `/programProgress/${this.softwareId}/${data.id}?isFromIndex=${false}`})
+      console.log(data)
+      this.$router.push({path: `/programProgress/${this.softwareId}/${data.id}?isFromIndex=${false}&data=${JSON.stringify(data)}`})
     }
   }
 }

@@ -26,7 +26,7 @@
           plain
           class="softwareBtn"
           @click="openSoftware(softwareData.id)"
-          v-show="!softwareData.processes"
+          v-show="processList.length === 0"
           >打开程序</el-button
         >
         <el-button
@@ -85,7 +85,6 @@
 export default {
   data() {
     return {
-      btnStatus: true,
       itemKey: 0,
       index: 1,
       data: null,
@@ -161,7 +160,6 @@ export default {
         data:{data:{id:res.id}}
       }).then(r => {
         if(r.code === '0'){
-          if(!r.data.processes)(this.btnStatus = true)
           for(let k in r.data){
             this.$set(this.softwareData,k,r.data[k])
           }
@@ -192,10 +190,11 @@ export default {
             data:{data:{id:res.id}}
           }).then(r => {
             if(r.code === '0'){
-              if(!r.data.processes)(this.btnStatus = true)
+              this.softwareData = {};
               for(let k in r.data){
                 this.$set(this.softwareData,k,r.data[k])
               }
+              this.processList = [];
               if(r.data.processes){
                 this.processList = r.data.processes.map((item,index)=>{
                   let obj = {};
@@ -247,7 +246,6 @@ export default {
         }).then(r => {
           if (r.code == "0") {
             this.$store.dispatch('resetSoftwareList')
-            this.btnStatus = false;
           }
         });
       }

@@ -5,7 +5,7 @@
         <img v-if="detailOnff" :src="softwareDetail.base64Icon" class="icon" />
         <span class="name" v-if="detailOnff">{{softwareDetail.softwareName}}</span>
         <span class="status"
-          :style="{color: softwareDetail.status === '已完成' ? '#f7d666' : '#0cab51'}">{{softwareDetail.status}}</span>
+          :style="{color: progressStatus === '已完成' ? '#f7d666' : '#0cab51'}">{{progressStatus}}</span>
       </div>
 
       <div v-if="showMonitorBtn">
@@ -122,6 +122,7 @@
           24576: '修改对象安全描述符'
         },// 操作类型code---text
         buttonText: '', // 按钮文案
+        progressStatus: null,
       }
     },
     created() {
@@ -152,8 +153,13 @@
       async initData() {
         await this.$store.dispatch('getSoftwareDetail', this.$route.params.programId).then((res) => {
           this.softwareDetail = res;
-          this.$route.query.data && (this.softwareDetail.status = JSON.parse(this.$route.query.data).status);
         });
+        // 判断状态
+        if(this.$route.query.isFromIndex == 'true'){
+          this.progressStatus = '监听中';
+        }else{
+          this.progressStatus = JSON.parse(this.$route.query.data).status;
+        }
         if (this.$route.name === 'programProgressFromIndex' || this.$route.name === 'programProgressFromHistory') {
           this.detailOnff = true;
           this.tabContentOnff = true;
