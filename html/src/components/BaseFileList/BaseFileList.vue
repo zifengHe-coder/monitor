@@ -67,6 +67,11 @@ export default {
   created() {
     this.getDisk();
   },
+  beforeDestroy(){
+    this.path = [];
+    this.selectItem = {};
+    this.fileList = [];
+  },
   methods: {
     // 获取系统根目录【Windows对应盘符，Linux对应根目录】
     getDisk() {
@@ -79,13 +84,12 @@ export default {
           data: {}
         }
       }).then((r) => {
-        // console.log(r)
         if (r.code == "0") {
           this.fileList = [];
           r.data.forEach((item) => {
             this.fileList.push({
               path: item.path,
-              name: item.name,
+              name: item.path.slice(0,-1),
               isDirectory: item.directory,
             });
           });
@@ -102,7 +106,6 @@ export default {
     },
     // 获取当前目录下的文件列表
     getList(path, name) {
-      console.log(JSON.parse(JSON.stringify(path)))
       this.$http({
         url: this.$api.softwareListFiles,
         method: "POST",
@@ -110,7 +113,6 @@ export default {
           data:{path: path,}
         },
       }).then((r) => {
-        console.log(r)
         if (r.code == "0") {
           this.path.push({
             path: path,

@@ -8,10 +8,11 @@
       </el-button>
     </div>
     <BaseFileList 
+      v-if="dialogVisible"
       title="选择程序" 
       :visible.sync="dialogVisible" 
       @ensure='chooseExe' 
-      @cancel='dialogVisible = false'>
+      @cancel='cancel'>
     </BaseFileList>
     <div class="softwareList" v-infinite-scroll="getList">
       <div v-for="(itemInSL, key) in $store.state.softwareProcess.softwareList" :key="key">
@@ -109,13 +110,16 @@
           }
         });
       },
+      cancel(){
+        this.dialogVisible = false
+      },
       chooseExe(item) {
         if (!item.isDirectory) {
           this.$http({
-            url: this.$api.apiSoftwareAdd,
+            url: this.$api.softwareAddSoftware,
             method: 'POST',
             data: {
-              path: item.path
+              data:{exePath: item.path}
             }
           }).then((r) => {
             if (r.code === '0') {

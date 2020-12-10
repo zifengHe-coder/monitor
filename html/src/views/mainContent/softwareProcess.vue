@@ -191,6 +191,7 @@ export default {
             method: "POST",
             data:{data:{id:res.id}}
           }).then(r => {
+            console.log(r)
             if(r.code === '0'){
               if(!r.data.processes)(this.btnStatus = true)
               for(let k in r.data){

@@ -608,7 +608,7 @@
         })
       },
       downloadChangeFileDetail(data) {
-        console.log(data);
+        // console.log(data);
         let config = {
           type: +this.currentTab
         };
