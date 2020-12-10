@@ -2,6 +2,7 @@ package com.idaoben.web.monitor.web.controller;
 
 import com.idaoben.web.common.api.bean.ApiPageRequest;
 import com.idaoben.web.common.api.bean.ApiPageResponse;
+import com.idaoben.web.monitor.utils.DownloadUtils;
 import com.idaoben.web.monitor.web.application.ActionApplicationService;
 import com.idaoben.web.monitor.web.command.ActionFileListCommand;
 import com.idaoben.web.monitor.web.command.ActionNetworkListCommand;
@@ -16,12 +17,12 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
 
 @Api(tags="软件行为相关")
 @RestController
@@ -57,5 +58,12 @@ public class ActionController {
     public ApiPageResponse<ActionNetworkDto> listByNetworkType(@RequestBody @Validated ApiPageRequest<ActionNetworkListCommand> request) {
         Page<ActionNetworkDto> result = actionApplicationService.listByNetworkType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "timestamp")));
         return ApiPageResponse.createPageSuccess(result);
+    }
+
+    @ApiOperation("网络包下载")
+    @GetMapping("downloadNetworkPackage")
+    public void downloadNetworkPackage(String uuid, HttpServletResponse response) throws IOException {
+        File file = actionApplicationService.getNetworkFile(uuid);
+        DownloadUtils.sendFileToClient(file, response);
     }
 }

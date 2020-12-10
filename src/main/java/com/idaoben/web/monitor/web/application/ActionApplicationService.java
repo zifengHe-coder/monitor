@@ -3,9 +3,11 @@ package com.idaoben.web.monitor.web.application;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.common.entity.Filters;
+import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.*;
+import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
@@ -107,6 +109,19 @@ public class ActionApplicationService {
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionNetworkDto.class).apply(actions);
+    }
+
+    public File getNetworkFile(String uuid){
+        Action action = actionService.findStrictly(uuid);
+        if(action.getActionGroup() != ActionGroup.NETWORK){
+            throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
+        }
+        File folder = new File(String.format(ACTION_BACKUP_FOLDER_PATH, action.getTaskId(), action.getPid()));
+        if(!folder.exists()){
+            folder = new File(ACTION_FOLDER, action.getPid());
+        }
+        File file = new File(folder, String.valueOf(action.getSocketFd()));
+        return file;
     }
 
     /**
