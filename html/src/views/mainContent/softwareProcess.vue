@@ -221,7 +221,7 @@ export default {
         .dispatch("getSoftwareDetail", this.softwareData.id)
         .then(res => {
           this.$router.push({
-            path: `/programProgress/${this.softwareData.id}`
+            path: `/programProgress/${this.softwareData.id}?data=${JSON.stringify(this.softwareData)}`
           });
         });
     },

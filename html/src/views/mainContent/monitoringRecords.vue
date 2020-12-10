@@ -388,7 +388,7 @@
             }, {
               type: 'word',
               prop: 'destHwnd',
-              label: '消息目表句柄'
+              label: '消息目标句柄'
             }, {
               type: 'word',
               prop: 'srcHwnd',
