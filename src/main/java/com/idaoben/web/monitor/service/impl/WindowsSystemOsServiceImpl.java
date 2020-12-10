@@ -108,7 +108,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
             // 获取 Image 对象的高度和宽度
             int width = image.getWidth(null);
             int height = image.getHeight(null);
-            BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
             Graphics g = bi.getGraphics();
            //通过 BufferedImage 绘制图像并保存在其对象中
             g.drawImage(image, 0, 0, width, height, null);
