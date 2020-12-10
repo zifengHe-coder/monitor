@@ -86,7 +86,7 @@
               ></slot>
 
               <!-- 图片 -->
-              <div v-else-if="item.type === 'image'">
+              <div @click="test(scope.row)" v-else-if="item.type === 'image'">
                 <img
                   :src="scope.row[item.prop]"
                   style="vertical-align: middle;height: 18px;width: 18px;"
@@ -358,6 +358,9 @@ export default {
     }
   },
   methods: {
+    test(row){
+      console.log(row)
+    },
     //保存已修改的单元格的数据
     saveCellChange(data) {
       //TOTEST: 保存单元格的修改后，popover是否关闭？是否更新列表
