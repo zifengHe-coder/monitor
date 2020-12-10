@@ -20,7 +20,7 @@
         <div class="group">
           <div class="groupItem" v-for="(itemInSLL, index) in itemInSL" :key="index">
             <span @click="goOther(itemInSLL)" class="software">
-              <img :src="itemInSLL.iconUrl" style="width: 20px;height: 20px;vertical-align: -webkit-baseline-middle;" />
+              <img :src="itemInSLL.base64Icon" style="width: 20px;height: 20px;vertical-align: -webkit-baseline-middle;" />
               <!-- 软件名称长度超出就显示提示框 -->
               <el-tooltip :disabled="itemInSLL.softwareName.length<29" :content="itemInSLL.name" placement="top"
                 effect="light">
