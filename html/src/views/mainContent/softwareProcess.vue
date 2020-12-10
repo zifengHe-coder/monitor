@@ -138,7 +138,8 @@ export default {
       preAllTime: 0,
       pidArr: [],
       processTimer: null,
-      monitorStatus: ['未监听','监听中','监听失败']
+      monitorStatus: ['未监听','监听中','监听失败'],
+      systemLists: ['windows','linux']
     };
   },
   created() {
@@ -248,6 +249,17 @@ export default {
             this.$store.dispatch('resetSoftwareList')
           }
         });
+        this.$http({
+          url: this.$api.systemGetSystemOs,
+          method: 'GET'
+        }).then(r => {
+          if(r.code === '0'){
+            let system = this.systemLists[r.data-1];
+            if(!sessionStorage.getItem(`${this.softwareData.softwareName}`)){
+              sessionStorage.setItem(`${this.softwareData.softwareName}System`,system)
+            }
+          }
+        })
       }
     },
     //开始监控程序所有进程
@@ -261,7 +273,6 @@ export default {
           }
         }
       }).then(r => {
-        console.log(r);
         if (r.code && r.code == "0") {
           this.$message({
             message: "开启监听成功",

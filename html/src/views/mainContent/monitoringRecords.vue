@@ -32,7 +32,7 @@
           <template v-slot:operationBtn="data">
             <el-button v-if="showBtn(data.scope.row)" size="mini" type="primary"
               @click="data.scope.row.readAndWriteType=='write'?downloadChangeFileDetail(data):downloadFile(data)">
-              {{buttonText}}</el-button>
+              {{changeButtonText(data.scope.row)}}</el-button>
           </template>
         </BaseTableCom>
       </div>
@@ -138,6 +138,21 @@
       }
     },
     methods: {
+      changeButtonText(row){
+        if(this.currentTab === '2'){
+          if(row.opType === '读'){
+            let platform = sessionStorage.getItem(`${this.softwareDetail.softwareName}System`);
+            if(platform === 'windows' && (row.path.indexOf('127.0.0.1') > -1 || row.path.indexOf('localhost') > -1)){
+              this.buttonText = '打开文件位置';
+            }else{
+              this.buttonText = '下载文件'
+            }
+          }else if(row.opType === '写'){
+            this.buttonText = '下载对比文件';
+          }
+        }
+        return this.buttonText;
+      },
       showBtn(row) {
         const arr = ['1','2','4']
         if(arr.includes(this.currentTab)){
@@ -217,7 +232,11 @@
             }, {
               type: 'word',
               prop: 'host',
-              label: '目的IP地址'
+              label: 'IP地址'
+            }, {
+              type: 'word',
+              prop: 'post',
+              label: '端口'
             }, {
               type: 'word',
               prop: 'protocol',
@@ -503,12 +522,14 @@
         let params = JSON.parse(
           sessionStorage.getItem(`${this.comData.id}Page`)
         );
-        this.getList(params).then((res) => {
-          clearTimeout(timer)
-          timer = setTimeout(() => {
-            this.updateList();
-          }, 2000)
-        })
+        if(this.$route.query.isFromIndex == 'true'){
+          this.getList(params).then((res) => {
+            clearTimeout(timer)
+            timer = setTimeout(() => {
+              this.updateList();
+            }, 2000)
+          })
+        }
       },
       // 处理列表搜索条件
       handleParams(params) {
