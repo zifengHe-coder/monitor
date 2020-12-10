@@ -2,6 +2,7 @@ package com.idaoben.web.monitor.web.application;
 
 import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
+import com.idaoben.web.common.util.DateTimeUtils;
 import com.idaoben.web.monitor.dao.entity.Favorite;
 import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
@@ -25,6 +26,8 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.io.File;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -64,6 +67,13 @@ public class SoftwareApplicationService {
         Map<String, String> tempExeNameSoftwareIdMap = new HashMap<>();
         softwares.forEach(software -> {
             software.setFavorite(favoriteSoftwareIds.contains(software.getId()));
+            if(StringUtils.isNotEmpty(software.getExePath())){
+                File exeFile = new File(software.getExePath());
+                if(exeFile.exists()){
+                    software.setFileSize(new BigDecimal(exeFile.length()).divide(new BigDecimal(1048576), 2, RoundingMode.HALF_UP));
+                    software.setFileCreationTime(DateTimeUtils.convertZonedDateTime(new Date(exeFile.lastModified())));
+                }
+            }
             tempSoftwareMap.put(software.getId(), software);
             if(StringUtils.isNotEmpty(software.getExeName())){
                 tempExeNameSoftwareIdMap.put(software.getExeName().toLowerCase(), software.getId());
@@ -121,7 +131,7 @@ public class SoftwareApplicationService {
                 process.setPid(String.valueOf(processJson.getPid()));
                 process.setName(processJson.getImageName());
                 //TODO：CPU使用时间待补充
-                process.setMemory(Float.parseFloat(processJson.getWsPrivateBytes()) / 1000);
+                process.setMemory(Float.parseFloat(processJson.getWsPrivateBytes()) / 1024);
                 if(systemOsService.isAutoMonitorChildProcess()){
                     //需要自动监听子进程的，则根据具体的当前监听进程判断
                     MonitorStatus monitorStatus;
