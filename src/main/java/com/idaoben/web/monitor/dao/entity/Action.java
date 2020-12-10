@@ -5,10 +5,7 @@ import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
 import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.ZonedDateTime;
 
 @Entity
@@ -66,6 +63,10 @@ public class Action {
     @Column
     private Long bytes;
 
+    @Description("多个写入数据时的包大小集合，逗号分隔")
+    @Column(length = 4000)
+    private String writeBytes;
+
     @Description("文件路径/如果创建远程线程时执行的thread")
     @Column
     private String path;
@@ -96,8 +97,12 @@ public class Action {
     private String fd;
 
     @Description("写入数据偏移量")
-    @Column(name = "write_offset")
+    @Transient
     private Long offset;
+
+    @Description("多个写入数据时的偏移量集合，逗号分隔")
+    @Column(length = 4000)
+    private String writeOffsets;
 
     @Description("注册表父键")
     @Column
@@ -389,5 +394,21 @@ public class Action {
 
     public void setSrcHwnd(String srcHwnd) {
         this.srcHwnd = srcHwnd;
+    }
+
+    public String getWriteBytes() {
+        return writeBytes;
+    }
+
+    public void setWriteBytes(String writeBytes) {
+        this.writeBytes = writeBytes;
+    }
+
+    public String getWriteOffsets() {
+        return writeOffsets;
+    }
+
+    public void setWriteOffsets(String writeOffsets) {
+        this.writeOffsets = writeOffsets;
     }
 }
