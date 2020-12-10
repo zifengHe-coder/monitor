@@ -128,7 +128,7 @@ public class Action {
     private String oldData;
 
     @Description("启动进程的完整命令行数据")
-    @Column
+    @Column(length = 2000)
     private String cmdLine;
 
     @Description("创建远程线程时提供的入口函数地址 ")

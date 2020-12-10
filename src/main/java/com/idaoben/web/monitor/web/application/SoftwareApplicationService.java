@@ -212,6 +212,15 @@ public class SoftwareApplicationService {
                     }
                 }
             }
+
+            //判断当前是否有正在监控的进程已关闭的，如果已经关闭主动结束监听
+            Set<String> monitoringSoftwareIds = monitorApplicationService.getMonitoringSoftwareIds();
+            for(String monitoringSoftwareId : monitoringSoftwareIds){
+                if(!tempProcessMaps.containsKey(monitoringSoftwareId)){
+                    monitorApplicationService.stopMonitor(monitoringSoftwareId, false);
+                }
+            }
+
             processMaps = tempProcessMaps;
         }
     }
