@@ -4,7 +4,7 @@
     <div class="softwareDetail">
       <div class="softwareInfo">
         <div class="softwareName">
-          <img :src="softwareData.iconUrl" alt="" />
+          <img :src="softwareData.base64Icon" alt="" />
           <span>{{ softwareData.softwareName }}</span>
           <span>{{ softwareData.monitoring ? "监听中" : "未监听" }}</span>
         </div>
@@ -14,11 +14,11 @@
         </p>
         <p>
           <span>文件大小</span>
-          <span>{{ softwareData.bytes | bytesMb }}</span>
+          <span>{{ softwareData.fileSize}}M</span>
         </p>
         <p>
           <span>创建时间</span>
-          <span>{{ softwareData.createTime | renderTime }}</span>
+          <span>{{ softwareData.fileCreationTime}}</span>
         </p>
       </div>
       <div class="softwareOperation">
@@ -142,20 +142,6 @@ export default {
       monitorStatus: ['未监听','监听中','监听失败']
     };
   },
-  filters: {
-    //字节大小转换M
-    bytesMb(num) {
-      return (Number(num) / 1024 / 1024).toFixed(2) + "M";
-    },
-    //时间格式处理
-    renderTime(date) {
-      var dateee = new Date(date).toJSON();
-      return new Date(+new Date(dateee) + 8 * 3600 * 1000)
-        .toISOString()
-        .replace(/T/g, " ")
-        .replace(/\.[\d]{3}Z/, "");
-    }
-  },
   created() {
     if (this.$route.params.data) {
       sessionStorage.setItem(
@@ -214,7 +200,7 @@ export default {
                 this.processList = r.data.processes.map((item,index)=>{
                   let obj = {};
                   obj.id = Number(index) > 9 ? Number(index)+1 : '0'+(Number(index)+1);
-                  obj.processName = item.name;
+                  obj.processName = item.name+'/exe/'+r.data.base64Icon;
                   obj.pid = item.pid;
                   obj.wsPrivateBytes = Math.floor(item.memory);
                   obj.cpu = (0).toFixed(2);
@@ -259,7 +245,6 @@ export default {
             data:{id}
           }
         }).then(r => {
-          console.log(r);
           if (r.code == "0") {
             this.$store.dispatch('resetSoftwareList')
             this.btnStatus = false;
