@@ -119,12 +119,15 @@ public class MonitorApplicationService {
     }
 
     public void stopMonitor(SoftwareIdCommand command){
-        String softwareId = command.getId();
+        stopMonitor(command.getId(), true);
+    }
+
+    public void stopMonitor(String softwareId, boolean needRemove){
         MonitoringTask monitoringTask = monitoringSoftwareTaskMap.get(softwareId);
         if(monitoringTask != null){
             List<String> successPids = new ArrayList<>();
             for(String pid : monitoringTask.getPids()){
-                boolean result = systemOsService.removeHooks(Integer.valueOf(pid));
+                boolean result = needRemove ? systemOsService.removeHooks(Integer.valueOf(pid)) : true;
                 if(result){
                     actionApplicationService.stopActionScan(pid);
                     successPids.add(pid);
@@ -137,7 +140,7 @@ public class MonitorApplicationService {
 
         //查询当前软件是否还有未完全的监听任务，把任务置为完成
         setTaskComplete(softwareId);
-        monitoringSoftwareTaskMap.remove(command.getId());
+        monitoringSoftwareTaskMap.remove(softwareId);
     }
 
     public void startAndMonitor(SoftwareIdCommand command){
