@@ -200,7 +200,7 @@ export default {
                 this.processList = r.data.processes.map((item,index)=>{
                   let obj = {};
                   obj.id = Number(index) > 9 ? Number(index)+1 : '0'+(Number(index)+1);
-                  obj.processName = item.name;
+                  obj.processName = item.name+'/exe/'+r.data.base64Icon;
                   obj.pid = item.pid;
                   obj.wsPrivateBytes = Math.floor(item.memory);
                   obj.cpu = (0).toFixed(2);

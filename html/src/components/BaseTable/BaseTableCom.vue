@@ -86,15 +86,14 @@
               ></slot>
 
               <!-- 图片 -->
-              <div @click="test(scope.row)" v-else-if="item.type === 'image'">
+              <div v-else-if="item.type === 'image'">
                 <img
-                  :src="scope.row[item.prop]"
+                  :src="handleRowImage(scope.row,item.prop)"
                   style="vertical-align: middle;height: 18px;width: 18px;"
                 />
                 <span
                   style="margin-left:5px"
-                  v-text="getCellWord(scope, item)"
-                ></span>
+                >{{handleRowText(scope.row,item.prop)}}</span>
               </div>
 
               <!-- 其他表单元素 -->
@@ -358,8 +357,15 @@ export default {
     }
   },
   methods: {
-    test(row){
-      console.log(row)
+    // 处理格仔中的文本
+    handleRowText(row,prop){
+      let text = row[prop].split('/exe/')[0];
+      return text;
+    },
+    // 处理格仔中的图标
+    handleRowImage(row,prop){
+      let img = row[prop].split('/exe/')[1];
+      return img;
     },
     //保存已修改的单元格的数据
     saveCellChange(data) {
