@@ -522,12 +522,14 @@
         let params = JSON.parse(
           sessionStorage.getItem(`${this.comData.id}Page`)
         );
-        this.getList(params).then((res) => {
-          clearTimeout(timer)
-          timer = setTimeout(() => {
-            this.updateList();
-          }, 2000)
-        })
+        if(this.$route.query.isFromIndex == 'true'){
+          this.getList(params).then((res) => {
+            clearTimeout(timer)
+            timer = setTimeout(() => {
+              this.updateList();
+            }, 2000)
+          })
+        }
       },
       // 处理列表搜索条件
       handleParams(params) {
