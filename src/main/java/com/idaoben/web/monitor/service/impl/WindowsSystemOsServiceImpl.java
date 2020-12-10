@@ -14,9 +14,11 @@ import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -101,9 +103,19 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
         ByteArrayOutputStream os = null;
         try {
             ImageIcon icon = (ImageIcon) fileSystemView.getSystemIcon(file);
-            BufferedImage image = (BufferedImage) icon.getImage();
+            Image image = icon.getImage();
+
+            // 获取 Image 对象的高度和宽度
+            int width = image.getWidth(null);
+            int height = image.getHeight(null);
+            BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            Graphics g = bi.getGraphics();
+           //通过 BufferedImage 绘制图像并保存在其对象中
+            g.drawImage(image, 0, 0, width, height, null);
+            g.dispose();
+
             os = new ByteArrayOutputStream();
-            ImageIO.write(image, "png", os);
+            ImageIO.write(bi, "png", os);
             return String.format("data:image/png;base64,%s", Base64.getEncoder().encodeToString(os.toByteArray()));
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
