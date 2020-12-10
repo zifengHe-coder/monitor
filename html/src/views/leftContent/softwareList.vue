@@ -8,10 +8,11 @@
       </el-button>
     </div>
     <BaseFileList 
+      v-if="dialogVisible"
       title="选择程序" 
       :visible.sync="dialogVisible" 
       @ensure='chooseExe' 
-      @cancel='dialogVisible = false'>
+      @cancel='cancel'>
     </BaseFileList>
     <div class="softwareList" v-infinite-scroll="getList">
       <div v-for="(itemInSL, key) in $store.state.softwareProcess.softwareList" :key="key">
@@ -19,7 +20,7 @@
         <div class="group">
           <div class="groupItem" v-for="(itemInSLL, index) in itemInSL" :key="index">
             <span @click="goOther(itemInSLL)" class="software">
-              <img :src="itemInSLL.iconUrl" style="width: 20px;height: 20px;vertical-align: -webkit-baseline-middle;" />
+              <img :src="itemInSLL.base64Icon" style="width: 20px;height: 20px;vertical-align: -webkit-baseline-middle;" />
               <!-- 软件名称长度超出就显示提示框 -->
               <el-tooltip :disabled="itemInSLL.softwareName.length<29" :content="itemInSLL.name" placement="top"
                 effect="light">
@@ -109,13 +110,16 @@
           }
         });
       },
+      cancel(){
+        this.dialogVisible = false
+      },
       chooseExe(item) {
         if (!item.isDirectory) {
           this.$http({
-            url: this.$api.apiSoftwareAdd,
+            url: this.$api.softwareAddSoftware,
             method: 'POST',
             data: {
-              path: item.path
+              data:{exePath: item.path}
             }
           }).then((r) => {
             if (r.code === '0') {
