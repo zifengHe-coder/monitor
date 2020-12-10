@@ -33,7 +33,7 @@
           plain
           class="softwareBtn"
           @click="startMonitor(softwareData.id)"
-          v-show="softwareData.processes && !softwareData.monitoring"
+          v-show="processList.length>0 && !softwareData.monitoring"
           >开始监听</el-button
         >
         <el-button

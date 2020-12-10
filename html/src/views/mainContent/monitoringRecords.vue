@@ -8,9 +8,9 @@
           :style="{color: progressStatus === '已完成' ? '#f7d666' : '#0cab51'}">{{progressStatus}}</span>
       </div>
 
-      <div v-if="showMonitorBtn">
-        <input type="button" class="monitorBtn" v-if='historyDetail.status === 0' @click="stopMonitor" value="停止监听" />
-        <input type="button" class="monitorBtn" v-else @click="starMonitor" value="开始监听" />
+      <div>
+        <input type="button" class="monitorBtn" v-if='progressStatus === "监听中"' @click="stopMonitor" value="停止监听" />
+        <!-- <input type="button" class="monitorBtn" v-else @click="starMonitor" value="开始监听" /> -->
       </div>
     </div>
     <div class="softwareDetail">
@@ -523,12 +523,14 @@
           sessionStorage.getItem(`${this.comData.id}Page`)
         );
         if(this.$route.query.isFromIndex == 'true'){
-          this.getList(params).then((res) => {
-            clearTimeout(timer)
-            timer = setTimeout(() => {
-              this.updateList();
-            }, 2000)
-          })
+          if(this.progressStatus === '监听中'){
+            this.getList(params).then((res) => {
+              clearTimeout(timer)
+              timer = setTimeout(() => {
+                this.updateList();
+              }, 2000)
+            })
+          }
         }
       },
       // 处理列表搜索条件
@@ -717,20 +719,19 @@
       },
       stopMonitor() {
         this.$http({
-          url: this.$api.apiProcessStopMonitorSoftware,
+          url: this.$api.monitorStopMonitor,
           method: 'POST',
           data: {
-            name: this.softwareDetail.name,
-            pidArr: JSON.stringify(this.processList.map(item => item.pid))
+            data:{id: this.softwareDetail.id}
           }
         }).then((r) => {
           if (r.code === '0') {
             this.$message.success('关闭监控成功');
-            this.getHistoryLatestOne();
             let params = JSON.parse(
               sessionStorage.getItem(`${this.comData.id}Page`)
             );
             this.getList(params);
+            this.progressStatus = '已完成';
           }
         })
       },
