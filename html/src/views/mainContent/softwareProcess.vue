@@ -191,7 +191,6 @@ export default {
             method: "POST",
             data:{data:{id:res.id}}
           }).then(r => {
-            console.log(r)
             if(r.code === '0'){
               if(!r.data.processes)(this.btnStatus = true)
               for(let k in r.data){
@@ -221,7 +220,7 @@ export default {
         .dispatch("getSoftwareDetail", this.softwareData.id)
         .then(res => {
           this.$router.push({
-            path: `/programProgress/${this.softwareData.id}?data=${JSON.stringify(this.softwareData)}`
+            path: `/programProgress/${this.softwareData.id}?isFromIndex=${true}`
           });
         });
     },

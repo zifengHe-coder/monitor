@@ -27,9 +27,9 @@
     <div class="processList" v-if="processListOnff">
       <p style="margin-top: 0;">相关进程名称</p>
       <div>
-        <div v-for="itemInPL in processList" :key="itemInPL.pid" class='processItem'>
+        <div v-for="itemInPL in detail.processes" :key="itemInPL.pid" class='processItem'>
           <img :src="detail.base64Icon" />
-          <span>{{itemInPL.softwareName}} ({{itemInPL.pid}})</span>
+          <span>{{itemInPL.name}} ({{itemInPL.pid}})</span>
         </div>
       </div>
     </div>
@@ -63,30 +63,6 @@ export default {
     }
   },
   methods:{
-    getRelativeProgress(){
-      // 获取相关的进程列表
-      console.log(JSON.parse(this.$route.query.data))
-      let params = {};
-      params.softwareId = JSON.parse(this.$route.query.data).softwareId ? JSON.parse(this.$route.query.data).softwareId : JSON.parse(this.$route.query.data).id;
-      this.$http({
-        url: this.$api.monitorListTask,
-        method: 'POST',
-        data: {
-          data:{...params}
-        }
-      }).then((r) => {
-        console.log(r)
-        if (r.code === '0') {
-          this.processList = r.data;
-          this.processList.forEach((item,index)=>{
-            item.order=r.pageNo*r.pageSize+index+1
-            item.startTime=this.$utils.funcData.formDateGMT(item.startTime)
-            item.endTime=this.$utils.funcData.formDateGMT(item.endTime)
-            item.status = item.complete? '已完成':'未完成'
-          })
-        }
-      })
-    },
     initCom(){
       this.$store.dispatch('getSoftwareDetail',this.$route.params.programId).then((res) => {
         this.detail = res;
@@ -96,9 +72,10 @@ export default {
           this.title='监听历史'
         }
       });
-      this.processListOnff = this.$route.path.includes('/programProgress') ? true : false;
-      if(this.processListOnff){
-        this.getRelativeProgress();
+      if(this.$route.query.isFromIndex == 'true'){
+        this.processListOnff = true
+      }else{
+        this.processListOnff = false
       }
     },
     goPage(detail){
