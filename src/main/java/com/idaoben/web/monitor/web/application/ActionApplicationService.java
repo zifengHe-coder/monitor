@@ -53,11 +53,13 @@ public class ActionApplicationService {
 
     private Map<String, Long> actionSkipMap = new ConcurrentHashMap<>();
 
-    private Map<String, Map<String, NetworkInfo>> socketFdNetworkMap = new HashMap<>();
+    private Map<String, Map<String, NetworkInfo>> socketFdNetworkMap = new ConcurrentHashMap<>();
 
-    private Map<String, Map<String, NetworkInfo>> refNetworkMap = new HashMap<>();
+    private Map<String, Map<String, NetworkInfo>> refNetworkMap = new ConcurrentHashMap<>();
 
-    private Map<String, Map<String, FileInfo>> fdFileMap = new HashMap<>();
+    private Map<String, Map<String, FileInfo>> fdFileMap = new ConcurrentHashMap<>();
+
+    private Map<String, Map<String, Action>> writeFileMap = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init(){
@@ -200,6 +202,8 @@ public class ActionApplicationService {
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
+
+        clearPidCache(pid);
     }
 
     private void clearPidCache(String pid){
@@ -207,6 +211,7 @@ public class ActionApplicationService {
         socketFdNetworkMap.remove(pid);
         refNetworkMap.remove(pid);
         fdFileMap.remove(pid);
+        writeFileMap.remove(pid);
     }
 
     /**
@@ -275,9 +280,22 @@ public class ActionApplicationService {
             if(fdFileInfoMap != null){
                 FileInfo fileInfo = fdFileInfoMap.get(action.getFd());
                 if(fileInfo != null){
-                    action.setFileName(fileInfo.getFileName());
-                    action.setSensitivity(fileInfo.getSensitivity());
-                    action.setPath(fileInfo.getPath());
+                    //查下是否有对上一个相同FD写入记录，有记录的话只做更新操作
+                    Map<String, Action> actionMap = writeFileMap.computeIfAbsent(pid, p -> new HashMap<>());
+                    Action originAction = actionMap.get(action.getFd());
+                    if(originAction == null){
+                        originAction = action;
+                        originAction.setFileName(fileInfo.getFileName());
+                        originAction.setSensitivity(fileInfo.getSensitivity());
+                        originAction.setPath(fileInfo.getPath());
+                        originAction.setWriteOffsets(String.valueOf(action.getOffset()));
+                        originAction.setWriteBytes(String.valueOf(action.getBytes()));
+                        actionMap.put(originAction.getFd(), originAction);
+                    } else {
+                        originAction.setWriteOffsets(String.format("%s,%d", originAction.getWriteOffsets(), action.getOffset()));
+                        originAction.setWriteBytes(String.format("%s,%d", originAction.getWriteBytes(), action.getBytes()));
+                    }
+                    return originAction;
                 } else {
                     //找不到对应文件，不做记录
                     return null;
