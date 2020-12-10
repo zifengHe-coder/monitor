@@ -45,11 +45,11 @@ public interface ActionProcessDto {
 
     @ApiModelProperty("消息发送目标窗口的句柄")
     @Mapping
-    String getDestHwnd();
+    Integer getDestHwnd();
 
     @ApiModelProperty("消息发送源窗口的句柄")
     @Mapping
-    String getSrcHwnd();
+    Integer getSrcHwnd();
 
     @ApiModelProperty("发送数据(HEX编码)")
     @Mapping

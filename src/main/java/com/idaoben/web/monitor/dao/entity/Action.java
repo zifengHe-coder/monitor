@@ -45,7 +45,7 @@ public class Action {
 
     @Description("网络套接字描述符")
     @Column
-    private String socketFd;
+    private Integer socketFd;
 
     @Description("目标主机")
     @Column
@@ -57,7 +57,7 @@ public class Action {
 
     @Description("参考字段")
     @Column
-    private String ref;
+    private Integer ref;
 
     @Description("数据包大小")
     @Column
@@ -82,7 +82,7 @@ public class Action {
 
     @Description("打开文件时要求的访问权限")
     @Column
-    private String access;
+    private Long access;
 
     @Description("文件是否普通文件")
     @Column
@@ -94,7 +94,7 @@ public class Action {
 
     @Description("文件描述符")
     @Column
-    private String fd;
+    private Long fd;
 
     @Description("写入数据偏移量")
     @Transient
@@ -142,19 +142,11 @@ public class Action {
 
     @Description("消息发送目标窗口的句柄")
     @Column
-    private String destHwnd;
+    private Integer destHwnd;
 
     @Description("消息发送源窗口的句柄")
     @Column
-    private String srcHwnd;
-
-    public Boolean getWithAttachment() {
-        return withAttachment;
-    }
-
-    public void setWithAttachment(Boolean withAttachment) {
-        this.withAttachment = withAttachment;
-    }
+    private Integer srcHwnd;
 
     public String getUuid() {
         return uuid;
@@ -170,6 +162,14 @@ public class Action {
 
     public void setTimestamp(ZonedDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public Boolean getWithAttachment() {
+        return withAttachment;
+    }
+
+    public void setWithAttachment(Boolean withAttachment) {
+        this.withAttachment = withAttachment;
     }
 
     public Long getTaskId() {
@@ -204,11 +204,11 @@ public class Action {
         this.type = type;
     }
 
-    public String getSocketFd() {
+    public Integer getSocketFd() {
         return socketFd;
     }
 
-    public void setSocketFd(String socketFd) {
+    public void setSocketFd(Integer socketFd) {
         this.socketFd = socketFd;
     }
 
@@ -228,11 +228,11 @@ public class Action {
         this.port = port;
     }
 
-    public String getRef() {
+    public Integer getRef() {
         return ref;
     }
 
-    public void setRef(String ref) {
+    public void setRef(Integer ref) {
         this.ref = ref;
     }
 
@@ -242,6 +242,14 @@ public class Action {
 
     public void setBytes(Long bytes) {
         this.bytes = bytes;
+    }
+
+    public String getWriteBytes() {
+        return writeBytes;
+    }
+
+    public void setWriteBytes(String writeBytes) {
+        this.writeBytes = writeBytes;
     }
 
     public String getPath() {
@@ -268,11 +276,11 @@ public class Action {
         this.sensitivity = sensitivity;
     }
 
-    public String getAccess() {
+    public Long getAccess() {
         return access;
     }
 
-    public void setAccess(String access) {
+    public void setAccess(Long access) {
         this.access = access;
     }
 
@@ -292,11 +300,11 @@ public class Action {
         this.backup = backup;
     }
 
-    public String getFd() {
+    public Long getFd() {
         return fd;
     }
 
-    public void setFd(String fd) {
+    public void setFd(Long fd) {
         this.fd = fd;
     }
 
@@ -306,6 +314,14 @@ public class Action {
 
     public void setOffset(Long offset) {
         this.offset = offset;
+    }
+
+    public String getWriteOffsets() {
+        return writeOffsets;
+    }
+
+    public void setWriteOffsets(String writeOffsets) {
+        this.writeOffsets = writeOffsets;
     }
 
     public String getParent() {
@@ -380,35 +396,19 @@ public class Action {
         this.threadEntryAddress = threadEntryAddress;
     }
 
-    public String getDestHwnd() {
+    public Integer getDestHwnd() {
         return destHwnd;
     }
 
-    public void setDestHwnd(String destHwnd) {
+    public void setDestHwnd(Integer destHwnd) {
         this.destHwnd = destHwnd;
     }
 
-    public String getSrcHwnd() {
+    public Integer getSrcHwnd() {
         return srcHwnd;
     }
 
-    public void setSrcHwnd(String srcHwnd) {
+    public void setSrcHwnd(Integer srcHwnd) {
         this.srcHwnd = srcHwnd;
-    }
-
-    public String getWriteBytes() {
-        return writeBytes;
-    }
-
-    public void setWriteBytes(String writeBytes) {
-        this.writeBytes = writeBytes;
-    }
-
-    public String getWriteOffsets() {
-        return writeOffsets;
-    }
-
-    public void setWriteOffsets(String writeOffsets) {
-        this.writeOffsets = writeOffsets;
     }
 }
