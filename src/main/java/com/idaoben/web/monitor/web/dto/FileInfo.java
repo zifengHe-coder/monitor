@@ -4,7 +4,7 @@ import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 
 public class FileInfo {
 
-    private Long fd;
+    private String fd;
 
     private String fileName;
 
@@ -12,18 +12,18 @@ public class FileInfo {
 
     private FileSensitivity sensitivity;
 
-    public FileInfo(Long fd, String fileName, String path, FileSensitivity sensitivity) {
+    public FileInfo(String fd, String fileName, String path, FileSensitivity sensitivity) {
         this.fd = fd;
         this.fileName = fileName;
         this.path = path;
         this.sensitivity = sensitivity;
     }
 
-    public Long getFd() {
+    public String getFd() {
         return fd;
     }
 
-    public void setFd(Long fd) {
+    public void setFd(String fd) {
         this.fd = fd;
     }
 
