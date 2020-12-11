@@ -291,7 +291,6 @@ export default {
           data: {id: this.softwareData.id }
         }
       }).then(r => {
-        console.log(r);
         if (r.code && r.code == "0") {
           this.$message({
             message: "关闭监听成功",

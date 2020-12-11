@@ -152,10 +152,11 @@
       },
       // 下载网络包
       downloadNetworkPackage(data){
-        console.log(data)
+        // console.log(data)
         let a = document.createElement('a');
         a.href = location.origin+'/api/'+this.$api.actionDownloadNetworkPackage+`?uuid=${data.uuid}`;
         a.download = 'newworkPackage';
+        console.log(a)
         a.click()
 
       },
@@ -173,11 +174,10 @@
       // 下载文件
       downloadFile(data){
         let a = document.createElement('a');
-        a.href = location.origin+'/api/'+this.$api.systemDownloadFile+`?path=${data.path}`;
-        a.download = '文件'
+        a.href = window.location.origin+this.$api.systemDownloadFile+`?path=${data.path}`;
+        a.download = window.location.origin+this.$api.systemDownloadFile+`?path=${data.path}`;
         a.click();
-        console.log(a.href)
-        console.log(data.path)
+        // console.log(a.href)
       },
       changeButtonText(row){
         let text = '';
@@ -392,6 +392,10 @@
               type: 'word',
               prop: 'type',
               label: '操作类型'
+            }, {
+              type: 'word',
+              prop: 'parent',
+              label: '父键'
             }, {
               type: 'word',
               prop: 'key',
@@ -650,7 +654,6 @@
           }).then((r) => {
             if (r.code === '0') {
               this.tableData = this.handleResult(r.data);
-              console.log(JSON.parse(JSON.stringify(this.tableData)))
               this.totalItems = r.totalItems;
               res(r.data);
             }

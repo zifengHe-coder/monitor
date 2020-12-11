@@ -19,7 +19,7 @@ let apiArr = [
 
   "system/getSystemOs", // 查询当前系统
   "system/openFileFolder", // 打开文件位置
-  "system/downloadFile", // 下载文件
+  "/api/system/downloadFile", // 下载文件
 ];
 
 const exportObj = {};
@@ -45,7 +45,6 @@ const exportObj = {};
 apiArr.forEach((api) => {
   if (api.indexOf('/api/') !== -1) {
     const tplApi = api.split('/api/')[1]
-    console.log(tplApi)
     if (process.env.NODE_ENV === 'development') {
       exportObj[tplApi.replace(/\/./g, char => char.substring(1).toUpperCase())] = `/api/${tplApi}`
     } else {
