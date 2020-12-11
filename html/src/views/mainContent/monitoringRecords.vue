@@ -488,6 +488,7 @@
             break;
             break;
           case 5:
+            this.funcApi = this.$api.actionListByDeviceType;
             this.searchLabels = [{
               type: 'input',
               prop: 'fileName',
@@ -506,11 +507,11 @@
               label: '操作时间'
             }, {
               type: 'word',
-              prop: 'fileName',
+              prop: 'deviceName',
               label: '设备名称'
             }, {
               type: 'word',
-              prop: 'fileLocation',
+              prop: 'deviceId',
               label: '设备ID'
             }]
             this.hasOperation = false
@@ -625,6 +626,7 @@
             })
             return data;
           case 'softwareDetail_5':
+            return data;
         }
       },
       getList(params) {
