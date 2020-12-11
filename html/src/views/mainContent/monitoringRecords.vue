@@ -152,10 +152,10 @@
       },
       // 下载网络包
       downloadNetworkPackage(data){
-        // console.log(data)
+        console.log(data)
         let a = document.createElement('a');
-        a.href = location.origin+'/api/'+this.$api.actionDownloadNetworkPackage+`?uuid=${data.uuid}`;
-        a.download = 'newworkPackage';
+        a.href = location.origin+'/api/system/downloadFile'+`?uuid=${data.uuid}`;
+        a.download = 'networkPackage';
         console.log(a)
         a.click()
 
