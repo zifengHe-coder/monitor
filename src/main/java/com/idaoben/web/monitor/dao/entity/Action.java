@@ -64,7 +64,7 @@ public class Action {
     private Long bytes;
 
     @Description("多个写入数据时的包大小集合，逗号分隔")
-    @Column(length = 4000)
+    @Column(name = "write_bytes", columnDefinition = "MEDIUMTEXT COMMENT '数据集'")
     private String writeBytes;
 
     @Description("文件路径/如果创建远程线程时执行的thread")
@@ -101,7 +101,7 @@ public class Action {
     private Long offset;
 
     @Description("多个写入数据时的偏移量集合，逗号分隔")
-    @Column(length = 4000)
+    @Column(name = "write_offsets", columnDefinition = "MEDIUMTEXT COMMENT '偏移量'")
     private String writeOffsets;
 
     @Description("注册表父键")
@@ -129,7 +129,7 @@ public class Action {
     private String oldValueType;
 
     @Description("值键原有值")
-    @Column
+    @Column(name = "old_data", columnDefinition = "MEDIUMTEXT COMMENT '原数据'")
     private String oldData;
 
     @Description("启动进程的完整命令行数据")

@@ -301,13 +301,38 @@ public class ActionApplicationService {
                         originAction.setFileName(fileInfo.getFileName());
                         originAction.setSensitivity(fileInfo.getSensitivity());
                         originAction.setPath(fileInfo.getPath());
-                        originAction.setWriteOffsets(String.valueOf(action.getOffset()));
+                        originAction.setWriteOffsets(action.getOffset() == null ? "" : String.valueOf(action.getOffset()));
                         originAction.setWriteBytes(String.valueOf(action.getBytes()));
                         actionMap.put(originAction.getFd(), originAction);
                     } else {
                         originAction.setTimestamp(action.getTimestamp());
-                        originAction.setWriteOffsets(String.format("%s,%d", originAction.getWriteOffsets(), action.getOffset()));
-                        originAction.setWriteBytes(String.format("%s,%d", originAction.getWriteBytes(), action.getBytes()));
+                        //空的时候是写到最后，写到最后时仅仅直接修改已写入量，不再追加记录
+                        if(action.getOffset() == null){
+                            //取最后写入量，并且进行写入量重新计算填充
+                            String writeOffsets = action.getWriteOffsets() == null ? "" :  action.getWriteOffsets();
+                            int lastIndex = writeOffsets.lastIndexOf(',');
+                            String preOffset = null;
+                            String currentOffset;
+                            if(lastIndex >= 0){
+                                preOffset = writeOffsets.substring(0, lastIndex + 1);
+                                currentOffset = writeOffsets.substring(lastIndex + 1);
+                            } else {
+                                currentOffset = writeOffsets;
+                            }
+                            //currentOffset为空表示原来的都是写入到最后的，不用做更新了
+                            if(currentOffset.length() > 0) {
+                                long offset = Long.parseLong(currentOffset);
+                                offset += action.getOffset();
+                                if(preOffset == null){
+                                    action.setWriteOffsets(String.valueOf(offset));
+                                } else {
+                                    action.setWriteOffsets(String.format("%s,%d", preOffset, action.getOffset()));
+                                }
+                            }
+                        } else {
+                            originAction.setWriteOffsets(String.format("%s,%d", originAction.getWriteOffsets(), action.getOffset()));
+                            originAction.setWriteBytes(String.format("%s,%d", originAction.getWriteBytes(), action.getBytes()));
+                        }
                     }
                     action = originAction;
                 } else {
@@ -352,7 +377,7 @@ public class ActionApplicationService {
 
     private void setActionNetworkInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.NETWORK);
-        if(action.getType() == ActionType.NETWORK_TCP_SEND){
+        if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
             if(StringUtils.isNotEmpty(action.getHost())){
                 Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
                 socketFdNetworkInfoMap.put(action.getSocketFd(), new NetworkInfo(action.getHost(), action.getPort()));
