@@ -31,7 +31,7 @@
           :style="{height: 'calc(100% - 100px)'}" :tableStyle="{ height: 'calc(100% - 49px)', 'padding-top': '0'}">
           <template v-slot:operationBtn="data">
             <el-button v-if="showBtn(data.scope.row)" size="mini" type="primary"
-              @click="data.scope.row.readAndWriteType=='write'?downloadChangeFileDetail(data):downloadFile(data)">
+              @click="changeClickEvent(data.scope.row)">
               {{changeButtonText(data.scope.row)}}</el-button>
           </template>
         </BaseTableCom>
@@ -138,20 +138,67 @@
       }
     },
     methods: {
+      changeClickEvent(row){
+        if(this.currentTab == '2'){
+          switch(this.buttonText){
+            case '打开文件位置':
+              this.openFile(row);
+            case '下载文件':
+              this.downloadFile(row);
+            case '下载对比文件':
+          }
+        }else if (this.currentTab == '1'){
+          this.downloadNetworkPackage(row);
+        }
+      },
+      // 下载网络包
+      downloadNetworkPackage(data){
+        console.log(data)
+        let a = document.createElement('a');
+        a.href = location.origin+'/api/'+this.$api.actionDownloadNetworkPackage+`?uuid=${data.uuid}`;
+        a.download = 'newworkPackage';
+        a.click()
+
+      },
+      // 打开文件位置
+      openFile(data){
+        let path = data.path;
+        this.$http({
+          url: this.$api.systemOpenFileFolder,
+          method: 'POST',
+          data: {data:{path}}
+        }).then(r => {
+          console.log(r)
+        })
+      },
+      // 下载文件
+      downloadFile(data){
+        let a = document.createElement('a');
+        a.href = location.origin+'/api/'+this.$api.systemDownloadFile+`?path=${data.path}`;
+        a.download = '文件'
+        a.click();
+        console.log(a.href)
+        console.log(data.path)
+      },
       changeButtonText(row){
+        let text = '';
         if(this.currentTab === '2'){
           if(row.opType === '读'){
             let platform = sessionStorage.getItem(`${this.softwareDetail.softwareName}System`);
             if(platform === 'windows' && (row.path.indexOf('127.0.0.1') > -1 || row.path.indexOf('localhost') > -1)){
-              this.buttonText = '打开文件位置';
+              text = '打开文件位置';
             }else{
-              this.buttonText = '下载文件'
+              text = '下载文件'
             }
           }else if(row.opType === '写'){
-            this.buttonText = '下载对比文件';
+            text = '下载对比文件';
           }
+        }else if(this.currentTab === '1'){
+          text = '下载网络包'
+        }else if(this.currentTab === '4'){
+          text = '查看'
         }
-        return this.buttonText;
+        return text;
       },
       showBtn(row) {
         const arr = ['1','2','4']
@@ -178,8 +225,6 @@
         if (this.$route.name === 'programProgressFromIndex' || this.$route.name === 'programProgressFromHistory') {
           this.detailOnff = true;
           this.tabContentOnff = true;
-        } else {
-
         }
         this.updateList();
       },
@@ -617,45 +662,45 @@
           })
         })
       },
-      downloadFile(data) {
-        let config = {
-          type: +this.currentTab
-        };
-        let fileName = '';
-        if (config.type === 1) {
-          // config.pid = data.scope.row.pid;
-          // config.fileName = data.scope.row.fd;
-          fileName = String(data.scope.row.fd);
-        } else {
-          fileName = data.scope.row.fileLocation.split('\\').pop();
-          // config.pid = data.scope.row.path.split('/').shift();
-          // config.fileName=fileName
-        }
-        config = {
-          type: config.type,
-          name: fileName,
-          fdPath: data.scope.row.fdPath,
-          path: data.scope.row.fileLocation,
-          mode: data.scope.row.mode
-        }
-        this.$http({
-          url: this.$api.apiFileOperationDownload,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json;charset=utf-8'
-          },
-          data: config,
-          responseType: "blob"
-        }).then((r) => {
-          // 创建a标签并点击， 即触发下载
-          let url = window.URL.createObjectURL(r);
-          let link = document.createElement("a");
-          link.href = url;
-          link.download = fileName;
-          link.click();
-          window.URL.revokeObjectURL(link.href);
-        })
-      },
+      // downloadFile(data) {
+      //   let config = {
+      //     type: +this.currentTab
+      //   };
+      //   let fileName = '';
+      //   if (config.type === 1) {
+      //     // config.pid = data.scope.row.pid;
+      //     // config.fileName = data.scope.row.fd;
+      //     fileName = String(data.scope.row.fd);
+      //   } else {
+      //     fileName = data.scope.row.fileLocation.split('\\').pop();
+      //     // config.pid = data.scope.row.path.split('/').shift();
+      //     // config.fileName=fileName
+      //   }
+      //   config = {
+      //     type: config.type,
+      //     name: fileName,
+      //     fdPath: data.scope.row.fdPath,
+      //     path: data.scope.row.fileLocation,
+      //     mode: data.scope.row.mode
+      //   }
+      //   this.$http({
+      //     url: this.$api.apiFileOperationDownload,
+      //     method: 'POST',
+      //     headers: {
+      //       'Content-Type': 'application/json;charset=utf-8'
+      //     },
+      //     data: config,
+      //     responseType: "blob"
+      //   }).then((r) => {
+      //     // 创建a标签并点击， 即触发下载
+      //     let url = window.URL.createObjectURL(r);
+      //     let link = document.createElement("a");
+      //     link.href = url;
+      //     link.download = fileName;
+      //     link.click();
+      //     window.URL.revokeObjectURL(link.href);
+      //   })
+      // },
       downloadChangeFileDetail(data) {
         // console.log(data);
         let config = {

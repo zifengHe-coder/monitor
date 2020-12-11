@@ -15,8 +15,11 @@ let apiArr = [
   "action/listByNetworkType", // 查询网络访问行为
   "action/listByProcessType", // 查询进程调用形成
   "action/listByRegistryType", // 查询注册表行为
+  "action/downloadNetworkPackage", // 下载网络包
 
   "system/getSystemOs", // 查询当前系统
+  "system/openFileFolder", // 打开文件位置
+  "system/downloadFile", // 下载文件
 ];
 
 const exportObj = {};
