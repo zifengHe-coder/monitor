@@ -106,19 +106,36 @@ public class ActionApplicationService {
                 .likeFuzzy(Action::getHost, command.getHost()).eq(Action::getPort, command.getPort()).eq(Action::getType, command.getType())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
         Page<Action> actions = actionService.findPage(filters, pageable);
-        return DtoTransformer.asPage(ActionNetworkDto.class).apply(actions);
+        return DtoTransformer.asPage(ActionNetworkDto.class).apply(actions, (domain, dto) -> {
+            //简单的协议分析
+            if(domain.getType() == ActionType.NETWORK_TCP_SEND || domain.getType() == ActionType.NETWORK_TCP_RECEIVE){
+                if(domain.getPort() == 443){
+                    dto.setProtocol("HTTPS");
+                } else if(domain.getPort() == 80){
+                    dto.setProtocol("HTTP");
+                } else {
+                    dto.setProtocol("TCP");
+                }
+            } else if(domain.getType() == ActionType.NETWORK_UDP_SEND || domain.getType() == ActionType.NETWORK_UDP_RECEIVE){
+                dto.setProtocol("UDP");
+            }
+        });
     }
 
     public File getNetworkFile(String uuid){
         Action action = actionService.findStrictly(uuid);
-        if(action.getActionGroup() != ActionGroup.NETWORK){
+        if(action.getActionGroup() != ActionGroup.NETWORK || action.getType() == ActionType.NETWORK_OPEN){
             throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
         }
         File folder = new File(String.format(ACTION_BACKUP_FOLDER_PATH, action.getTaskId(), action.getPid()));
         if(!folder.exists()){
             folder = new File(ACTION_FOLDER, action.getPid());
         }
-        File file = new File(folder, String.valueOf(action.getSocketFd()));
+        String fileName = String.valueOf(action.getSocketFd());
+        if(action.getType() == ActionType.NETWORK_TCP_RECEIVE || action.getType() == ActionType.NETWORK_UDP_RECEIVE){
+            fileName = fileName + "_recv";
+        }
+        File file = new File(folder, fileName);
         return file;
     }
 
