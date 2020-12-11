@@ -148,6 +148,10 @@ public class Action {
     @Column
     private Integer srcHwnd;
 
+    @Description("设备名称")
+    @Column
+    private String deviceName;
+
     public String getUuid() {
         return uuid;
     }
@@ -410,5 +414,13 @@ public class Action {
 
     public void setSrcHwnd(Integer srcHwnd) {
         this.srcHwnd = srcHwnd;
+    }
+
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
     }
 }

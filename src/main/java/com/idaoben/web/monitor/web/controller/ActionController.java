@@ -4,14 +4,8 @@ import com.idaoben.web.common.api.bean.ApiPageRequest;
 import com.idaoben.web.common.api.bean.ApiPageResponse;
 import com.idaoben.web.monitor.utils.DownloadUtils;
 import com.idaoben.web.monitor.web.application.ActionApplicationService;
-import com.idaoben.web.monitor.web.command.ActionFileListCommand;
-import com.idaoben.web.monitor.web.command.ActionNetworkListCommand;
-import com.idaoben.web.monitor.web.command.ActionProcessListCommand;
-import com.idaoben.web.monitor.web.command.ActionRegistryListCommand;
-import com.idaoben.web.monitor.web.dto.ActionFileDto;
-import com.idaoben.web.monitor.web.dto.ActionNetworkDto;
-import com.idaoben.web.monitor.web.dto.ActionProcessDto;
-import com.idaoben.web.monitor.web.dto.ActionRegistryDto;
+import com.idaoben.web.monitor.web.command.*;
+import com.idaoben.web.monitor.web.dto.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.data.domain.Page;
@@ -57,6 +51,13 @@ public class ActionController {
     @PostMapping("/listByNetworkType")
     public ApiPageResponse<ActionNetworkDto> listByNetworkType(@RequestBody @Validated ApiPageRequest<ActionNetworkListCommand> request) {
         Page<ActionNetworkDto> result = actionApplicationService.listByNetworkType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "timestamp")));
+        return ApiPageResponse.createPageSuccess(result);
+    }
+
+    @ApiOperation("查询设备访问行为")
+    @PostMapping("/listByDeviceType")
+    public ApiPageResponse<ActionDeviceDto> listByDeviceType(@RequestBody @Validated ApiPageRequest<ActionDeviceListCommand> request) {
+        Page<ActionDeviceDto> result = actionApplicationService.listByDeviceType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "timestamp")));
         return ApiPageResponse.createPageSuccess(result);
     }
 
