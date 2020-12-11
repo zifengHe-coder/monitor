@@ -31,7 +31,7 @@
           :style="{height: 'calc(100% - 100px)'}" :tableStyle="{ height: 'calc(100% - 49px)', 'padding-top': '0'}">
           <template v-slot:operationBtn="data">
             <el-button v-if="showBtn(data.scope.row)" size="mini" type="primary"
-              @click="changeClickEvent(data.scope.row)">
+              @click="changeClickEvent(data.scope.row,changeButtonText(data.scope.row))">
               {{changeButtonText(data.scope.row)}}</el-button>
           </template>
         </BaseTableCom>
@@ -121,7 +121,6 @@
           20481: 'WM_COPYDATA发送',
           24576: '修改对象安全描述符'
         },// 操作类型code---text
-        buttonText: '', // 按钮文案
         progressStatus: null,
       }
     },
@@ -138,9 +137,9 @@
       }
     },
     methods: {
-      changeClickEvent(row){
+      changeClickEvent(row,buttonText){
         if(this.currentTab == '2'){
-          switch(this.buttonText){
+          switch(buttonText){
             case '打开文件位置':
               this.openFile(row);
             case '下载文件':
@@ -235,7 +234,6 @@
         switch (type) {
           case 1:
             this.funcApi = this.$api.actionListByNetworkType;
-            this.buttonText = '下载网络包'
             this.searchLabels = [{
               type: 'input',
               prop: 'host',
@@ -280,7 +278,7 @@
               label: 'IP地址'
             }, {
               type: 'word',
-              prop: 'post',
+              prop: 'port',
               label: '端口'
             }, {
               type: 'word',
@@ -301,7 +299,6 @@
             break;
           case 2:
             this.funcApi = this.$api.actionListByFileType;
-            this.buttonText = '打开文件'
             this.searchLabels = [{
               type: 'select',
               prop: 'opType',
@@ -429,7 +426,6 @@
             break;
           case 4:
             this.funcApi = this.$api.actionListByProcessType;
-            this.buttonText = '查看';
             this.searchLabels = [{
               type: 'input',
               prop: 'commandLine',
@@ -654,6 +650,7 @@
           }).then((r) => {
             if (r.code === '0') {
               this.tableData = this.handleResult(r.data);
+              console.log(JSON.parse(JSON.stringify(this.tableData)))
               this.totalItems = r.totalItems;
               res(r.data);
             }
