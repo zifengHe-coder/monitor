@@ -152,13 +152,10 @@
       },
       // 下载网络包
       downloadNetworkPackage(data){
-        console.log(data)
         let a = document.createElement('a');
-        a.href = location.origin+'/api/system/downloadFile'+`?uuid=${data.uuid}`;
+        a.href = window.location.origin+this.$api.actionDownloadNetworkPackage+`?uuid=${data.uuid}`;
         a.download = 'networkPackage';
-        console.log(a)
         a.click()
-
       },
       // 打开文件位置
       openFile(data){
@@ -175,9 +172,8 @@
       downloadFile(data){
         let a = document.createElement('a');
         a.href = window.location.origin+this.$api.systemDownloadFile+`?path=${data.path}`;
-        a.download = window.location.origin+this.$api.systemDownloadFile+`?path=${data.path}`;
+        a.download = 'package';
         a.click();
-        // console.log(a.href)
       },
       changeButtonText(row){
         let text = '';
@@ -284,11 +280,13 @@
               type: 'word',
               prop: 'protocol',
               label: '协议类型'
-            }, {
-              type: 'word',
-              prop: 'warningParams ',
-              label: '敏感数据字段'
-            }, {
+            }, 
+            // {
+            //   type: 'word',
+            //   prop: 'warningParams ',
+            //   label: '敏感数据字段'
+            // }, 
+            {
               type: 'word',
               prop: 'bytes',
               label: '网络流量'
