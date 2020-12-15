@@ -176,9 +176,7 @@
       // 下载文件
       downloadFile(data){
         let a = document.createElement('a');
-        let path = data.path.replace(/:/g,'%3A');
-        path = path.replace(/\\/g,'%5C')
-        console.log(path)
+        let path = encodeURIComponent(data.path)
         a.href = window.location.origin+this.$api.systemDownloadFile+`?path=${path}`;
         a.download = 'package';
         a.click();
@@ -772,22 +770,27 @@
         });
       },
       stopMonitor() {
-        this.$http({
-          url: this.$api.monitorStopMonitor,
-          method: 'POST',
-          data: {
-            data:{id: this.softwareDetail.id}
-          }
-        }).then((r) => {
-          if (r.code === '0') {
-            this.$message.success('关闭监控成功');
-            let params = JSON.parse(
-              sessionStorage.getItem(`${this.comData.id}Page`)
-            );
-            this.getList(params);
-            this.progressStatus = '已完成';
-          }
-        })
+        this.$confirm('确定停止监听？','提示',{
+          confirmButtonText: '确定',
+          cancelButtonText: '取消'
+        }).then(()=>{
+          this.$http({
+            url: this.$api.monitorStopMonitor,
+            method: 'POST',
+            data: {
+              data:{id: this.softwareDetail.id}
+            }
+          }).then((r) => {
+            if (r.code === '0') {
+              this.$message.success('关闭监控成功');
+              let params = JSON.parse(
+                sessionStorage.getItem(`${this.comData.id}Page`)
+              );
+              this.getList(params);
+              this.progressStatus = '已完成';
+            }
+          })
+        }).catch(()=>{})
       },
       changeStateInHistory(id) {
         this.$http({
