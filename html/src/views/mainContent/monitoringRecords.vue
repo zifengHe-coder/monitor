@@ -122,6 +122,11 @@
           24576: '修改对象安全描述符'
         },// 操作类型code---text
         progressStatus: null,
+        deviceTypeLists: {
+          16384: '启动进程',
+          20480: '进程注入',
+          20481: '消息通讯'
+        }
       }
     },
     created() {
@@ -171,7 +176,10 @@
       // 下载文件
       downloadFile(data){
         let a = document.createElement('a');
-        a.href = window.location.origin+this.$api.systemDownloadFile+`?path=${data.path}`;
+        let path = data.path.replace(/:/g,'%3A');
+        path = path.replace(/\\/g,'%5C')
+        console.log(path)
+        a.href = window.location.origin+this.$api.systemDownloadFile+`?path=${path}`;
         a.download = 'package';
         a.click();
       },
@@ -626,6 +634,7 @@
             })
             return data;
           case 'softwareDetail_5':
+            console.log(data)
             return data;
         }
       },
