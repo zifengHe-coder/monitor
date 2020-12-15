@@ -2,6 +2,7 @@ package com.idaoben.web.monitor.service.impl;
 
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
+import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
 import org.slf4j.Logger;
@@ -136,5 +137,10 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     @Override
     public boolean isAutoMonitorChildProcess() {
         return false;
+    }
+
+    @Override
+    public DeviceInfoJson getDeviceInfo(String instanceId) {
+        return null;
     }
 }

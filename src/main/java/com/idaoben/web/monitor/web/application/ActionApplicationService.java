@@ -10,6 +10,7 @@ import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.SystemOsService;
+import com.idaoben.web.monitor.utils.DeviceFileUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
@@ -27,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -106,9 +106,10 @@ public class ActionApplicationService {
         return DtoTransformer.asPage(ActionNetworkDto.class).apply(actions, (domain, dto) -> {
             //简单的协议分析
             if(domain.getType() == ActionType.NETWORK_TCP_SEND || domain.getType() == ActionType.NETWORK_TCP_RECEIVE){
-                if(domain.getPort() == 443){
+                int port = domain.getPort() == null ? -1 : domain.getPort();
+                if(port == 443){
                     dto.setProtocol("HTTPS");
-                } else if(domain.getPort() == 80){
+                } else if(port == 80){
                     dto.setProtocol("HTTP");
                 } else {
                     dto.setProtocol("TCP");
@@ -292,7 +293,7 @@ public class ActionApplicationService {
         return null;
     }
 
-    private static final String FILE_TYPE_SEPARATOR = "\\??\\";
+    private static final String[] FILE_TYPE_SEPARATORS = new String[]{"\\??\\", "\\\\??\\"};
 
     private Action setActionFileInfo(Action action, String pid){
         if(action.getType() == ActionType.FILE_OPEN){
@@ -300,18 +301,16 @@ public class ActionApplicationService {
             //获取path对应的文件名称
             action.setFileName(StringUtils.substringAfterLast(path, SystemUtils.FILE_SEPARATOR));
             //根据操作系统判断系统敏感性
-            if(path.toLowerCase(Locale.ROOT).startsWith(SystemUtils.getSensitivityPath().toLowerCase())){
+            if(path.toLowerCase().startsWith(SystemUtils.getSensitivityPath().toLowerCase())){
                 action.setSensitivity(FileSensitivity.HIGH);
             } else {
                 action.setSensitivity(FileSensitivity.LOW);
             }
-            FileAccess fileAccess = getFileAccess(action);
+            FileAccess fileAccess = DeviceFileUtils.getFileAccess(action.getAccess());
             //只有含写操作的才会记录到map中
             if(fileAccess == FileAccess.WRITE || fileAccess == FileAccess.READ_AND_WRITE){
                 Map<String, FileInfo> fdFileInfoMap = fdFileMap.computeIfAbsent(pid, p -> new HashMap<>());
-                if(!fdFileInfoMap.containsKey(action.getFd())){
-                    fdFileInfoMap.put(action.getFd(), new FileInfo(action.getFd(), action.getFileName(), action.getPath(), action.getSensitivity()));
-                }
+                fdFileInfoMap.put(action.getFd(), new FileInfo(action.getFd(), action.getFileName(), action.getPath(), action.getSensitivity()));
             }
             if(fileAccess == null){
                 return null;
@@ -373,53 +372,44 @@ public class ActionApplicationService {
             }
         }
 
-        //设置正式的文件路径和action group
-        if(action.getActionGroup() ==null){
-            String path = action.getPath();
-            if(path.startsWith(FILE_TYPE_SEPARATOR)){
-                path = StringUtils.substringAfter(path, FILE_TYPE_SEPARATOR);
-                action.setPath(path);
-
-                //再判断当前的路径是否调用网络打印机 示例：\??\C:\Windows\system32\spool\PRINTERS\00005.SPL
-                if(action.getFileName().endsWith(".SPL") && action.getPath().contains("spool\\PRINTERS")){
-                    action.setDeviceName("网络打印机");
-                    action.setActionGroup(ActionGroup.DEVICE);
-                } else {
-                    action.setActionGroup(ActionGroup.FILE);
-                }
-            } else {
-                //这不是一个文件，是一个设备
-                setActionDeviceFromFileInfo(action);
-            }
-        }
+        //设置正式的文件路径和action group，并且判断是否设备
+        boolean isDevice = setActionDeviceFromFileInfo(action);
+        action.setActionGroup(isDevice ? ActionGroup.DEVICE : ActionGroup.FILE);
         return action;
     }
 
-    private void setActionDeviceFromFileInfo(Action action){
-        //这不是一个文件，是一个设备
-        action.setActionGroup(ActionGroup.DEVICE);
-        // \Device\DeviceApi\Dev\Query
-        if("\\Device\\DeviceApi\\Dev\\Query".equals(action.getPath())){
-            action.setDeviceName("系统设备查询");
-        } else {
-            action.setDeviceName(action.getPath());
-        }
-    }
-
-    private FileAccess getFileAccess(Action action){
-        if(action.getAccess() != null){
-            long access = action.getAccess().longValue();
-            boolean read = access >> 31 == 1;
-            boolean write = access << 1 >> 31 == 1;
-            if(read && write){
-                return FileAccess.READ_AND_WRITE;
-            } else if(read){
-                return FileAccess.READ;
-            } else if(write){
-                return FileAccess.WRITE;
+    private boolean setActionDeviceFromFileInfo(Action action){
+        String path = action.getPath();
+        if(StringUtils.startsWithAny(path, FILE_TYPE_SEPARATORS)){
+            for(String filePrefix : FILE_TYPE_SEPARATORS){
+                if(path.startsWith(filePrefix)){
+                    path = StringUtils.substringAfter(path, filePrefix);
+                    action.setPath(path);
+                }
             }
+            //如果是盘符+冒号开头的，表示是文件读取，其他的是设备读取
+            if(path.length() < 2 || path.charAt(1) != ':'){
+                String instanceId = StringUtils.substringBeforeLast(path, "\\").replace("#", "\\").toUpperCase();
+                //要再去掉最后一个反斜杠后面的部分
+                instanceId = StringUtils.substringBeforeLast(instanceId, "\\");
+                DeviceInfoJson deviceInfo = systemOsService.getDeviceInfo(instanceId);
+                if(deviceInfo != null){
+                    action.setDeviceName(deviceInfo.getFriendlyName());
+                }
+                return true;
+            }
+
+            //再判断当前的路径是否调用网络打印机 示例：\??\C:\Windows\system32\spool\PRINTERS\00005.SPL
+            if(action.getFileName().endsWith(".SPL") && action.getPath().contains("spool\\PRINTERS")){
+                action.setDeviceName("网络打印机");
+                return true;
+            }
+        } else {
+            //这不是一个文件，是一个设备
+            action.setDeviceName(action.getPath());
+            return true;
         }
-        return null;
+        return false;
     }
 
     private void setActionNetworkInfo(Action action, String pid){

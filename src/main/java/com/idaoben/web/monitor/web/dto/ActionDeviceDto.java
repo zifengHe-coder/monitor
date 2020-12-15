@@ -36,7 +36,6 @@ public interface ActionDeviceDto {
     String getDeviceName();
 
     @ApiModelProperty("设备ID")
+    @Mapping("path")
     String getDeviceId();
-
-    void setDeviceId(String deviceId);
 }

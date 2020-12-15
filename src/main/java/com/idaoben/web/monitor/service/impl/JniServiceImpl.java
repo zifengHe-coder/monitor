@@ -27,6 +27,16 @@ public class JniServiceImpl implements JniService {
     }
 
     @Override
+    public String listAllDevices() {
+        int blockRef = utilityJni.ListAllDevices();
+        int blockSize = utilityJni.GetBlockSize(blockRef);
+        byte[] buffer = new byte[blockSize];
+        utilityJni.ReadBlock(blockRef, buffer,0, blockSize);
+        utilityJni.FreeBlock(blockRef);
+        return new String(buffer);
+    }
+
+    @Override
     public String listAllProcesses() {
         int blockRef = utilityJni.ListAllProcesses();
         int blockSize = utilityJni.GetBlockSize(blockRef);

@@ -1,5 +1,6 @@
 package com.idaoben.web.monitor.service;
 
+import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
 
@@ -60,4 +61,11 @@ public interface SystemOsService {
      * @return
      */
     boolean isAutoMonitorChildProcess();
+
+    /**
+     * 根据instanceId获取设备信息
+     * @param instanceId 设备ID
+     * @return
+     */
+    DeviceInfoJson getDeviceInfo(String instanceId);
 }

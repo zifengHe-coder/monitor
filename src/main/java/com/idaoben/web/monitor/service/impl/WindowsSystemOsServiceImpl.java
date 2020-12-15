@@ -34,6 +34,8 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
 
     private FileSystemView fileSystemView = FileSystemView.getFileSystemView();
 
+    private Map<String, DeviceInfoJson> deviceInfoMap = new HashMap<>();
+
     @Override
     public String getActionFolderPath() {
         return SystemUtils.getOsHome() + "\\WinMonitor";
@@ -47,20 +49,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
         List<File> linkFiles = new ArrayList<>();
         if(startMenu.exists() && startMenu.isDirectory()){
             for(File file : startMenu.listFiles()){
-                if(!file.isDirectory()){
-                    if(checklnkFile(file)){
-                        linkFiles.add(file);
-                    }
-                } else {
-                    //只搜索一层文件夹
-                    for(File fileChild : file.listFiles()){
-                        if(!fileChild.isDirectory()){
-                            if(checklnkFile(fileChild)){
-                                linkFiles.add(fileChild);
-                            }
-                        }
-                    }
-                }
+                checkAndAddFile(file, linkFiles);
             }
         }
         List<String> linkPaths = linkFiles.stream().map(File::getPath).collect(Collectors.toList());
@@ -76,6 +65,18 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
             softwares.add(getSoftwareInfo(linkFile, linkFileJsonMap.get(linkFile.getPath())));
         }
         return softwares;
+    }
+
+    private void checkAndAddFile(File file, List<File> linkFiles){
+        if(!file.isDirectory()){
+            if(checklnkFile(file)){
+                linkFiles.add(file);
+            }
+        } else {
+            for(File fileChild : file.listFiles()){
+                checkAndAddFile(fileChild, linkFiles);
+            }
+        }
     }
 
     private boolean checklnkFile(File file){
@@ -157,5 +158,32 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     @Override
     public boolean isAutoMonitorChildProcess() {
         return true;
+    }
+
+    @Override
+    public DeviceInfoJson getDeviceInfo(String instanceId) {
+        DeviceInfoJson deviceInfoJson = null;
+        if(!deviceInfoMap.containsKey(instanceId)){
+            //重新获取一次信息
+            String allDevicesJson = jniService.listAllDevices();
+            logger.info("找不到对应设备{}，进行设备列表查询", instanceId);
+            try {
+                DeviceListJson deviceList = objectMapper.readValue(allDevicesJson, DeviceListJson.class);
+                Map<String, DeviceInfoJson> deviceInfoJsonMap = new HashMap<>();
+                deviceList.getDevices().forEach(deviceInfo -> {deviceInfoJsonMap.put(deviceInfo.getInstanceId(), deviceInfo);});
+                deviceInfoMap = deviceInfoJsonMap;
+            } catch (JsonProcessingException e) {
+                logger.error(e.getMessage(), e);
+            }
+            if(deviceInfoMap.containsKey(instanceId)){
+                deviceInfoJson = deviceInfoMap.get(instanceId);
+            } else {
+                //找不到设备时传入一个空的缓存，避免下次重复查询了
+                deviceInfoMap.put(instanceId, null);
+            }
+        } else {
+            deviceInfoJson = deviceInfoMap.get(instanceId);
+        }
+        return deviceInfoJson;
     }
 }
