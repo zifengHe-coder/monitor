@@ -183,6 +183,13 @@ public class ActionApplicationService {
     private void handlePidAction(String pid, Long taskId, ActionHanlderThread thread){
         File pidFolder = new File(ACTION_FOLDER, pid);
         if(!pidFolder.exists()){
+            logger.error("进程action文件夹未生成， 尝试等待后重试，PID: {}", pid);
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                logger.error(e.getMessage(), e);
+            }
+            handlePidAction(pid, taskId, thread);
             return;
         }
         //查询action文件
