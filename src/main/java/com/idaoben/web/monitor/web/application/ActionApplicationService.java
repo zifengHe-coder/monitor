@@ -397,9 +397,7 @@ public class ActionApplicationService {
                 //要再去掉最后一个反斜杠后面的部分
                 instanceId = StringUtils.substringBeforeLast(instanceId, "\\");
                 DeviceInfoJson deviceInfo = systemOsService.getDeviceInfo(instanceId);
-                if(deviceInfo != null){
-                    action.setDeviceName(deviceInfo.getFriendlyName());
-                }
+                action.setDeviceName(deviceInfo == null ? "未知设备" : deviceInfo.getFriendlyName());
                 return true;
             }
 
