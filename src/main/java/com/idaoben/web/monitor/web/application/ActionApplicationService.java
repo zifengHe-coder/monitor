@@ -181,7 +181,7 @@ public class ActionApplicationService {
         }
     }
 
-    private void handlePidAction(String pid, Long taskId, ActionHanlderThread thread){
+    void handlePidAction(String pid, Long taskId, ActionHanlderThread thread){
         File pidFolder = new File(ACTION_FOLDER, pid);
         if(!pidFolder.exists()){
             logger.error("进程action文件夹未生成， 尝试等待后重试，PID: {}", pid);
@@ -297,11 +297,15 @@ public class ActionApplicationService {
 
     private Action setActionFileInfo(Action action, String pid){
         if(action.getType() == ActionType.FILE_OPEN){
-            String path = action.getPath();
             //获取path对应的文件名称
-            action.setFileName(StringUtils.substringAfterLast(path, SystemUtils.FILE_SEPARATOR));
+            action.setFileName(StringUtils.substringAfterLast(action.getPath(), SystemUtils.FILE_SEPARATOR));
+
+            //设置正式的文件路径和action group，并且判断是否设备
+            boolean isDevice = setActionDeviceFromFileInfo(action);
+            action.setActionGroup(isDevice ? ActionGroup.DEVICE : ActionGroup.FILE);
+
             //根据操作系统判断系统敏感性
-            if(path.toLowerCase().startsWith(SystemUtils.getSensitivityPath().toLowerCase())){
+            if(action.getPath().toLowerCase().startsWith(SystemUtils.getSensitivityPath().toLowerCase())){
                 action.setSensitivity(FileSensitivity.HIGH);
             } else {
                 action.setSensitivity(FileSensitivity.LOW);
@@ -310,7 +314,9 @@ public class ActionApplicationService {
             //只有含写操作的才会记录到map中
             if(fileAccess == FileAccess.WRITE || fileAccess == FileAccess.READ_AND_WRITE){
                 Map<String, FileInfo> fdFileInfoMap = fdFileMap.computeIfAbsent(pid, p -> new HashMap<>());
-                fdFileInfoMap.put(action.getFd(), new FileInfo(action.getFd(), action.getFileName(), action.getPath(), action.getSensitivity()));
+                if(!fdFileInfoMap.containsKey(action.getFd())){
+                    fdFileInfoMap.put(action.getFd(), new FileInfo(action.getFd(), action.getFileName(), action.getPath(), action.getSensitivity(), action.getDeviceName(), action.getActionGroup()));
+                }
             }
             if(fileAccess == null){
                 return null;
@@ -329,6 +335,8 @@ public class ActionApplicationService {
                         originAction.setFileName(fileInfo.getFileName());
                         originAction.setSensitivity(fileInfo.getSensitivity());
                         originAction.setPath(fileInfo.getPath());
+                        originAction.setDeviceName(fileInfo.getDeviceName());
+                        originAction.setActionGroup(fileInfo.getActionGroup());
                         originAction.setWriteOffsets(action.getOffset() == null ? "" : String.valueOf(action.getOffset()));
                         originAction.setWriteBytes(String.valueOf(action.getBytes()));
                         actionMap.put(originAction.getFd(), originAction);
@@ -371,10 +379,6 @@ public class ActionApplicationService {
                 return null;
             }
         }
-
-        //设置正式的文件路径和action group，并且判断是否设备
-        boolean isDevice = setActionDeviceFromFileInfo(action);
-        action.setActionGroup(isDevice ? ActionGroup.DEVICE : ActionGroup.FILE);
         return action;
     }
 
