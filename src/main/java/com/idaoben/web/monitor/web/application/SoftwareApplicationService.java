@@ -193,11 +193,12 @@ public class SoftwareApplicationService {
             for(ProcessJson processJson : processJsons){
                 //先找父对象是否存在，存在父对象时直接挂到父对象的进程列表中
                 ProcessJson parentProcess = pidProcessMap.get(processJson.getParentPid());
-                String softwareId;
+                String softwareId = null;
                 if(parentProcess != null){
                     softwareId = getSoftwareIdFromImageName(parentProcess.getImageName());
-                } else {
-                    //无父对象，则单独添加
+                }
+                if(softwareId == null){
+                    //无父对象，或父对象找不到的，则单独添加
                     softwareId = getSoftwareIdFromImageName(processJson.getImageName());
                 }
                 if(softwareId == null) {

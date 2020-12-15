@@ -389,14 +389,21 @@ public class ActionApplicationService {
                 }
             } else {
                 //这不是一个文件，是一个设备
-                action.setActionGroup(ActionGroup.DEVICE);
-                // \Device\DeviceApi\Dev\Query
-                if("\\Device\\DeviceApi\\Dev\\Query".equals(action.getPath())){
-                    action.setDeviceName("系统设备查询");
-                }
+                setActionDeviceFromFileInfo(action);
             }
         }
         return action;
+    }
+
+    private void setActionDeviceFromFileInfo(Action action){
+        //这不是一个文件，是一个设备
+        action.setActionGroup(ActionGroup.DEVICE);
+        // \Device\DeviceApi\Dev\Query
+        if("\\Device\\DeviceApi\\Dev\\Query".equals(action.getPath())){
+            action.setDeviceName("系统设备查询");
+        } else {
+            action.setDeviceName(action.getPath());
+        }
     }
 
     private FileAccess getFileAccess(Action action){
