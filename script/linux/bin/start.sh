@@ -1,4 +1,4 @@
-﻿if [ "$(whoami)" != "root" ]
+if [ "$(whoami)" != "root" ]
 then
     echo "请使用root账号启动";
     exit 1;

@@ -1,4 +1,4 @@
-﻿SCRIPT_PATH="${BASH_SOURCE[0]}"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_DIR=`dirname ${SCRIPT_PATH}`
 BASE_DIR=`cd ${SCRIPT_DIR}/.. && pwd`
 PROJ_DIR=`cd ${BASE_DIR}/.. && pwd`

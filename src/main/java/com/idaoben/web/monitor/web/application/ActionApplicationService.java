@@ -6,10 +6,7 @@ import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
-import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
-import com.idaoben.web.monitor.dao.entity.enums.ActionType;
-import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
-import com.idaoben.web.monitor.dao.entity.enums.FileOpType;
+import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.SystemOsService;
@@ -382,19 +379,22 @@ public class ActionApplicationService {
 
     private void setActionNetworkInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.NETWORK);
-        if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
-            if(StringUtils.isNotEmpty(action.getHost())){
-                Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
-                socketFdNetworkInfoMap.put(action.getSocketFd(), new NetworkInfo(action.getHost(), action.getPort()));
+        //Windows平台所有发送和接收都带上了host和port，不用处理。只有Linux下需要处理
+        if(SystemUtils.getSystemOs() == SystemOs.LINUX){
+            if(action.getType() == ActionType.NETWORK_OPEN){
+                if(StringUtils.isNotEmpty(action.getHost())){
+                    Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
+                    socketFdNetworkInfoMap.put(action.getSocketFd(), new NetworkInfo(action.getHost(), action.getPort()));
+                }
             }
-        }
-        if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
-            Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.get(pid);
-            if(socketFdNetworkInfoMap != null){
-                NetworkInfo networkInfo = socketFdNetworkInfoMap.get(action.getSocketFd());
-                if(networkInfo != null){
-                    action.setHost(networkInfo.getHost());
-                    action.setPort(networkInfo.getPort());
+            if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
+                Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.get(pid);
+                if(socketFdNetworkInfoMap != null){
+                    NetworkInfo networkInfo = socketFdNetworkInfoMap.get(action.getSocketFd());
+                    if(networkInfo != null){
+                        action.setHost(networkInfo.getHost());
+                        action.setPort(networkInfo.getPort());
+                    }
                 }
             }
         }
