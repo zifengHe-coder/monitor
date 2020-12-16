@@ -27,7 +27,7 @@ public class AfterApplicationRunner {
     @EventListener({ApplicationReadyEvent.class})
     public void openBrowser() throws Exception {
         try{
-            if(autoOpenBrowser && SystemUtils.getSystemOs() == SystemOs.WINDOWS){
+            if(autoOpenBrowser && SystemUtils.isWindows()){
                 String url = String.format("http://127.0.0.01:%d/index.html", port);
                 if(Desktop.isDesktopSupported()){
                     Desktop.getDesktop().browse(new URI(url));

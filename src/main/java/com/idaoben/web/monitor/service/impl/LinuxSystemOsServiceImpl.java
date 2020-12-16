@@ -127,17 +127,9 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     public boolean attachAndInjectHooks(int pid) {
         try {
             Process process = Runtime.getRuntime().exec(String.format("%s -a %d", TRACER_CMD, pid));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
-                    StandardCharsets.UTF_8));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                logger.info(line);
-                //Console will show the success pid, eg: {"pid":"18205"}
-                String pidPrefix = "{\"pid\":\"";
-                if(line.startsWith(pidPrefix)){
-                    pidTracerProcessMap.put(pid, Pair.of(false, process));
-                    return true;
-                }
+            if(process != null && process.pid() > 1){
+                pidTracerProcessMap.put(pid, Pair.of(false, process));
+                return true;
             }
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
@@ -211,5 +203,14 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     @Override
     public FileAccess getFileAccess(Long accessLong) {
         return DeviceFileUtils.getLinuxFileAccess(accessLong);
+    }
+
+    @Override
+    public void setActionProcessInfo(Action action, String pid) {
+        action.setActionGroup(ActionGroup.PROCESS);
+        if(action.getType() == ActionType.PROCESS_OPEN_LINUX){
+            action.setType(ActionType.PROCESS_OPEN);
+            action.setCmdLine(String.format("%s %s", action.getCmd(), StringUtils.join(action.getArgs(), " ")));
+        }
     }
 }

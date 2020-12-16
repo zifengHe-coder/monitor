@@ -256,4 +256,9 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     public FileAccess getFileAccess(Long accessLong) {
         return DeviceFileUtils.getWindowsFileAccess(accessLong);
     }
+
+    @Override
+    public void setActionProcessInfo(Action action, String pid) {
+        action.setActionGroup(ActionGroup.PROCESS);
+    }
 }

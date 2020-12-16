@@ -280,7 +280,7 @@ public class ActionApplicationService {
             } else if(ActionType.isRegistryType(action.getType())){
                 setActionRegistryInfo(action, pid);
             } else if(ActionType.isProcessType(action.getType())){
-                setActionProcessInfo(action, pid);
+                systemOsService.setActionProcessInfo(action, pid);
             }
 
             if(action != null){
@@ -407,9 +407,5 @@ public class ActionApplicationService {
 
     private void setActionRegistryInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.REGISTRY);
-    }
-
-    private void setActionProcessInfo(Action action, String pid){
-        action.setActionGroup(ActionGroup.PROCESS);
     }
 }

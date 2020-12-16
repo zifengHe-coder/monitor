@@ -44,6 +44,8 @@ public class ActionType {
     //启动进程
     public static final int PROCESS_OPEN = 16384;
 
+    public static final int PROCESS_OPEN_LINUX = 16385;
+
     //进程注入
     public static final int PROCESS_INJECT = 20480;
 
@@ -66,6 +68,6 @@ public class ActionType {
     }
 
     public static boolean isProcessType(int access){
-        return access == PROCESS_OPEN || access == PROCESS_INJECT || access == PROCESS_MESSAGE_SEND;
+        return access == PROCESS_OPEN || access == PROCESS_OPEN_LINUX || access == PROCESS_INJECT || access == PROCESS_MESSAGE_SEND;
     }
 }

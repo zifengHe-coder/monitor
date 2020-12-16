@@ -100,4 +100,11 @@ public interface SystemOsService {
      * @return
      */
     FileAccess getFileAccess(Long accessLong);
+
+    /**
+     * Set the process info for action
+     * @param action
+     * @param pid
+     */
+    void setActionProcessInfo(Action action, String pid);
 }

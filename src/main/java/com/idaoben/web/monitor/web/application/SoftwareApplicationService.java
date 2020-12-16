@@ -6,7 +6,6 @@ import com.idaoben.web.common.util.DateTimeUtils;
 import com.idaoben.web.monitor.dao.entity.Favorite;
 import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
-import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.FavoriteService;
 import com.idaoben.web.monitor.service.MonitoringService;
@@ -233,7 +232,9 @@ public class SoftwareApplicationService {
                     if(systemOsService.isAutoMonitorChildProcess()){
                         //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
                         String pidStr = String.valueOf(processJson.getPid());
-                        if(monitoringService.isMonitoring(softwareId) && !monitoringService.isPidMonitoringError(softwareId, pidStr) && !monitoringService.isPidMonitoring(softwareId, pidStr)){
+                        //Only Windows Need to auto add monitor
+                        if(SystemUtils.isWindows() && monitoringService.isMonitoring(softwareId)
+                                && !monitoringService.isPidMonitoringError(softwareId, pidStr) && !monitoringService.isPidMonitoring(softwareId, pidStr)){
                             monitorApplicationService.startMonitorPid(softwareId, pidStr);
                         }
                     }
@@ -253,7 +254,7 @@ public class SoftwareApplicationService {
     }
 
     private String getSoftwareIdFromImageName(String imageName){
-        if(SystemUtils.getSystemOs() == SystemOs.WINDOWS){
+        if(SystemUtils.isWindows()){
             return exeNameSoftwareIdMap.get(imageName.toLowerCase());
         } else {
             //For linux

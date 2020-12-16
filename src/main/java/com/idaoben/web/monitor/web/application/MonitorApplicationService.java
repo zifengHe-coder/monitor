@@ -9,6 +9,7 @@ import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.TaskService;
 import com.idaoben.web.monitor.service.impl.MonitoringTask;
+import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.command.TaskListCommand;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
@@ -24,6 +25,7 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.Resource;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -73,10 +75,33 @@ public class MonitorApplicationService {
             task.setSoftwareName(softwareDto.getSoftwareName());
             task.setExePath(softwareDto.getExePath());
         }
-        //启动所有pid的监听线程
-        List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
-        if(processes != null){
-            List<Integer> pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
+
+        List<Integer> pids = null;
+        if(SystemUtils.isWindows()){
+            //启动所有pid的监听线程
+            List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
+            if(processes != null){
+                pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
+            }
+        } else {
+            //Find the main process
+            Integer pid = null;
+            List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
+            if(processes != null){
+                pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
+                for(ProcessJson process : processes){
+                    if(process.getParentPid().intValue() == 1 || pids.contains(process.getParentPid())){
+                        pid = process.getPid();
+                        break;
+                    }
+                }
+                if(pid == null){
+                    pid = processes.get(0).getPid();
+                }
+                pids = Arrays.asList(pid);
+            }
+        }
+        if(pids != null){
             for(Integer pid : pids){
                 logger.info("启动PID: {}的注入监听。", pid);
                 boolean result = systemOsService.attachAndInjectHooks(pid);
@@ -93,6 +118,8 @@ public class MonitorApplicationService {
             for(String pid : monitoringService.getMonitoringPids(monitoringTask)){
                 actionApplicationService.startActionScan(pid, task.getId());
             }
+        } else {
+            throw ServiceException.of(ErrorCode.SOFTWARE_NOT_RUNING);
         }
     }
 
