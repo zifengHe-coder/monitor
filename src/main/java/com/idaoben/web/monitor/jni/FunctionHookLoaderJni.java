@@ -3,7 +3,7 @@ package com.idaoben.web.monitor.jni;
 public class FunctionHookLoaderJni {
 
     static {
-        System.load(System.getProperty("user.dir") + "\\src\\main\\resources\\dll\\FunctionHookLoader64.dll");
+        System.load(System.getProperty("user.dir") + "\\res\\dll\\FunctionHookLoader64.dll");
     }
 
     public native int AttachAndInjectHooks(int pid);
