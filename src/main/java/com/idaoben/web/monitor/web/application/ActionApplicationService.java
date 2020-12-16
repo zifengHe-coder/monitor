@@ -296,7 +296,6 @@ public class ActionApplicationService {
         return null;
     }
 
-    private static final String[] FILE_TYPE_SEPARATORS = new String[]{"\\??\\", "\\\\??\\"};
 
     private Action setActionFileInfo(Action action, String pid){
         if(action.getType() == ActionType.FILE_OPEN){
@@ -304,7 +303,7 @@ public class ActionApplicationService {
             action.setFileName(StringUtils.substringAfterLast(action.getPath(), SystemUtils.FILE_SEPARATOR));
 
             //设置正式的文件路径和action group，并且判断是否设备
-            boolean isDevice = setActionDeviceFromFileInfo(action);
+            boolean isDevice = systemOsService.setActionDeviceFromFileInfo(action);
             action.setActionGroup(isDevice ? ActionGroup.DEVICE : ActionGroup.FILE);
 
             //根据操作系统判断系统敏感性
@@ -379,38 +378,6 @@ public class ActionApplicationService {
             }
         }
         return action;
-    }
-
-    private boolean setActionDeviceFromFileInfo(Action action){
-        String path = action.getPath();
-        if(StringUtils.startsWithAny(path, FILE_TYPE_SEPARATORS)){
-            for(String filePrefix : FILE_TYPE_SEPARATORS){
-                if(path.startsWith(filePrefix)){
-                    path = StringUtils.substringAfter(path, filePrefix);
-                    action.setPath(path);
-                }
-            }
-            //如果是盘符+冒号开头的，表示是文件读取，其他的是设备读取
-            if(path.length() < 2 || path.charAt(1) != ':'){
-                String instanceId = StringUtils.substringBeforeLast(path, "\\").replace("#", "\\").toUpperCase();
-                //要再去掉最后一个反斜杠后面的部分
-                instanceId = StringUtils.substringBeforeLast(instanceId, "\\");
-                DeviceInfoJson deviceInfo = systemOsService.getDeviceInfo(instanceId);
-                action.setDeviceName(deviceInfo == null ? "未知设备" : deviceInfo.getFriendlyName());
-                return true;
-            }
-
-            //再判断当前的路径是否调用网络打印机 示例：\??\C:\Windows\system32\spool\PRINTERS\00005.SPL
-            if(action.getFileName().endsWith(".SPL") && action.getPath().contains("spool\\PRINTERS")){
-                action.setDeviceName("网络打印机");
-                return true;
-            }
-        } else {
-            //这不是一个文件，是一个设备
-            action.setDeviceName(action.getPath());
-            return true;
-        }
-        return false;
     }
 
     private void setActionNetworkInfo(Action action, String pid){

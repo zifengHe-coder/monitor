@@ -1,5 +1,6 @@
 package com.idaoben.web.monitor.service.impl;
 
+import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
@@ -30,6 +31,8 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     private Map<Integer, Process> pidTracerProcessMap = new ConcurrentHashMap<>();
 
     private static String[] sensitivityPaths;
+
+    private static final String DEVICE_TYPE_SEPARATOR = "/dev";
 
     @PostConstruct
     public void init(){
@@ -169,5 +172,15 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
             return FileSensitivity.HIGH;
         }
         return FileSensitivity.LOW;
+    }
+
+    @Override
+    public boolean setActionDeviceFromFileInfo(Action action) {
+        String path = action.getPath();
+        if(path.startsWith(DEVICE_TYPE_SEPARATOR)){
+            action.setDeviceName(path);
+            return true;
+        }
+        return false;
     }
 }
