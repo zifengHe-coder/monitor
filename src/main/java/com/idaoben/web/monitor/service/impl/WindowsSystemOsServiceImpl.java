@@ -2,14 +2,17 @@ package com.idaoben.web.monitor.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import com.idaoben.web.monitor.service.JniService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.*;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -35,6 +38,13 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     private FileSystemView fileSystemView = FileSystemView.getFileSystemView();
 
     private Map<String, DeviceInfoJson> deviceInfoMap = new HashMap<>();
+
+    private static String[] sensitivityPaths;
+
+    @PostConstruct
+    public void init(){
+        sensitivityPaths = new String[]{(SystemUtils.getOsHome() + "\\WINDOWS\\").toLowerCase()};
+    }
 
     @Override
     public String getActionFolderPath() {
@@ -185,5 +195,21 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
             deviceInfoJson = deviceInfoMap.get(instanceId);
         }
         return deviceInfoJson;
+    }
+
+    @Override
+    public boolean isExeFile(File file) {
+        if(!file.isDirectory() && file.getName().endsWith(".exe")){
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public FileSensitivity getFileSensitivity(String path) {
+        if(StringUtils.startsWithAny(path.toLowerCase(), sensitivityPaths)){
+            return FileSensitivity.HIGH;
+        }
+        return FileSensitivity.LOW;
     }
 }

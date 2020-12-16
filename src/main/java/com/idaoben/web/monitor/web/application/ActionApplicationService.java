@@ -6,7 +6,10 @@ import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
-import com.idaoben.web.monitor.dao.entity.enums.*;
+import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
+import com.idaoben.web.monitor.dao.entity.enums.ActionType;
+import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
+import com.idaoben.web.monitor.dao.entity.enums.FileOpType;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.SystemOsService;
@@ -305,11 +308,7 @@ public class ActionApplicationService {
             action.setActionGroup(isDevice ? ActionGroup.DEVICE : ActionGroup.FILE);
 
             //根据操作系统判断系统敏感性
-            if(action.getPath().toLowerCase().startsWith(SystemUtils.getSensitivityPath().toLowerCase())){
-                action.setSensitivity(FileSensitivity.HIGH);
-            } else {
-                action.setSensitivity(FileSensitivity.LOW);
-            }
+            action.setSensitivity(systemOsService.getFileSensitivity(action.getPath()));
             FileAccess fileAccess = DeviceFileUtils.getFileAccess(action.getAccess());
             //只有含写操作的才会记录到map中
             if(fileAccess == FileAccess.WRITE || fileAccess == FileAccess.READ_AND_WRITE){

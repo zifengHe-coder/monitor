@@ -6,14 +6,12 @@ import com.idaoben.web.common.util.DateTimeUtils;
 import com.idaoben.web.monitor.dao.entity.Favorite;
 import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
-import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.FavoriteService;
 import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SoftwareService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.impl.MonitoringTask;
-import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.FileListCommand;
 import com.idaoben.web.monitor.web.command.SoftwareAddCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
@@ -254,7 +252,7 @@ public class SoftwareApplicationService {
         if(fileChildren != null){
             for(File file : fileChildren){
                 //过滤文件后缀
-                if(SystemUtils.getSystemOs() == SystemOs.WINDOWS && !file.isDirectory() && !file.getName().endsWith(".exe")){
+                if(!file.isDirectory() && !systemOsService.isExeFile(file)){
                     continue;
                 }
                 FileDto fileDto = new FileDto();

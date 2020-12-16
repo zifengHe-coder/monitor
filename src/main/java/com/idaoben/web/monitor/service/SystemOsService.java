@@ -1,5 +1,6 @@
 package com.idaoben.web.monitor.service;
 
+import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
@@ -68,4 +69,18 @@ public interface SystemOsService {
      * @return
      */
     DeviceInfoJson getDeviceInfo(String instanceId);
+
+    /**
+     * 判断是否可执行程序
+     * @param file
+     * @return
+     */
+    boolean isExeFile(File file);
+
+    /**
+     * 判断当前文件路径判断文件系统敏感性
+     * @param path
+     * @return
+     */
+    FileSensitivity getFileSensitivity(String path);
 }

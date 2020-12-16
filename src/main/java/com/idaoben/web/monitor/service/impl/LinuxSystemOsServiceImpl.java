@@ -1,13 +1,16 @@
 package com.idaoben.web.monitor.service.impl;
 
+import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -25,6 +28,13 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     private static final String TRACER_CMD = System.getProperty("user.dir") + "/src/main/resources/exe/tracer";
 
     private Map<Integer, Process> pidTracerProcessMap = new ConcurrentHashMap<>();
+
+    private static String[] sensitivityPaths;
+
+    @PostConstruct
+    public void init(){
+        sensitivityPaths = new String[]{"/bin", "/boot", "/data", "/root", "/sbin", "/sys"};
+    }
 
     @Override
     public String getActionFolderPath() {
@@ -142,5 +152,22 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     @Override
     public DeviceInfoJson getDeviceInfo(String instanceId) {
         return null;
+    }
+
+    @Override
+    public boolean isExeFile(File file) {
+        String fileName = file.getName();
+        if(!file.isDirectory() && (fileName.endsWith(".sh") || !fileName.contains("."))){
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public FileSensitivity getFileSensitivity(String path) {
+        if(StringUtils.startsWithAny(path.toLowerCase(), sensitivityPaths)){
+            return FileSensitivity.HIGH;
+        }
+        return FileSensitivity.LOW;
     }
 }
