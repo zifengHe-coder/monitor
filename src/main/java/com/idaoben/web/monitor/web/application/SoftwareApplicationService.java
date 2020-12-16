@@ -6,14 +6,17 @@ import com.idaoben.web.common.util.DateTimeUtils;
 import com.idaoben.web.monitor.dao.entity.Favorite;
 import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
+import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.FavoriteService;
 import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SoftwareService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.impl.MonitoringTask;
+import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.FileListCommand;
 import com.idaoben.web.monitor.web.command.SoftwareAddCommand;
+import com.idaoben.web.monitor.web.command.SoftwareCmdAddCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.dto.*;
 import org.apache.commons.lang3.StringUtils;
@@ -95,6 +98,22 @@ public class SoftwareApplicationService {
         Software software = new Software();
         software.setSoftwareName(file.getName());
         software.setCommandLine(file.getPath());
+        software.setExecutePath(file.getParent());
+        software.setExeName(file.getName());
+        software.setExePath(file.getPath());
+        softwareService.save(software);
+    }
+
+    public void addCmdSoftware(SoftwareCmdAddCommand command){
+        if(softwareService.exists(Filters.query().eq(Software::getExePath, command.getCommandLine()))){
+            throw ServiceException.of(ErrorCode.SOFTWARE_ALREADY_EXISTS);
+        }
+        //Get the exe file
+        String exePath = StringUtils.substringBefore(command.getCommandLine(), " ");
+        File file = new File(exePath);
+        Software software = new Software();
+        software.setSoftwareName(file.getName());
+        software.setCommandLine(command.getCommandLine());
         software.setExecutePath(file.getParent());
         software.setExeName(file.getName());
         software.setExePath(file.getPath());
@@ -234,7 +253,17 @@ public class SoftwareApplicationService {
     }
 
     private String getSoftwareIdFromImageName(String imageName){
-        return exeNameSoftwareIdMap.get(imageName.toLowerCase());
+        if(SystemUtils.getSystemOs() == SystemOs.WINDOWS){
+            return exeNameSoftwareIdMap.get(imageName.toLowerCase());
+        } else {
+            //For linux
+            for(SoftwareDto software : softwareMap.values()){
+                if(imageName.contains(software.getExeName())){
+                    return software.getId();
+                }
+            }
+        }
+        return null;
     }
 
     public List<FileDto> listFiles(FileListCommand command){

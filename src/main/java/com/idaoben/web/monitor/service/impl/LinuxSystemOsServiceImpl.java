@@ -12,6 +12,7 @@ import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     private static final String TRACER_CMD = System.getProperty("user.dir") + "/res/exe/tracer";
 
-    private Map<Integer, Process> pidTracerProcessMap = new ConcurrentHashMap<>();
+    private Map<Integer, Pair<Boolean, Process>> pidTracerProcessMap = new ConcurrentHashMap<>();
 
     private static String[] sensitivityPaths;
 
@@ -112,7 +113,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
                 String pidPrefix = "{\"pid\":\"";
                 if(line.startsWith(pidPrefix)){
                     int pid = Integer.parseInt(line.substring(8, line.length() - 2));
-                    pidTracerProcessMap.put(pid, process);
+                    pidTracerProcessMap.put(pid, Pair.of(true, process));
                     return pid;
                 }
             }
@@ -134,7 +135,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
                 //Console will show the success pid, eg: {"pid":"18205"}
                 String pidPrefix = "{\"pid\":\"";
                 if(line.startsWith(pidPrefix)){
-                    pidTracerProcessMap.put(pid, process);
+                    pidTracerProcessMap.put(pid, Pair.of(false, process));
                     return true;
                 }
             }
@@ -146,9 +147,18 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     @Override
     public boolean removeHooks(int pid) {
-        Process process = pidTracerProcessMap.get(pid);
-        if(process != null){
-            process.destroy();
+        Pair<Boolean, Process> processPair = pidTracerProcessMap.remove(pid);
+        if(processPair != null){
+            if(processPair.getLeft()){
+                //User kill -9 to kill the process
+                try {
+                    Runtime.getRuntime().exec(String.format("kill -9 %d", pid));
+                } catch (IOException e) {
+                    logger.error(e.getMessage(), e);
+                }
+            } else {
+                processPair.getRight().destroy();
+            }
         }
         return true;
     }
@@ -187,6 +197,8 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
             if(path.startsWith(PROCESS_TYPE_SEPARATOR)){
                 action.setType(ActionType.PROCESS_SHARE_MEMORY);
                 action.setCmdLine(path);
+                //Path is no the same for process
+                action.setPath("");
                 return ActionGroup.PROCESS;
             } else {
                 action.setDeviceName(path);

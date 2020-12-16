@@ -306,7 +306,10 @@ public class ActionApplicationService {
             action.setActionGroup(actionGroup);
 
             //根据操作系统判断系统敏感性
-            action.setSensitivity(systemOsService.getFileSensitivity(action.getPath()));
+            if(actionGroup == ActionGroup.FILE){
+                action.setSensitivity(systemOsService.getFileSensitivity(action.getPath()));
+            }
+
             FileAccess fileAccess = systemOsService.getFileAccess(action.getAccess());
             //只有含写操作的才会记录到map中
             if(fileAccess == FileAccess.WRITE || fileAccess == FileAccess.READ_AND_WRITE){
