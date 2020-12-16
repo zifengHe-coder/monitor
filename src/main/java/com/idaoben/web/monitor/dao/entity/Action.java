@@ -96,10 +96,6 @@ public class Action {
     @Column
     private String fd;
 
-    @Description("真正文件描述符")
-    @Column
-    private String origFd;
-
     @Description("写入数据偏移量")
     @Transient
     private Long offset;
@@ -314,14 +310,6 @@ public class Action {
 
     public void setFd(String fd) {
         this.fd = fd;
-    }
-
-    public String getOrigFd() {
-        return origFd;
-    }
-
-    public void setOrigFd(String origFd) {
-        this.origFd = origFd;
     }
 
     public Long getOffset() {

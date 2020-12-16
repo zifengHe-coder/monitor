@@ -10,7 +10,6 @@ import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.SystemOsService;
-import com.idaoben.web.monitor.utils.DeviceFileUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
@@ -300,12 +299,15 @@ public class ActionApplicationService {
             action.setFileName(StringUtils.substringAfterLast(action.getPath(), SystemUtils.FILE_SEPARATOR));
 
             //设置正式的文件路径和action group，并且判断是否设备
-            boolean isDevice = systemOsService.setActionDeviceFromFileInfo(action);
-            action.setActionGroup(isDevice ? ActionGroup.DEVICE : ActionGroup.FILE);
+            ActionGroup actionGroup = systemOsService.setActionFromFileInfo(action);
+            if(actionGroup == null){
+                return null;
+            }
+            action.setActionGroup(actionGroup);
 
             //根据操作系统判断系统敏感性
             action.setSensitivity(systemOsService.getFileSensitivity(action.getPath()));
-            FileAccess fileAccess = DeviceFileUtils.getFileAccess(action.getAccess());
+            FileAccess fileAccess = systemOsService.getFileAccess(action.getAccess());
             //只有含写操作的才会记录到map中
             if(fileAccess == FileAccess.WRITE || fileAccess == FileAccess.READ_AND_WRITE){
                 Map<String, FileInfo> fdFileInfoMap = fdFileMap.computeIfAbsent(pid, p -> new HashMap<>());

@@ -1,6 +1,8 @@
 package com.idaoben.web.monitor.service;
 
 import com.idaoben.web.monitor.dao.entity.Action;
+import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
+import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
 import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
@@ -86,9 +88,16 @@ public interface SystemOsService {
     FileSensitivity getFileSensitivity(String path);
 
     /**
-     * 从文件行为中分析出设备行为
+     * 从文件行为中分析出设备/Process行为
      * @param action
      * @return
      */
-    boolean setActionDeviceFromFileInfo(Action action);
+    ActionGroup setActionFromFileInfo(Action action);
+
+    /**
+     * Get file access from access value
+     * @param accessLong
+     * @return
+     */
+    FileAccess getFileAccess(Long accessLong);
 }

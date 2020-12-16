@@ -3,9 +3,12 @@ package com.idaoben.web.monitor.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.monitor.dao.entity.Action;
+import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
+import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
 import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import com.idaoben.web.monitor.service.JniService;
 import com.idaoben.web.monitor.service.SystemOsService;
+import com.idaoben.web.monitor.utils.DeviceFileUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.*;
 import org.apache.commons.io.IOUtils;
@@ -217,7 +220,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     }
 
     @Override
-    public boolean setActionDeviceFromFileInfo(Action action) {
+    public ActionGroup setActionFromFileInfo(Action action) {
         String path = action.getPath();
         if(StringUtils.startsWithAny(path, FILE_TYPE_SEPARATORS)){
             for(String filePrefix : FILE_TYPE_SEPARATORS){
@@ -233,19 +236,24 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
                 instanceId = StringUtils.substringBeforeLast(instanceId, "\\");
                 DeviceInfoJson deviceInfo = getDeviceInfo(instanceId);
                 action.setDeviceName(deviceInfo == null ? "未知设备" : deviceInfo.getFriendlyName());
-                return true;
+                return ActionGroup.DEVICE;
             }
 
             //再判断当前的路径是否调用网络打印机 示例：\??\C:\Windows\system32\spool\PRINTERS\00005.SPL
             if(action.getFileName().endsWith(".SPL") && action.getPath().contains("spool\\PRINTERS")){
                 action.setDeviceName("网络打印机");
-                return true;
+                return ActionGroup.DEVICE;
             }
         } else {
             //这不是一个文件，是一个设备
             action.setDeviceName(action.getPath());
-            return true;
+            return ActionGroup.DEVICE;
         }
-        return false;
+        return ActionGroup.FILE;
+    }
+
+    @Override
+    public FileAccess getFileAccess(Long accessLong) {
+        return DeviceFileUtils.getWindowsFileAccess(accessLong);
     }
 }

@@ -12,6 +12,6 @@ public class UtilsTest {
     @Test
     public void testGetFileAccess(){
         long access = 3222274176L;
-        logger.info(DeviceFileUtils.getFileAccess(access).toString());
+        logger.info(DeviceFileUtils.getWindowsFileAccess(access).toString());
     }
 }

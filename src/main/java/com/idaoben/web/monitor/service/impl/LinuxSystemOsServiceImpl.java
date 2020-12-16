@@ -1,8 +1,12 @@
 package com.idaoben.web.monitor.service.impl;
 
 import com.idaoben.web.monitor.dao.entity.Action;
+import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
+import com.idaoben.web.monitor.dao.entity.enums.ActionType;
+import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
 import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import com.idaoben.web.monitor.service.SystemOsService;
+import com.idaoben.web.monitor.utils.DeviceFileUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
@@ -26,13 +30,15 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     private static final Logger logger = LoggerFactory.getLogger(LinuxSystemOsServiceImpl.class);
 
-    private static final String TRACER_CMD = System.getProperty("user.dir") + "/src/main/resources/exe/tracer";
+    private static final String TRACER_CMD = System.getProperty("user.dir") + "/res/exe/tracer";
 
     private Map<Integer, Process> pidTracerProcessMap = new ConcurrentHashMap<>();
 
     private static String[] sensitivityPaths;
 
-    private static final String DEVICE_TYPE_SEPARATOR = "/dev";
+    private static final String DEVICE_TYPE_SEPARATOR = "/dev/";
+
+    private static final String PROCESS_TYPE_SEPARATOR = "/dev/shm/";
 
     @PostConstruct
     public void init(){
@@ -175,12 +181,23 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     }
 
     @Override
-    public boolean setActionDeviceFromFileInfo(Action action) {
+    public ActionGroup setActionFromFileInfo(Action action) {
         String path = action.getPath();
         if(path.startsWith(DEVICE_TYPE_SEPARATOR)){
-            action.setDeviceName(path);
-            return true;
+            if(path.startsWith(PROCESS_TYPE_SEPARATOR)){
+                action.setType(ActionType.PROCESS_SHARE_MEMORY);
+                action.setCmdLine(path);
+                return ActionGroup.PROCESS;
+            } else {
+                action.setDeviceName(path);
+                return ActionGroup.DEVICE;
+            }
         }
-        return false;
+        return ActionGroup.FILE;
+    }
+
+    @Override
+    public FileAccess getFileAccess(Long accessLong) {
+        return DeviceFileUtils.getLinuxFileAccess(accessLong);
     }
 }

@@ -50,6 +50,9 @@ public class ActionType {
     //进程间消息通讯
     public static final int PROCESS_MESSAGE_SEND = 20481;
 
+    //进程间消息通讯
+    public static final int PROCESS_SHARE_MEMORY = 20482;
+
     public static boolean isFileType(int access){
         return access == FILE_OPEN || access == FILE_WRITE;
     }
