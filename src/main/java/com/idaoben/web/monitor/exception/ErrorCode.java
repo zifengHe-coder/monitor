@@ -9,4 +9,5 @@ public class ErrorCode extends CommonErrorCode {
     public static final String SOFTWARE_NOT_RUNING = "2003";
     public static final String SOFTWARE_RUNING = "2004";
     public static final String START_AND_MONITOR_ERROR = "2005";
+    public static final String BACKUP_FILE_NOT_FOUND = "2006";
 }

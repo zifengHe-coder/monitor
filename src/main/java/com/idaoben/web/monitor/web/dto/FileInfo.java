@@ -11,16 +11,19 @@ public class FileInfo {
 
     private String path;
 
+    private String backup;
+
     private FileSensitivity sensitivity;
 
     private String deviceName;
 
     private ActionGroup actionGroup;
 
-    public FileInfo(String fd, String fileName, String path, FileSensitivity sensitivity, String deviceName, ActionGroup actionGroup) {
+    public FileInfo(String fd, String fileName, String path, String backup, FileSensitivity sensitivity, String deviceName, ActionGroup actionGroup) {
         this.fd = fd;
         this.fileName = fileName;
         this.path = path;
+        this.backup = backup;
         this.sensitivity = sensitivity;
         this.deviceName = deviceName;
         this.actionGroup = actionGroup;
@@ -48,6 +51,14 @@ public class FileInfo {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getBackup() {
+        return backup;
+    }
+
+    public void setBackup(String backup) {
+        this.backup = backup;
     }
 
     public FileSensitivity getSensitivity() {

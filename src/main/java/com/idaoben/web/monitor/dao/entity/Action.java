@@ -91,7 +91,7 @@ public class Action {
     @Column
     private Boolean generalFile;
 
-    @Description("备份目录 ")
+    @Description("备份路径")
     @Column
     private String backup;
 

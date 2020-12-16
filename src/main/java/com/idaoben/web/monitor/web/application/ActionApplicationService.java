@@ -14,6 +14,7 @@ import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,12 +24,12 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Component
 public class ActionApplicationService {
@@ -142,6 +143,83 @@ public class ActionApplicationService {
         }
         File file = new File(folder, fileName);
         return file;
+    }
+
+    public File getWriteFile(String uuid) throws IOException{
+        Action action = actionService.findStrictly(uuid);
+        if(action.getActionGroup() != ActionGroup.FILE || action.getType() != ActionType.FILE_WRITE){
+            throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
+        }
+
+        File folder = new File(String.format(ACTION_BACKUP_FOLDER_PATH, action.getTaskId(), action.getPid()));
+        if(!folder.exists()){
+            folder = new File(ACTION_FOLDER, action.getPid());
+        }
+        File offsetFile = new File(folder, action.getFd());
+        File zipFile = new File(folder, uuid + ".zip");
+        //如果zip文件已存在，表示曾经生成过，直接下载即可
+        if(zipFile.exists()){
+            return zipFile;
+        }
+
+        if(StringUtils.isEmpty(action.getBackup())){
+            //没有备份表示是新文件，直接下载即可
+            compressZipFile(null, offsetFile, action.getFileName(), zipFile);
+        }
+
+        File backupFile = new File(folder, StringUtils.substringAfterLast(action.getBackup(), SystemUtils.FILE_SEPARATOR));
+        if(!backupFile.exists()){
+            throw ServiceException.of(ErrorCode.BACKUP_FILE_NOT_FOUND);
+        }
+        File newFile = new File(folder, uuid);
+        FileUtils.copyFile(backupFile, newFile);
+        RandomAccessFile randomAccessFile = new RandomAccessFile(newFile, "rw");
+        FileInputStream offsetInputStream = new FileInputStream(offsetFile);
+        //对write file进行偏移量计算并重新写入文件
+        if(StringUtils.isNotEmpty(action.getWriteOffsets()) && StringUtils.isNotEmpty(action.getWriteBytes())){
+            String[] offsets = action.getWriteOffsets().split(",");
+            String[] bytes = action.getWriteBytes().split(",");
+            for(int i = 0, size = bytes.length; i < size; i++){
+                long offset = StringUtils.isNotEmpty(offsets[i]) ? Long.parseLong(offsets[i]) : -1;
+                int writeByte = Integer.parseInt(bytes[i]);
+                byte[] content = new byte[writeByte];
+                offsetInputStream.read(content);
+                if(offset != -1){
+                    randomAccessFile.seek(offset);
+                } else {
+                    randomAccessFile.seek(randomAccessFile.length());
+                }
+                randomAccessFile.write(content);
+            }
+        }
+        IOUtils.closeQuietly(offsetInputStream);
+
+        compressZipFile(backupFile, newFile, action.getFileName(), zipFile);
+        return zipFile;
+    }
+
+    private void compressZipFile(File backupFile, File writeFile, String fileName, File zipFile) throws IOException{
+        if(!zipFile.exists()) {
+            zipFile.createNewFile();
+        }
+        FileInputStream writeFileIs = new FileInputStream(writeFile);
+        FileOutputStream zipFileOs = new FileOutputStream(zipFile);
+        ZipOutputStream zos = new ZipOutputStream(zipFileOs);
+        if(backupFile != null){
+            FileInputStream backupFileIs = new FileInputStream(backupFile);
+            zos.putNextEntry(new ZipEntry("backup_" + fileName));
+            IOUtils.copy(backupFileIs, zos);
+            zos.closeEntry();
+            IOUtils.closeQuietly(backupFileIs);
+        }
+
+        zos.putNextEntry(new ZipEntry("new_" + fileName));
+        IOUtils.copy(writeFileIs, zos);
+        zos.closeEntry();
+
+        IOUtils.closeQuietly(writeFileIs);
+        IOUtils.closeQuietly(zipFileOs);
+        IOUtils.closeQuietly(zos);
     }
 
     /**
@@ -315,7 +393,7 @@ public class ActionApplicationService {
             if(fileAccess == FileAccess.WRITE || fileAccess == FileAccess.READ_AND_WRITE){
                 Map<String, FileInfo> fdFileInfoMap = fdFileMap.computeIfAbsent(pid, p -> new HashMap<>());
                 if(!fdFileInfoMap.containsKey(action.getFd())){
-                    fdFileInfoMap.put(action.getFd(), new FileInfo(action.getFd(), action.getFileName(), action.getPath(), action.getSensitivity(), action.getDeviceName(), action.getActionGroup()));
+                    fdFileInfoMap.put(action.getFd(), new FileInfo(action.getFd(), action.getFileName(), action.getPath(), action.getBackup(), action.getSensitivity(), action.getDeviceName(), action.getActionGroup()));
                 }
             }
             if(fileAccess == null){
@@ -335,6 +413,7 @@ public class ActionApplicationService {
                         originAction.setFileName(fileInfo.getFileName());
                         originAction.setSensitivity(fileInfo.getSensitivity());
                         originAction.setPath(fileInfo.getPath());
+                        originAction.setBackup(fileInfo.getBackup());
                         originAction.setDeviceName(fileInfo.getDeviceName());
                         originAction.setActionGroup(fileInfo.getActionGroup());
                         originAction.setWriteOffsets(action.getOffset() == null ? "" : String.valueOf(action.getOffset()));
