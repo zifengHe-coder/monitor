@@ -90,6 +90,11 @@ public interface MonitoringService {
      */
     void removeMonitoringPids(MonitoringTask task, Collection pids);
 
-    //void setMonitoringPidToError(String softwareId, );
+    /**
+     * 设置正在监听的PID为监听失败
+     * @param softwareId
+     * @param pid
+     */
+    void setMonitoringPidToError(String pid);
 
 }

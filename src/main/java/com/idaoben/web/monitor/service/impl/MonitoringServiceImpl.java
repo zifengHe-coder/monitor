@@ -1,6 +1,7 @@
 package com.idaoben.web.monitor.service.impl;
 
 import com.idaoben.web.monitor.service.MonitoringService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -79,6 +80,18 @@ public class MonitoringServiceImpl implements MonitoringService {
     public void removeMonitoringPids(MonitoringTask task, Collection pids) {
         task.getPids().removeAll(pids);
         pids.forEach(pid -> {pidSoftwareIdMap.remove(pid);});
+    }
+
+    @Override
+    public void setMonitoringPidToError(String pid) {
+        String softwareId = getMonitoringSoftwareIdByPid(pid);
+        if(StringUtils.isNotEmpty(softwareId)){
+            MonitoringTask monitoringTask = getMonitoringTask(softwareId);
+            if(monitoringTask != null){
+                monitoringTask.getPids().remove(pid);
+                monitoringTask.getErrorPids().add(pid);
+            }
+        }
     }
 
 }

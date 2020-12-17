@@ -26,3 +26,5 @@ node_modules
 src/main/resources/public/**
 db/
 dist
+
+res/**/*.exe

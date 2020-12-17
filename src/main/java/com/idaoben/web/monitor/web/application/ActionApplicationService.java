@@ -9,6 +9,7 @@ import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
+import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.*;
@@ -48,6 +49,9 @@ public class ActionApplicationService {
 
     @Resource
     private SystemOsService systemOsService;
+
+    @Resource
+    private MonitoringService monitoringService;
 
     private Map<String, ActionHanlderThread> handlingThreads = new ConcurrentHashMap<>();
 
@@ -165,6 +169,7 @@ public class ActionApplicationService {
         if(StringUtils.isEmpty(action.getBackup())){
             //没有备份表示是新文件，直接下载即可
             compressZipFile(null, offsetFile, action.getFileName(), zipFile);
+            return zipFile;
         }
 
         File backupFile = new File(folder, StringUtils.substringAfterLast(action.getBackup(), SystemUtils.FILE_SEPARATOR));
@@ -216,10 +221,10 @@ public class ActionApplicationService {
         zos.putNextEntry(new ZipEntry("new_" + fileName));
         IOUtils.copy(writeFileIs, zos);
         zos.closeEntry();
-
-        IOUtils.closeQuietly(writeFileIs);
-        IOUtils.closeQuietly(zipFileOs);
+        zos.finish();
         IOUtils.closeQuietly(zos);
+        IOUtils.closeQuietly(zipFileOs);
+        IOUtils.closeQuietly(writeFileIs);
     }
 
     /**
@@ -276,6 +281,7 @@ public class ActionApplicationService {
                 handlePidAction(pid, taskId, thread, retry);
             } else {
                 logger.error("进程action文件夹重试{}次后仍未生成， 停止监听并置为监听失败，PID: {}", pid);
+                monitoringService.setMonitoringPidToError(pid);
                 clearPidCache(pid);
             }
             return;
