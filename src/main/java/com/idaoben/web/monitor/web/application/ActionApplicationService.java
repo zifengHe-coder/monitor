@@ -144,6 +144,14 @@ public class ActionApplicationService {
         return DtoTransformer.asPage(ActionDeviceDto.class).apply(actions);
     }
 
+    public Page<ActionSecurityDto> listBySecurityType(ActionSecurityListCommand command, Pageable pageable){
+        Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.SECURITY).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
+                .likeFuzzy(Action::getTarget, command.getTarget())
+                .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        Page<Action> actions = actionService.findPage(filters, pageable);
+        return DtoTransformer.asPage(ActionSecurityDto.class).apply(actions);
+    }
+
     public File getNetworkFile(String uuid){
         Action action = actionService.findStrictly(uuid);
         if(action.getActionGroup() != ActionGroup.NETWORK || action.getType() == ActionType.NETWORK_OPEN){
@@ -388,6 +396,8 @@ public class ActionApplicationService {
                 setActionRegistryInfo(action, pid);
             } else if(ActionType.isProcessType(action.getType())){
                 systemOsService.setActionProcessInfo(action, pid);
+            } else if(ActionType.isSecurity(action.getType())){
+                setActionSecurityInfo(action, pid);
             }
 
             if(action != null){
@@ -520,5 +530,9 @@ public class ActionApplicationService {
 
     private void setActionRegistryInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.REGISTRY);
+    }
+
+    private void setActionSecurityInfo(Action action, String pid){
+        action.setActionGroup(ActionGroup.SECURITY);
     }
 }
