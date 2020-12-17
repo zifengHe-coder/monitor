@@ -33,7 +33,9 @@ public class ActionType {
     public static final int FILE_SEEK = 8195;
 
     //文件删除
-    public static final int FILE_DELETE = 8196;
+    public static final int FILE_DELETE_LINUX = 8196;
+
+    public static final int FILE_DELETE_WINDOWS = 8198;
 
     //注册表打开或创建键
     public static final int REGISTRY_OPEN_KEY = 12288;
@@ -65,7 +67,7 @@ public class ActionType {
     public static final int SECURITY_UPDATE = 24576;
 
     public static boolean isFileType(int access){
-        return access == FILE_OPEN || access == FILE_WRITE;
+        return access == FILE_OPEN || access == FILE_WRITE || access == FILE_DELETE_WINDOWS || access == FILE_DELETE_LINUX;
     }
 
     public static boolean isNetworkType(int access){

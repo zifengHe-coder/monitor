@@ -81,7 +81,7 @@ public class ActionApplicationService {
             } else if(command.getOpType() == FileOpType.READ){
                 filters.eq(Action::getType, ActionType.FILE_OPEN);
             } else if(command.getOpType() == FileOpType.DELETE){
-                filters.eq(Action::getType, ActionType.FILE_DELETE);
+                filters.in(Action::getType, ActionType.FILE_DELETE_LINUX, ActionType.FILE_DELETE_WINDOWS);
             }
         }
         Page<Action> actions = actionService.findPage(filters, pageable);
@@ -93,7 +93,8 @@ public class ActionApplicationService {
                 case ActionType.FILE_OPEN:
                     dto.setOpType(FileOpType.READ);
                     break;
-                case ActionType.FILE_DELETE:
+                case ActionType.FILE_DELETE_LINUX:
+                case ActionType.FILE_DELETE_WINDOWS:
                     dto.setOpType(FileOpType.DELETE);
                     break;
             }
@@ -531,9 +532,28 @@ public class ActionApplicationService {
             }
         }
 
-        if(action.getType() == ActionType.FILE_DELETE){
+        if(action.getType() == ActionType.FILE_DELETE_LINUX){
+            action.setActionGroup(ActionGroup.FILE);
             action.setPath(action.getFile());
             action.setSensitivity(systemOsService.getFileSensitivity(action.getPath()));
+            action.setFileName(new File(action.getPath()).getName());
+        } else if(action.getType() == ActionType.FILE_DELETE_WINDOWS){
+            //Windows平台还需要从打开文件中找回备份文件
+            Map<String, FileInfo> fdFileInfoMap = fdFileMap.get(pid);
+            if(fdFileInfoMap != null) {
+                FileInfo fileInfo = fdFileInfoMap.get(action.getFd());
+                if (fileInfo != null) {
+                    action.setActionGroup(ActionGroup.FILE);
+                    action.setPath(fileInfo.getPath());
+                    action.setBackup(fileInfo.getBackup());
+                    action.setSensitivity(fileInfo.getSensitivity());
+                    action.setFileName(fileInfo.getFileName());
+                } else {
+                    return null;
+                }
+            } else {
+                return null;
+            }
         }
 
         return action;
