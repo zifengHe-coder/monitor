@@ -76,13 +76,25 @@ public class ActionApplicationService {
         if(command.getOpType() != null){
             if(command.getOpType() == FileOpType.WRITE){
                 filters.eq(Action::getType, ActionType.FILE_WRITE);
-            } else {
+            } else if(command.getOpType() == FileOpType.READ){
                 filters.eq(Action::getType, ActionType.FILE_OPEN);
+            } else if(command.getOpType() == FileOpType.DELETE){
+                filters.eq(Action::getType, ActionType.FILE_DELETE);
             }
         }
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionFileDto.class).apply(actions, (domain, dto) -> {
-            dto.setOpType(domain.getType() == ActionType.FILE_WRITE ? FileOpType.WRITE : FileOpType.READ);
+            switch (domain.getType()){
+                case ActionType.FILE_WRITE:
+                    dto.setOpType(FileOpType.WRITE);
+                    break;
+                case ActionType.FILE_OPEN:
+                    dto.setOpType(FileOpType.READ);
+                    break;
+                case ActionType.FILE_DELETE:
+                    dto.setOpType(FileOpType.DELETE);
+                    break;
+            }
         });
     }
 
@@ -474,6 +486,10 @@ public class ActionApplicationService {
             } else {
                 return null;
             }
+        }
+
+        if(action.getType() == ActionType.FILE_DELETE){
+            action.setPath(action.getFile());
         }
         return action;
     }

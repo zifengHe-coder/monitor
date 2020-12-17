@@ -29,6 +29,9 @@ public class ActionType {
     //文件写入
     public static final int FILE_WRITE = 8193;
 
+    //文件删除
+    public static final int FILE_DELETE = 8196;
+
     //注册表打开或创建键
     public static final int REGISTRY_OPEN_KEY = 12288;
 

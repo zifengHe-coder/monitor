@@ -83,6 +83,10 @@ public class Action {
     @Column
     private FileSensitivity sensitivity;
 
+    @Description("被删除的文件")
+    @Transient
+    private String file;
+
     @Description("打开文件时要求的访问权限")
     @Column
     private Long access;
@@ -286,6 +290,14 @@ public class Action {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public void setFile(String file) {
+        this.file = file;
     }
 
     public FileSensitivity getSensitivity() {
