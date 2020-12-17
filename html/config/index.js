@@ -15,7 +15,8 @@ module.exports = {
         // target: 'http://192.168.42.61:8112',
         // target: 'http://localhost:3000',
         // target: 'http://192.168.42.224:3000',
-        target: 'http://127.0.0.1:8080',
+        // target: 'http://127.0.0.1:8080',
+        target: 'http://192.168.42.167:8080',
         changeOrigin: true,
         pathRewrite: {
           '^/api': '/api',

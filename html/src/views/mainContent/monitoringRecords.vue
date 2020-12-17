@@ -78,21 +78,24 @@
           value: 'REG_SZ'
         }],
         tabLabels: [{
-          label: '文件读写',
-          value: '2'
-        }, {
-          label: '注册表',
-          value: '3'
-        }, {
-          label: '进程调用',
-          value: '4'
-        }, {
-          label: '设备控制',
-          value: '5'
-        }, {
-          label: '网络访问',
-          value: '1'
-        }],
+            label: '文件读写',
+            value: '2'
+          },
+          //  {
+          //   label: '注册表',
+          //   value: '3'
+          // }, 
+          {
+            label: '进程调用',
+            value: '4'
+          }, {
+            label: '设备控制',
+            value: '5'
+          }, {
+            label: '网络访问',
+            value: '1'
+          }
+        ],
         currentTab: '2',
         tabContentOnff: false,
         progressDetail: null,
@@ -102,7 +105,7 @@
         opTypeLists: ['读', '写'],
         sensitivityLists: ['低', '中', '高'],
         funcApi: null, // 对应的tabs的列表的接口
-        typeLists:{
+        typeLists: {
           0: '监控开始',
           4095: '监控结束',
           4096: '发起网络连接',
@@ -120,7 +123,7 @@
           20480: '创建远程线程',
           20481: 'WM_COPYDATA发送',
           24576: '修改对象安全描述符'
-        },// 操作类型code---text
+        }, // 操作类型code---text
         progressStatus: null,
         deviceTypeLists: {
           16384: '启动进程',
@@ -130,6 +133,13 @@
       }
     },
     created() {
+      console.log(sessionStorage.getItem('system'));
+      if (sessionStorage.getItem('system') === 'windows') {
+        this.tabLabels.splice(0, 0, {
+          label: '注册表',
+          value: '3'
+        })
+      }
       this.changeConfig(this.currentTab);
       this.initData();
     },
@@ -142,74 +152,78 @@
       }
     },
     methods: {
-      changeClickEvent(row,buttonText){
-        if(this.currentTab == '2'){
-          switch(buttonText){
+      changeClickEvent(row, buttonText) {
+        if (this.currentTab == '2') {
+          switch (buttonText) {
             case '打开文件位置':
               this.openFile(row);
             case '下载文件':
               this.downloadFile(row);
             case '下载对比文件':
           }
-        }else if (this.currentTab == '1'){
+        } else if (this.currentTab == '1') {
           this.downloadNetworkPackage(row);
         }
       },
       // 下载网络包
-      downloadNetworkPackage(data){
+      downloadNetworkPackage(data) {
         let a = document.createElement('a');
-        a.href = window.location.origin+this.$api.actionDownloadNetworkPackage+`?uuid=${data.uuid}`;
+        a.href = window.location.origin + this.$api.actionDownloadNetworkPackage + `?uuid=${data.uuid}`;
         a.download = 'networkPackage';
         a.click()
       },
       // 打开文件位置
-      openFile(data){
+      openFile(data) {
         let path = data.path;
         this.$http({
           url: this.$api.systemOpenFileFolder,
           method: 'POST',
-          data: {data:{path}}
+          data: {
+            data: {
+              path
+            }
+          }
         }).then(r => {
           console.log(r)
         })
       },
       // 下载文件
-      downloadFile(data){
+      downloadFile(data) {
         let a = document.createElement('a');
         let path = encodeURIComponent(data.path)
-        a.href = window.location.origin+this.$api.systemDownloadFile+`?path=${path}`;
+        a.href = window.location.origin + this.$api.systemDownloadFile + `?path=${path}`;
         a.download = 'package';
         a.click();
       },
-      changeButtonText(row){
+      changeButtonText(row) {
         let text = '';
-        if(this.currentTab === '2'){
-          if(row.opType === '读'){
+        if (this.currentTab === '2') {
+          if (row.opType === '读') {
             let platform = sessionStorage.getItem(`${this.softwareDetail.softwareName}System`);
-            if(platform === 'windows' && (row.path.indexOf('127.0.0.1') > -1 || row.path.indexOf('localhost') > -1)){
+            if (platform === 'windows' && (row.path.indexOf('127.0.0.1') > -1 || row.path.indexOf('localhost') > -1)) {
               text = '打开文件位置';
-            }else{
+            } else {
               text = '下载文件'
             }
-          }else if(row.opType === '写'){
+          } else if (row.opType === '写') {
             text = '下载对比文件';
           }
-        }else if(this.currentTab === '1'){
+        } else if (this.currentTab === '1') {
           text = '下载网络包'
-        }else if(this.currentTab === '4'){
+        } else if (this.currentTab === '4') {
           text = '查看'
         }
         return text;
       },
       showBtn(row) {
-        const arr = ['1','2','4']
-        if(arr.includes(this.currentTab)){
-          if(this.currentTab === '4' && row.type !== this.typeLists[20481]){
+        const arr = ['1', '2', '4']
+        if (arr.includes(this.currentTab)) {
+          if (this.currentTab === '4' && row.type !== this.typeLists[20481]) {
             return false;
-          }else{
+          } else {
             return true;
           }
-        }else{
+        } else {
           return false;
         }
       },
@@ -218,9 +232,9 @@
           this.softwareDetail = res;
         });
         // 判断状态
-        if(this.$route.query.isFromIndex == 'true'){
+        if (this.$route.query.isFromIndex == 'true') {
           this.progressStatus = '监听中';
-        }else{
+        } else {
           this.progressStatus = JSON.parse(this.$route.query.data).status;
         }
         if (this.$route.name === 'programProgressFromIndex' || this.$route.name === 'programProgressFromHistory') {
@@ -251,10 +265,10 @@
               options: [{
                 label: '发送网络连接',
                 value: 4096
-              },{
+              }, {
                 label: 'TCP数据发送',
                 value: 4097
-              },{
+              }, {
                 label: 'TCP数据接收',
                 value: 4098
               }]
@@ -266,37 +280,38 @@
               format: 'yyyy-MM-dd HH:mm:ss'
             }]
             this.tableLabels = [{
-              type: 'timestamp',
-              prop: 'timestamp',
-              columnOperable: 'none',
-              label: '访问时间'
-            }, {
-              type: 'word',
-              prop: 'type',
-              label: '链接类型'
-            }, {
-              type: 'word',
-              prop: 'host',
-              label: 'IP地址'
-            }, {
-              type: 'word',
-              prop: 'port',
-              label: '端口'
-            }, {
-              type: 'word',
-              prop: 'protocol',
-              label: '协议类型'
-            }, 
-            // {
-            //   type: 'word',
-            //   prop: 'warningParams ',
-            //   label: '敏感数据字段'
-            // }, 
-            {
-              type: 'word',
-              prop: 'bytes',
-              label: '网络流量'
-            }]
+                type: 'timestamp',
+                prop: 'timestamp',
+                columnOperable: 'none',
+                label: '访问时间'
+              }, {
+                type: 'word',
+                prop: 'type',
+                label: '链接类型'
+              }, {
+                type: 'word',
+                prop: 'host',
+                label: 'IP地址'
+              }, {
+                type: 'word',
+                prop: 'port',
+                label: '端口'
+              }, {
+                type: 'word',
+                prop: 'protocol',
+                label: '协议类型'
+              },
+              // {
+              //   type: 'word',
+              //   prop: 'warningParams ',
+              //   label: '敏感数据字段'
+              // }, 
+              {
+                type: 'word',
+                prop: 'bytes',
+                label: '网络流量'
+              }
+            ]
             this.hasOperation = true
             this.operationName = '下载网络包'
             this.labelWidth = 60;
@@ -310,7 +325,7 @@
               options: [{
                 label: '读',
                 value: 1
-              },{
+              }, {
                 label: '写',
                 value: 2
               }]
@@ -325,10 +340,10 @@
               options: [{
                 label: '低',
                 value: 1
-              },{
+              }, {
                 label: '中',
                 value: 2
-              },{
+              }, {
                 label: '高',
                 value: 3
               }]
@@ -445,10 +460,10 @@
               options: [{
                 label: '启动进程',
                 value: 16384
-              },{
+              }, {
                 label: '进程注入',
                 value: 20480
-              },{
+              }, {
                 label: '消息通讯',
                 value: 20481
               }]
@@ -572,8 +587,8 @@
         let params = JSON.parse(
           sessionStorage.getItem(`${this.comData.id}Page`)
         );
-        if(this.$route.query.isFromIndex == 'true'){
-          if(this.progressStatus === '监听中'){
+        if (this.$route.query.isFromIndex == 'true') {
+          if (this.progressStatus === '监听中') {
             this.getList(params).then((res) => {
               clearTimeout(timer)
               timer = setTimeout(() => {
@@ -646,10 +661,10 @@
           delete postParams.data.operatingTime_date;
         }
         // 添加taskId
-        if(this.$route.params.historyId){
+        if (this.$route.params.historyId) {
           // 从历史进去，taskId是historyId
           postParams.data.taskId = Number(this.$route.params.historyId)
-        }else{
+        } else {
           // 如果没有historyId，就用软件详情的taskId
           postParams.data.taskId = this.softwareDetail.taskId
         }
@@ -770,15 +785,17 @@
         });
       },
       stopMonitor() {
-        this.$confirm('确定停止监听？','提示',{
+        this.$confirm('停止监听时有可能引起应用异常退出，请先做好应用的数据保存再停止监听', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消'
-        }).then(()=>{
+        }).then(() => {
           this.$http({
             url: this.$api.monitorStopMonitor,
             method: 'POST',
             data: {
-              data:{id: this.softwareDetail.id}
+              data: {
+                id: this.softwareDetail.id
+              }
             }
           }).then((r) => {
             if (r.code === '0') {
@@ -790,7 +807,7 @@
               this.progressStatus = '已完成';
             }
           })
-        }).catch(()=>{})
+        }).catch(() => {})
       },
       changeStateInHistory(id) {
         this.$http({
