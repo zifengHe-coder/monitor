@@ -2,14 +2,21 @@ package com.idaoben.web.monitor.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.idaoben.web.monitor.dao.entity.Action;
+import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
+import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
+import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import com.idaoben.web.monitor.service.JniService;
 import com.idaoben.web.monitor.service.SystemOsService;
+import com.idaoben.web.monitor.utils.DeviceFileUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.*;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -34,6 +41,17 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
 
     private FileSystemView fileSystemView = FileSystemView.getFileSystemView();
 
+    private Map<String, DeviceInfoJson> deviceInfoMap = new HashMap<>();
+
+    private static String[] sensitivityPaths;
+
+    private static final String[] FILE_TYPE_SEPARATORS = new String[]{"\\??\\", "\\\\??\\"};
+
+    @PostConstruct
+    public void init(){
+        sensitivityPaths = new String[]{(SystemUtils.getOsHome() + "\\WINDOWS\\").toLowerCase()};
+    }
+
     @Override
     public String getActionFolderPath() {
         return SystemUtils.getOsHome() + "\\WinMonitor";
@@ -47,20 +65,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
         List<File> linkFiles = new ArrayList<>();
         if(startMenu.exists() && startMenu.isDirectory()){
             for(File file : startMenu.listFiles()){
-                if(!file.isDirectory()){
-                    if(checklnkFile(file)){
-                        linkFiles.add(file);
-                    }
-                } else {
-                    //只搜索一层文件夹
-                    for(File fileChild : file.listFiles()){
-                        if(!fileChild.isDirectory()){
-                            if(checklnkFile(fileChild)){
-                                linkFiles.add(fileChild);
-                            }
-                        }
-                    }
-                }
+                checkAndAddFile(file, linkFiles);
             }
         }
         List<String> linkPaths = linkFiles.stream().map(File::getPath).collect(Collectors.toList());
@@ -76,6 +81,18 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
             softwares.add(getSoftwareInfo(linkFile, linkFileJsonMap.get(linkFile.getPath())));
         }
         return softwares;
+    }
+
+    private void checkAndAddFile(File file, List<File> linkFiles){
+        if(!file.isDirectory()){
+            if(checklnkFile(file)){
+                linkFiles.add(file);
+            }
+        } else {
+            for(File fileChild : file.listFiles()){
+                checkAndAddFile(fileChild, linkFiles);
+            }
+        }
     }
 
     private boolean checklnkFile(File file){
@@ -157,5 +174,91 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     @Override
     public boolean isAutoMonitorChildProcess() {
         return true;
+    }
+
+    @Override
+    public DeviceInfoJson getDeviceInfo(String instanceId) {
+        DeviceInfoJson deviceInfoJson = null;
+        if(!deviceInfoMap.containsKey(instanceId)){
+            //重新获取一次信息
+            String allDevicesJson = jniService.listAllDevices();
+            logger.info("找不到对应设备{}，进行设备列表查询", instanceId);
+            try {
+                DeviceListJson deviceList = objectMapper.readValue(allDevicesJson, DeviceListJson.class);
+                Map<String, DeviceInfoJson> deviceInfoJsonMap = new HashMap<>();
+                deviceList.getDevices().forEach(deviceInfo -> {deviceInfoJsonMap.put(deviceInfo.getInstanceId(), deviceInfo);});
+                deviceInfoMap = deviceInfoJsonMap;
+            } catch (JsonProcessingException e) {
+                logger.error(e.getMessage(), e);
+            }
+            if(deviceInfoMap.containsKey(instanceId)){
+                deviceInfoJson = deviceInfoMap.get(instanceId);
+            } else {
+                //找不到设备时传入一个空的缓存，避免下次重复查询了
+                deviceInfoMap.put(instanceId, null);
+            }
+        } else {
+            deviceInfoJson = deviceInfoMap.get(instanceId);
+        }
+        return deviceInfoJson;
+    }
+
+    @Override
+    public boolean isExeFile(File file) {
+        if(!file.isDirectory() && file.getName().endsWith(".exe")){
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public FileSensitivity getFileSensitivity(String path) {
+        if(StringUtils.startsWithAny(path.toLowerCase(), sensitivityPaths)){
+            return FileSensitivity.HIGH;
+        }
+        return FileSensitivity.LOW;
+    }
+
+    @Override
+    public ActionGroup setActionFromFileInfo(Action action) {
+        String path = action.getPath();
+        if(StringUtils.startsWithAny(path, FILE_TYPE_SEPARATORS)){
+            for(String filePrefix : FILE_TYPE_SEPARATORS){
+                if(path.startsWith(filePrefix)){
+                    path = StringUtils.substringAfter(path, filePrefix);
+                    action.setPath(path);
+                }
+            }
+            //如果是盘符+冒号开头的，表示是文件读取，其他的是设备读取
+            if(path.length() < 2 || path.charAt(1) != ':'){
+                String instanceId = StringUtils.substringBeforeLast(path, "\\").replace("#", "\\").toUpperCase();
+                //要再去掉最后一个反斜杠后面的部分
+                instanceId = StringUtils.substringBeforeLast(instanceId, "\\");
+                DeviceInfoJson deviceInfo = getDeviceInfo(instanceId);
+                action.setDeviceName(deviceInfo == null ? "未知设备" : deviceInfo.getFriendlyName());
+                return ActionGroup.DEVICE;
+            }
+
+            //再判断当前的路径是否调用网络打印机 示例：\??\C:\Windows\system32\spool\PRINTERS\00005.SPL
+            if(action.getFileName().endsWith(".SPL") && action.getPath().contains("spool\\PRINTERS")){
+                action.setDeviceName("网络打印机");
+                return ActionGroup.DEVICE;
+            }
+        } else {
+            //这不是一个文件，是一个设备
+            action.setDeviceName(action.getPath());
+            return ActionGroup.DEVICE;
+        }
+        return ActionGroup.FILE;
+    }
+
+    @Override
+    public FileAccess getFileAccess(Long accessLong) {
+        return DeviceFileUtils.getWindowsFileAccess(accessLong);
+    }
+
+    @Override
+    public void setActionProcessInfo(Action action, String pid) {
+        action.setActionGroup(ActionGroup.PROCESS);
     }
 }

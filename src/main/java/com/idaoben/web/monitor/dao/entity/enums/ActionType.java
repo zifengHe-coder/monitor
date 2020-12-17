@@ -44,11 +44,16 @@ public class ActionType {
     //启动进程
     public static final int PROCESS_OPEN = 16384;
 
+    public static final int PROCESS_OPEN_LINUX = 16385;
+
     //进程注入
     public static final int PROCESS_INJECT = 20480;
 
     //进程间消息通讯
     public static final int PROCESS_MESSAGE_SEND = 20481;
+
+    //进程间内存共享
+    public static final int PROCESS_SHARE_MEMORY = 20482;
 
     public static boolean isFileType(int access){
         return access == FILE_OPEN || access == FILE_WRITE;
@@ -63,6 +68,6 @@ public class ActionType {
     }
 
     public static boolean isProcessType(int access){
-        return access == PROCESS_OPEN || access == PROCESS_INJECT || access == PROCESS_MESSAGE_SEND;
+        return access == PROCESS_OPEN || access == PROCESS_OPEN_LINUX || access == PROCESS_INJECT || access == PROCESS_MESSAGE_SEND;
     }
 }

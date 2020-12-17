@@ -67,4 +67,11 @@ public class ActionController {
         File file = actionApplicationService.getNetworkFile(uuid);
         DownloadUtils.sendFileToClient(file, response);
     }
+
+    @ApiOperation("写对比文件下载")
+    @GetMapping("downloadWriteFilePackage")
+    public void downloadWriteFilePackage(String uuid, HttpServletResponse response) throws IOException {
+        File file = actionApplicationService.getWriteFile(uuid);
+        DownloadUtils.sendFileToClient(file, response);
+    }
 }

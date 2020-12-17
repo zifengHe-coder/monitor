@@ -1,5 +1,7 @@
 package com.idaoben.web.monitor.dao.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.idaoben.web.common.entity.Description;
 import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
 import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
@@ -30,6 +32,7 @@ public class Action {
     @Column(nullable = false)
     private Long taskId;
 
+    @JsonIgnore
     @Description("进程ID")
     @Column(nullable = false)
     private String pid;
@@ -88,7 +91,7 @@ public class Action {
     @Column
     private Boolean generalFile;
 
-    @Description("备份目录 ")
+    @Description("备份路径")
     @Column
     private String backup;
 
@@ -135,6 +138,19 @@ public class Action {
     @Description("启动进程的完整命令行数据")
     @Column(length = 2000)
     private String cmdLine;
+
+    @JsonProperty("pid")
+    @Description("执行命令的PID")
+    @Column
+    private String cmdPid;
+
+    @Description("执行的命令")
+    @Transient
+    private String cmd;
+
+    @Description("执行命令时的参数（数组）")
+    @Transient
+    private String[] args;
 
     @Description("创建远程线程时提供的入口函数地址 ")
     @Column
@@ -390,6 +406,30 @@ public class Action {
 
     public void setCmdLine(String cmdLine) {
         this.cmdLine = cmdLine;
+    }
+
+    public String getCmdPid() {
+        return cmdPid;
+    }
+
+    public void setCmdPid(String cmdPid) {
+        this.cmdPid = cmdPid;
+    }
+
+    public String getCmd() {
+        return cmd;
+    }
+
+    public void setCmd(String cmd) {
+        this.cmd = cmd;
+    }
+
+    public String[] getArgs() {
+        return args;
+    }
+
+    public void setArgs(String[] args) {
+        this.args = args;
     }
 
     public String getThreadEntryAddress() {

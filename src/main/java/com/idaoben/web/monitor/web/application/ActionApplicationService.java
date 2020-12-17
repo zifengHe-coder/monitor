@@ -9,11 +9,13 @@ import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
+import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,13 +25,12 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Component
 public class ActionApplicationService {
@@ -48,6 +49,9 @@ public class ActionApplicationService {
 
     @Resource
     private SystemOsService systemOsService;
+
+    @Resource
+    private MonitoringService monitoringService;
 
     private Map<String, ActionHanlderThread> handlingThreads = new ConcurrentHashMap<>();
 
@@ -106,9 +110,10 @@ public class ActionApplicationService {
         return DtoTransformer.asPage(ActionNetworkDto.class).apply(actions, (domain, dto) -> {
             //简单的协议分析
             if(domain.getType() == ActionType.NETWORK_TCP_SEND || domain.getType() == ActionType.NETWORK_TCP_RECEIVE){
-                if(domain.getPort() == 443){
+                int port = domain.getPort() == null ? -1 : domain.getPort();
+                if(port == 443){
                     dto.setProtocol("HTTPS");
-                } else if(domain.getPort() == 80){
+                } else if(port == 80){
                     dto.setProtocol("HTTP");
                 } else {
                     dto.setProtocol("TCP");
@@ -142,6 +147,84 @@ public class ActionApplicationService {
         }
         File file = new File(folder, fileName);
         return file;
+    }
+
+    public File getWriteFile(String uuid) throws IOException{
+        Action action = actionService.findStrictly(uuid);
+        if(action.getActionGroup() != ActionGroup.FILE || action.getType() != ActionType.FILE_WRITE){
+            throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
+        }
+
+        File folder = new File(String.format(ACTION_BACKUP_FOLDER_PATH, action.getTaskId(), action.getPid()));
+        if(!folder.exists()){
+            folder = new File(ACTION_FOLDER, action.getPid());
+        }
+        File offsetFile = new File(folder, action.getFd());
+        File zipFile = new File(folder, uuid + ".zip");
+        //如果zip文件已存在，表示曾经生成过，直接下载即可
+        if(zipFile.exists()){
+            return zipFile;
+        }
+
+        if(StringUtils.isEmpty(action.getBackup())){
+            //没有备份表示是新文件，直接下载即可
+            compressZipFile(null, offsetFile, action.getFileName(), zipFile);
+            return zipFile;
+        }
+
+        File backupFile = new File(folder, StringUtils.substringAfterLast(action.getBackup(), SystemUtils.FILE_SEPARATOR));
+        if(!backupFile.exists()){
+            throw ServiceException.of(ErrorCode.BACKUP_FILE_NOT_FOUND);
+        }
+        File newFile = new File(folder, uuid);
+        FileUtils.copyFile(backupFile, newFile);
+        RandomAccessFile randomAccessFile = new RandomAccessFile(newFile, "rw");
+        FileInputStream offsetInputStream = new FileInputStream(offsetFile);
+        //对write file进行偏移量计算并重新写入文件
+        if(StringUtils.isNotEmpty(action.getWriteOffsets()) && StringUtils.isNotEmpty(action.getWriteBytes())){
+            String[] offsets = action.getWriteOffsets().split(",");
+            String[] bytes = action.getWriteBytes().split(",");
+            for(int i = 0, size = bytes.length; i < size; i++){
+                long offset = StringUtils.isNotEmpty(offsets[i]) ? Long.parseLong(offsets[i]) : -1;
+                int writeByte = Integer.parseInt(bytes[i]);
+                byte[] content = new byte[writeByte];
+                offsetInputStream.read(content);
+                if(offset != -1){
+                    randomAccessFile.seek(offset);
+                } else {
+                    randomAccessFile.seek(randomAccessFile.length());
+                }
+                randomAccessFile.write(content);
+            }
+        }
+        IOUtils.closeQuietly(offsetInputStream);
+
+        compressZipFile(backupFile, newFile, action.getFileName(), zipFile);
+        return zipFile;
+    }
+
+    private void compressZipFile(File backupFile, File writeFile, String fileName, File zipFile) throws IOException{
+        if(!zipFile.exists()) {
+            zipFile.createNewFile();
+        }
+        FileInputStream writeFileIs = new FileInputStream(writeFile);
+        FileOutputStream zipFileOs = new FileOutputStream(zipFile);
+        ZipOutputStream zos = new ZipOutputStream(zipFileOs);
+        if(backupFile != null){
+            FileInputStream backupFileIs = new FileInputStream(backupFile);
+            zos.putNextEntry(new ZipEntry("backup_" + fileName));
+            IOUtils.copy(backupFileIs, zos);
+            zos.closeEntry();
+            IOUtils.closeQuietly(backupFileIs);
+        }
+
+        zos.putNextEntry(new ZipEntry("new_" + fileName));
+        IOUtils.copy(writeFileIs, zos);
+        zos.closeEntry();
+        zos.finish();
+        IOUtils.closeQuietly(zos);
+        IOUtils.closeQuietly(zipFileOs);
+        IOUtils.closeQuietly(writeFileIs);
     }
 
     /**
@@ -180,9 +263,27 @@ public class ActionApplicationService {
         }
     }
 
-    private void handlePidAction(String pid, Long taskId, ActionHanlderThread thread){
+    void handlePidAction(String pid, Long taskId, ActionHanlderThread thread){
+        handlePidAction(pid, taskId, thread, 0);
+    }
+
+    private void handlePidAction(String pid, Long taskId, ActionHanlderThread thread, int retry){
         File pidFolder = new File(ACTION_FOLDER, pid);
         if(!pidFolder.exists()){
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                logger.error(e.getMessage(), e);
+            }
+            if(retry < 10 && !thread.isFinish()){
+                logger.error("进程action文件夹未生成， 尝试等待后重试，PID: {}", pid);
+                retry ++;
+                handlePidAction(pid, taskId, thread, retry);
+            } else {
+                logger.error("进程action文件夹重试{}次后仍未生成， 停止监听并置为监听失败，PID: {}", pid);
+                monitoringService.setMonitoringPidToError(pid);
+                clearPidCache(pid);
+            }
             return;
         }
         //查询action文件
@@ -273,7 +374,7 @@ public class ActionApplicationService {
             } else if(ActionType.isRegistryType(action.getType())){
                 setActionRegistryInfo(action, pid);
             } else if(ActionType.isProcessType(action.getType())){
-                setActionProcessInfo(action, pid);
+                systemOsService.setActionProcessInfo(action, pid);
             }
 
             if(action != null){
@@ -285,25 +386,30 @@ public class ActionApplicationService {
         return null;
     }
 
-    private static final String FILE_TYPE_SEPARATOR = "\\??\\";
 
     private Action setActionFileInfo(Action action, String pid){
         if(action.getType() == ActionType.FILE_OPEN){
-            String path = action.getPath();
             //获取path对应的文件名称
-            action.setFileName(StringUtils.substringAfterLast(path, SystemUtils.FILE_SEPARATOR));
-            //根据操作系统判断系统敏感性
-            if(path.toLowerCase(Locale.ROOT).startsWith(SystemUtils.getSensitivityPath().toLowerCase())){
-                action.setSensitivity(FileSensitivity.HIGH);
-            } else {
-                action.setSensitivity(FileSensitivity.LOW);
+            action.setFileName(StringUtils.substringAfterLast(action.getPath(), SystemUtils.FILE_SEPARATOR));
+
+            //设置正式的文件路径和action group，并且判断是否设备
+            ActionGroup actionGroup = systemOsService.setActionFromFileInfo(action);
+            if(actionGroup == null){
+                return null;
             }
-            FileAccess fileAccess = getFileAccess(action);
+            action.setActionGroup(actionGroup);
+
+            //根据操作系统判断系统敏感性
+            if(actionGroup == ActionGroup.FILE){
+                action.setSensitivity(systemOsService.getFileSensitivity(action.getPath()));
+            }
+
+            FileAccess fileAccess = systemOsService.getFileAccess(action.getAccess());
             //只有含写操作的才会记录到map中
             if(fileAccess == FileAccess.WRITE || fileAccess == FileAccess.READ_AND_WRITE){
                 Map<String, FileInfo> fdFileInfoMap = fdFileMap.computeIfAbsent(pid, p -> new HashMap<>());
                 if(!fdFileInfoMap.containsKey(action.getFd())){
-                    fdFileInfoMap.put(action.getFd(), new FileInfo(action.getFd(), action.getFileName(), action.getPath(), action.getSensitivity()));
+                    fdFileInfoMap.put(action.getFd(), new FileInfo(action.getFd(), action.getFileName(), action.getPath(), action.getBackup(), action.getSensitivity(), action.getDeviceName(), action.getActionGroup()));
                 }
             }
             if(fileAccess == null){
@@ -323,6 +429,9 @@ public class ActionApplicationService {
                         originAction.setFileName(fileInfo.getFileName());
                         originAction.setSensitivity(fileInfo.getSensitivity());
                         originAction.setPath(fileInfo.getPath());
+                        originAction.setBackup(fileInfo.getBackup());
+                        originAction.setDeviceName(fileInfo.getDeviceName());
+                        originAction.setActionGroup(fileInfo.getActionGroup());
                         originAction.setWriteOffsets(action.getOffset() == null ? "" : String.valueOf(action.getOffset()));
                         originAction.setWriteBytes(String.valueOf(action.getBytes()));
                         actionMap.put(originAction.getFd(), originAction);
@@ -365,64 +474,27 @@ public class ActionApplicationService {
                 return null;
             }
         }
-
-        //设置正式的文件路径和action group
-        if(action.getActionGroup() ==null){
-            String path = action.getPath();
-            if(path.startsWith(FILE_TYPE_SEPARATOR)){
-                path = StringUtils.substringAfter(path, FILE_TYPE_SEPARATOR);
-                action.setPath(path);
-
-                //再判断当前的路径是否调用网络打印机 示例：\??\C:\Windows\system32\spool\PRINTERS\00005.SPL
-                if(action.getFileName().endsWith(".SPL") && action.getPath().contains("spool\\PRINTERS")){
-                    action.setDeviceName("网络打印机");
-                    action.setActionGroup(ActionGroup.DEVICE);
-                } else {
-                    action.setActionGroup(ActionGroup.FILE);
-                }
-            } else {
-                //这不是一个文件，是一个设备
-                action.setActionGroup(ActionGroup.DEVICE);
-                // \Device\DeviceApi\Dev\Query
-                if("\\Device\\DeviceApi\\Dev\\Query".equals(action.getPath())){
-                    action.setDeviceName("系统设备查询");
-                }
-            }
-        }
         return action;
-    }
-
-    private FileAccess getFileAccess(Action action){
-        if(action.getAccess() != null){
-            long access = action.getAccess().longValue();
-            boolean read = access >> 31 == 1;
-            boolean write = access << 1 >> 31 == 1;
-            if(read && write){
-                return FileAccess.READ_AND_WRITE;
-            } else if(read){
-                return FileAccess.READ;
-            } else if(write){
-                return FileAccess.WRITE;
-            }
-        }
-        return null;
     }
 
     private void setActionNetworkInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.NETWORK);
-        if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
-            if(StringUtils.isNotEmpty(action.getHost())){
-                Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
-                socketFdNetworkInfoMap.put(action.getSocketFd(), new NetworkInfo(action.getHost(), action.getPort()));
+        //Windows平台所有发送和接收都带上了host和port，不用处理。只有Linux下需要处理
+        if(SystemUtils.getSystemOs() == SystemOs.LINUX){
+            if(action.getType() == ActionType.NETWORK_OPEN){
+                if(StringUtils.isNotEmpty(action.getHost())){
+                    Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
+                    socketFdNetworkInfoMap.put(action.getSocketFd(), new NetworkInfo(action.getHost(), action.getPort()));
+                }
             }
-        }
-        if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
-            Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.get(pid);
-            if(socketFdNetworkInfoMap != null){
-                NetworkInfo networkInfo = socketFdNetworkInfoMap.get(action.getSocketFd());
-                if(networkInfo != null){
-                    action.setHost(networkInfo.getHost());
-                    action.setPort(networkInfo.getPort());
+            if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
+                Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.get(pid);
+                if(socketFdNetworkInfoMap != null){
+                    NetworkInfo networkInfo = socketFdNetworkInfoMap.get(action.getSocketFd());
+                    if(networkInfo != null){
+                        action.setHost(networkInfo.getHost());
+                        action.setPort(networkInfo.getPort());
+                    }
                 }
             }
         }
@@ -430,9 +502,5 @@ public class ActionApplicationService {
 
     private void setActionRegistryInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.REGISTRY);
-    }
-
-    private void setActionProcessInfo(Action action, String pid){
-        action.setActionGroup(ActionGroup.PROCESS);
     }
 }

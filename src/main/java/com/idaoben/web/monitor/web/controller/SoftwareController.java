@@ -5,6 +5,7 @@ import com.idaoben.web.common.api.bean.ApiResponse;
 import com.idaoben.web.monitor.web.application.SoftwareApplicationService;
 import com.idaoben.web.monitor.web.command.FileListCommand;
 import com.idaoben.web.monitor.web.command.SoftwareAddCommand;
+import com.idaoben.web.monitor.web.command.SoftwareCmdAddCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.dto.FileDto;
 import com.idaoben.web.monitor.web.dto.SoftwareDetailDto;
@@ -43,6 +44,13 @@ public class SoftwareController {
     @PostMapping("/addSoftware")
     public ApiResponse<Void> addSoftware(@RequestBody @Validated ApiRequest<SoftwareAddCommand> request){
         softwareApplicationService.addSoftware(request.getPayload());
+        return ApiResponse.createSuccess();
+    }
+
+    @ApiOperation("通过命令行添加软件")
+    @PostMapping("/addCmdSoftware")
+    public ApiResponse<Void> addCmdSoftware(@RequestBody @Validated ApiRequest<SoftwareCmdAddCommand> request){
+        softwareApplicationService.addCmdSoftware(request.getPayload());
         return ApiResponse.createSuccess();
     }
 

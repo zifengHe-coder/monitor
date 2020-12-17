@@ -14,12 +14,17 @@ import java.util.List;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = MonitorApplication.class)
-public class LinuxProcessTests {
+public class SystemOsServiceTests {
 
-    private static final Logger logger = LoggerFactory.getLogger(LinuxProcessTests.class);
+    private static final Logger logger = LoggerFactory.getLogger(SystemOsServiceTests.class);
 
     @Resource
     private SystemOsService systemOsService;
+
+    @Test
+    public void testListAllDevices(){
+        systemOsService.getDeviceInfo("test");
+    }
 
     @Test
     public void testListProcess(){

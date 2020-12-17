@@ -4,6 +4,8 @@ import java.util.List;
 
 public interface JniService {
 
+    String listAllDevices();
+
     String listAllProcesses();
 
     String queryLinkInfos(List<String> links);

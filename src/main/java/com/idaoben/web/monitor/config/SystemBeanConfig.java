@@ -1,6 +1,5 @@
 package com.idaoben.web.monitor.config;
 
-import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.impl.LinuxSystemOsServiceImpl;
 import com.idaoben.web.monitor.service.impl.WindowsSystemOsServiceImpl;
@@ -13,7 +12,7 @@ public class SystemBeanConfig {
 
     @Bean
     public SystemOsService systemOsService() {
-        if(SystemUtils.getSystemOs() == SystemOs.WINDOWS){
+        if(SystemUtils.isWindows()){
             return new WindowsSystemOsServiceImpl();
         } else {
             return new LinuxSystemOsServiceImpl();

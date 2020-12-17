@@ -5,11 +5,13 @@ import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Task;
 import com.idaoben.web.monitor.exception.ErrorCode;
+import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.TaskService;
+import com.idaoben.web.monitor.service.impl.MonitoringTask;
+import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.command.TaskListCommand;
-import com.idaoben.web.monitor.web.dto.MonitoringTask;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
 import com.idaoben.web.monitor.web.dto.TaskDto;
@@ -23,18 +25,15 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.Resource;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Component
 public class MonitorApplicationService {
 
     private static final Logger logger = LoggerFactory.getLogger(MonitorApplicationService.class);
-
-    private Map<String, MonitoringTask> monitoringSoftwareTaskMap = new ConcurrentHashMap<>();
 
     @Resource
     private SoftwareApplicationService softwareApplicationService;
@@ -48,9 +47,12 @@ public class MonitorApplicationService {
     @Resource
     private SystemOsService systemOsService;
 
+    @Resource
+    private MonitoringService monitoringService;
+
     public void startMonitor(SoftwareIdCommand command){
         String softwareId = command.getId();
-        if(monitoringSoftwareTaskMap.containsKey(softwareId)){
+        if(monitoringService.isMonitoring(softwareId)){
             throw ServiceException.of(ErrorCode.MONITOR_ON_GOING);
         }
         //启动监听
@@ -63,7 +65,7 @@ public class MonitorApplicationService {
 
         MonitoringTask monitoringTask = new MonitoringTask();
         monitoringTask.setSoftwareId(softwareId);
-        monitoringSoftwareTaskMap.put(softwareId, monitoringTask);
+        monitoringService.putMonitoringTask(softwareId, monitoringTask);
         //创建一个监控任务
         Task task = new Task();
         task.setStartTime(ZonedDateTime.now());
@@ -73,31 +75,57 @@ public class MonitorApplicationService {
             task.setSoftwareName(softwareDto.getSoftwareName());
             task.setExePath(softwareDto.getExePath());
         }
-        //启动所有pid的监听线程
-        List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
-        if(processes != null){
-            List<Integer> pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
+
+        List<Integer> pids = null;
+        if(SystemUtils.isWindows()){
+            //启动所有pid的监听线程
+            List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
+            if(processes != null){
+                pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
+            }
+        } else {
+            //Find the main process
+            Integer pid = null;
+            List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
+            if(processes != null){
+                pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
+                for(ProcessJson process : processes){
+                    if(process.getParentPid().intValue() == 1 || pids.contains(process.getParentPid())){
+                        pid = process.getPid();
+                        break;
+                    }
+                }
+                if(pid == null){
+                    pid = processes.get(0).getPid();
+                }
+                pids = Arrays.asList(pid);
+            }
+        }
+        if(pids != null){
             for(Integer pid : pids){
                 logger.info("启动PID: {}的注入监听。", pid);
                 boolean result = systemOsService.attachAndInjectHooks(pid);
                 if(result){
-                    monitoringTask.getPids().add(String.valueOf(pid));
+                    logger.error("注入进程成功，SoftwareId: {}, PID：{}", softwareId, pid);
+                    monitoringService.addMonitoringPid(monitoringTask, String.valueOf(pid));
                 } else {
                     monitoringTask.getErrorPids().add(String.valueOf(pid));
                     logger.error("注入进程失败，SoftwareId: {}, PID：{}", softwareId, pid);
                 }
             }
-            task.setPids(monitoringTask.getPids());
+            task.setPids(monitoringService.getMonitoringPids(monitoringTask));
             task = taskService.save(task);
             monitoringTask.setTaskId(task.getId());
-            for(String pid : monitoringTask.getPids()){
+            for(String pid : monitoringService.getMonitoringPids(monitoringTask)){
                 actionApplicationService.startActionScan(pid, task.getId());
             }
+        } else {
+            throw ServiceException.of(ErrorCode.SOFTWARE_NOT_RUNING);
         }
     }
 
     public void startMonitorPid(String softwareId, String pid){
-        MonitoringTask monitoringTask = monitoringSoftwareTaskMap.get(softwareId);
+        MonitoringTask monitoringTask = monitoringService.getMonitoringTask(softwareId);
         if(monitoringTask == null){
             //当前软件未监听，不做处理
             return;
@@ -106,10 +134,10 @@ public class MonitorApplicationService {
         boolean result = systemOsService.attachAndInjectHooks(Integer.parseInt(pid));
         if(result){
             //注入成功，增加pid到监听缓存和更新task的监听进程
-            monitoringTask.getPids().add(pid);
+            monitoringService.addMonitoringPid(monitoringTask, pid);
             actionApplicationService.startActionScan(pid, monitoringTask.getTaskId());
             Task task = taskService.findStrictly(monitoringTask.getTaskId());
-            task.setPids(monitoringTask.getPids());
+            task.setPids(monitoringService.getMonitoringPids(monitoringTask));
             taskService.save(task);
         } else {
             monitoringTask.getErrorPids().add(pid);
@@ -123,10 +151,10 @@ public class MonitorApplicationService {
     }
 
     public void stopMonitor(String softwareId, boolean needRemove){
-        MonitoringTask monitoringTask = monitoringSoftwareTaskMap.get(softwareId);
+        MonitoringTask monitoringTask = monitoringService.getMonitoringTask(softwareId);
         if(monitoringTask != null){
             List<String> successPids = new ArrayList<>();
-            for(String pid : monitoringTask.getPids()){
+            for(String pid : monitoringService.getMonitoringPids(monitoringTask)){
                 boolean result = needRemove ? systemOsService.removeHooks(Integer.valueOf(pid)) : true;
                 if(result){
                     actionApplicationService.stopActionScan(pid);
@@ -135,17 +163,17 @@ public class MonitorApplicationService {
                     logger.error("解除注入进程错误，SoftwareId: {}, PID：{}", softwareId, pid);
                 }
             }
-            monitoringTask.getPids().removeAll(successPids);
+            monitoringService.removeMonitoringPids(monitoringTask, successPids);
         }
 
         //查询当前软件是否还有未完全的监听任务，把任务置为完成
         setTaskComplete(softwareId);
-        monitoringSoftwareTaskMap.remove(softwareId);
+        monitoringService.removeMonitoringTask(softwareId);
     }
 
     public void startAndMonitor(SoftwareIdCommand command){
         String softwareId = command.getId();
-        if(monitoringSoftwareTaskMap.containsKey(softwareId)){
+        if(monitoringService.isMonitoring(softwareId)){
             throw ServiceException.of(ErrorCode.MONITOR_ON_GOING);
         }
         //启动监听
@@ -161,6 +189,7 @@ public class MonitorApplicationService {
             throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
         }
         int pid = systemOsService.startProcessWithHooks(software.getCommandLine(), software.getExecutePath());
+        logger.info("当前启动的软件ID:{}， 主进程号：{}", software.getId(), pid);
         if(pid > 0){
             String pidStr = String.valueOf(pid);
             Task task = new Task();
@@ -172,8 +201,8 @@ public class MonitorApplicationService {
             task = taskService.save(task);
             MonitoringTask monitoringTask = new MonitoringTask();
             monitoringTask.setSoftwareId(softwareId);
-            monitoringTask.getPids().add(pidStr);
-            monitoringSoftwareTaskMap.put(softwareId, monitoringTask);
+            monitoringService.addMonitoringPid(monitoringTask, pidStr);
+            monitoringService.putMonitoringTask(softwareId, monitoringTask);
             monitoringTask.setTaskId(task.getId());
 
             actionApplicationService.startActionScan(pidStr, task.getId());
@@ -183,37 +212,13 @@ public class MonitorApplicationService {
         }
     }
 
-    public MonitoringTask getMonitoringTask(String softwareId){
-        return monitoringSoftwareTaskMap.get(softwareId);
-    }
-
-    public boolean isMonitoring(String softwareId){
-        return monitoringSoftwareTaskMap.containsKey(softwareId);
-    }
-
-    public boolean isPidMonitoring(String softwareId, String pid){
-        MonitoringTask monitoringTask = monitoringSoftwareTaskMap.get(softwareId);
-        if(monitoringTask != null){
-            return monitoringTask.getPids().contains(pid);
-        }
-        return false;
-    }
-
-    public boolean isPidMonitoringError(String softwareId, String pid){
-        MonitoringTask monitoringTask = monitoringSoftwareTaskMap.get(softwareId);
-        if(monitoringTask != null){
-            return monitoringTask.getErrorPids().contains(pid);
-        }
-        return false;
-    }
-
-    public Set<String> getMonitoringSoftwareIds(){
-        return monitoringSoftwareTaskMap.keySet();
-    }
-
     public Page<TaskDto> listTask(TaskListCommand command, Pageable pageable){
         Page<Task> tasks = taskService.findPage(Filters.query().eq(Task::getSoftwareId, command.getSoftwareId()).likeFuzzy(Task::getPids, command.getPid()).ge(Task::getStartTime, command.getStartTime()).le(Task::getStartTime, command.getEndTime()), pageable);
         return DtoTransformer.asPage(TaskDto.class).apply(tasks);
+    }
+
+    public Set<String> getMonitoringSoftwareIds(){
+        return monitoringService.getMonitoringSoftwareIds();
     }
 
     private void setTaskComplete(String softwareId){

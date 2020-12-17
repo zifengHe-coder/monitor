@@ -6,14 +6,16 @@ import com.idaoben.web.common.util.DateTimeUtils;
 import com.idaoben.web.monitor.dao.entity.Favorite;
 import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
-import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.FavoriteService;
+import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SoftwareService;
 import com.idaoben.web.monitor.service.SystemOsService;
+import com.idaoben.web.monitor.service.impl.MonitoringTask;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.FileListCommand;
 import com.idaoben.web.monitor.web.command.SoftwareAddCommand;
+import com.idaoben.web.monitor.web.command.SoftwareCmdAddCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.dto.*;
 import org.apache.commons.lang3.StringUtils;
@@ -47,6 +49,9 @@ public class SoftwareApplicationService {
 
     @Resource
     private SystemOsService systemOsService;
+
+    @Resource
+    private MonitoringService monitoringService;
 
     private Map<String, SoftwareDto> softwareMap;
 
@@ -98,6 +103,22 @@ public class SoftwareApplicationService {
         softwareService.save(software);
     }
 
+    public void addCmdSoftware(SoftwareCmdAddCommand command){
+        if(softwareService.exists(Filters.query().eq(Software::getExePath, command.getCommandLine()))){
+            throw ServiceException.of(ErrorCode.SOFTWARE_ALREADY_EXISTS);
+        }
+        //Get the exe file
+        String exePath = StringUtils.substringBefore(command.getCommandLine(), " ");
+        File file = new File(exePath);
+        Software software = new Software();
+        software.setSoftwareName(file.getName());
+        software.setCommandLine(command.getCommandLine());
+        software.setExecutePath(file.getParent());
+        software.setExeName(file.getName());
+        software.setExePath(file.getPath());
+        softwareService.save(software);
+    }
+
     public void addFavorite(SoftwareIdCommand command){
         if(!favoriteService.exists(Filters.query().eq(Favorite::getSoftwareId, command.getId()))){
             Favorite favorite = new Favorite();
@@ -118,7 +139,7 @@ public class SoftwareApplicationService {
         }
         SoftwareDetailDto detail = new SoftwareDetailDto();
         BeanUtils.copyProperties(softwareDto, detail);
-        MonitoringTask monitoringTask = monitorApplicationService.getMonitoringTask(softwareDto.getId());
+        MonitoringTask monitoringTask = monitoringService.getMonitoringTask(softwareDto.getId());
         detail.setMonitoring(monitoringTask == null ? false : true);
         if(monitoringTask != null){
             detail.setTaskId(monitoringTask.getTaskId());
@@ -135,9 +156,9 @@ public class SoftwareApplicationService {
                 if(systemOsService.isAutoMonitorChildProcess()){
                     //需要自动监听子进程的，则根据具体的当前监听进程判断
                     MonitorStatus monitorStatus;
-                    if(monitorApplicationService.isPidMonitoring(softwareDto.getId(), process.getPid())){
+                    if(monitoringService.isPidMonitoring(softwareDto.getId(), process.getPid())){
                         monitorStatus = MonitorStatus.MONITORING;
-                    } else if(monitorApplicationService.isPidMonitoringError(softwareDto.getId(), process.getPid())){
+                    } else if(monitoringService.isPidMonitoringError(softwareDto.getId(), process.getPid())){
                         monitorStatus = MonitorStatus.ERROR;
                     } else {
                         monitorStatus = MonitorStatus.NOT_MONITOR;
@@ -188,12 +209,17 @@ public class SoftwareApplicationService {
             for(ProcessJson processJson : processJsons){
                 //先找父对象是否存在，存在父对象时直接挂到父对象的进程列表中
                 ProcessJson parentProcess = pidProcessMap.get(processJson.getParentPid());
-                String softwareId;
+                String softwareId = null;
                 if(parentProcess != null){
-                    softwareId = getSoftwareIdFromImageName(parentProcess.getImageName());
-                } else {
-                    //无父对象，则单独添加
-                    softwareId = getSoftwareIdFromImageName(processJson.getImageName());
+                    softwareId = getSoftwareIdFromImageName(parentProcess.getImageName(), true);
+                }
+                if(softwareId == null){
+                    //无父对象，或父对象找不到的，则单独添加
+                    softwareId = getSoftwareIdFromImageName(processJson.getImageName(), false);
+                }
+                if(softwareId == null) {
+                    //找不到softwareId的，现从正在监听的id列表中反向查询
+                    softwareId = monitoringService.getMonitoringSoftwareIdByPid(String.valueOf(processJson.getPid()));
                 }
                 if(softwareId != null){
                     List<ProcessJson> softwareProcesses = tempProcessMaps.get(softwareId);
@@ -206,7 +232,9 @@ public class SoftwareApplicationService {
                     if(systemOsService.isAutoMonitorChildProcess()){
                         //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
                         String pidStr = String.valueOf(processJson.getPid());
-                        if(monitorApplicationService.isMonitoring(softwareId) && !monitorApplicationService.isPidMonitoringError(softwareId, pidStr) && !monitorApplicationService.isPidMonitoring(softwareId, pidStr)){
+                        //Only Windows Need to auto add monitor
+                        if(SystemUtils.isWindows() && monitoringService.isMonitoring(softwareId)
+                                && !monitoringService.isPidMonitoringError(softwareId, pidStr) && !monitoringService.isPidMonitoring(softwareId, pidStr)){
                             monitorApplicationService.startMonitorPid(softwareId, pidStr);
                         }
                     }
@@ -214,7 +242,7 @@ public class SoftwareApplicationService {
             }
 
             //判断当前是否有正在监控的进程已关闭的，如果已经关闭主动结束监听
-            Set<String> monitoringSoftwareIds = monitorApplicationService.getMonitoringSoftwareIds();
+            Set<String> monitoringSoftwareIds = monitoringService.getMonitoringSoftwareIds();
             for(String monitoringSoftwareId : monitoringSoftwareIds){
                 if(!tempProcessMaps.containsKey(monitoringSoftwareId)){
                     monitorApplicationService.stopMonitor(monitoringSoftwareId, false);
@@ -225,8 +253,22 @@ public class SoftwareApplicationService {
         }
     }
 
-    private String getSoftwareIdFromImageName(String imageName){
-        return exeNameSoftwareIdMap.get(imageName.toLowerCase());
+    private String getSoftwareIdFromImageName(String imageName, boolean isParent){
+        if(SystemUtils.isWindows()){
+            if(isParent && "explorer.exe".equals(imageName)){
+                //如果父进程是explorer.exe的，不把他当作explorer.exe的软件
+                return null;
+            }
+            return exeNameSoftwareIdMap.get(imageName.toLowerCase());
+        } else {
+            //For linux
+            for(SoftwareDto software : softwareMap.values()){
+                if(imageName.contains(software.getExeName())){
+                    return software.getId();
+                }
+            }
+        }
+        return null;
     }
 
     public List<FileDto> listFiles(FileListCommand command){
@@ -244,7 +286,7 @@ public class SoftwareApplicationService {
         if(fileChildren != null){
             for(File file : fileChildren){
                 //过滤文件后缀
-                if(SystemUtils.getSystemOs() == SystemOs.WINDOWS && !file.isDirectory() && !file.getName().endsWith(".exe")){
+                if(!file.isDirectory() && !systemOsService.isExeFile(file)){
                     continue;
                 }
                 FileDto fileDto = new FileDto();

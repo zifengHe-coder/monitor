@@ -1,4 +1,4 @@
-package com.idaoben.web.monitor.web.dto;
+package com.idaoben.web.monitor.service.impl;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -35,7 +35,7 @@ public class MonitoringTask {
         this.softwareId = softwareId;
     }
 
-    public Set<String> getPids() {
+    Set<String> getPids() {
         return pids;
     }
 

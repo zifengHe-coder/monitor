@@ -15,7 +15,7 @@ public class ActionProcessListCommand {
     @ApiModelProperty("命令行")
     private String cmdLine;
 
-    @ApiModelProperty("进程调用类型：16384:启动进程, 20480:进程注入, 20481：消息通讯")
+    @ApiModelProperty("进程调用类型：16384:启动进程, 20480:进程注入(仅Windows), 20481：消息通讯(仅Windows), 20482: 进程间内存共享(仅Linux)")
     private Integer type;
 
     @ApiModelProperty("操作开始时间")

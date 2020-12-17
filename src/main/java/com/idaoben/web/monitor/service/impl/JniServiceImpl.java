@@ -1,6 +1,5 @@
 package com.idaoben.web.monitor.service.impl;
 
-import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.jni.FunctionHookLoaderJni;
 import com.idaoben.web.monitor.jni.UtilityJni;
 import com.idaoben.web.monitor.service.JniService;
@@ -20,10 +19,20 @@ public class JniServiceImpl implements JniService {
 
     @PostConstruct
     public void init(){
-        if(SystemUtils.getSystemOs() == SystemOs.WINDOWS){
+        if(SystemUtils.isWindows()){
             utilityJni = new UtilityJni();
             functionHookLoaderJni = new FunctionHookLoaderJni();
         }
+    }
+
+    @Override
+    public String listAllDevices() {
+        int blockRef = utilityJni.ListAllDevices();
+        int blockSize = utilityJni.GetBlockSize(blockRef);
+        byte[] buffer = new byte[blockSize];
+        utilityJni.ReadBlock(blockRef, buffer,0, blockSize);
+        utilityJni.FreeBlock(blockRef);
+        return new String(buffer);
     }
 
     @Override

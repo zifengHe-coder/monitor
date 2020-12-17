@@ -1,5 +1,10 @@
 package com.idaoben.web.monitor.service;
 
+import com.idaoben.web.monitor.dao.entity.Action;
+import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
+import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
+import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
+import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
 
@@ -60,4 +65,46 @@ public interface SystemOsService {
      * @return
      */
     boolean isAutoMonitorChildProcess();
+
+    /**
+     * 根据instanceId获取设备信息
+     * @param instanceId 设备ID
+     * @return
+     */
+    DeviceInfoJson getDeviceInfo(String instanceId);
+
+    /**
+     * 判断是否可执行程序
+     * @param file
+     * @return
+     */
+    boolean isExeFile(File file);
+
+    /**
+     * 判断当前文件路径判断文件系统敏感性
+     * @param path
+     * @return
+     */
+    FileSensitivity getFileSensitivity(String path);
+
+    /**
+     * 从文件行为中分析出设备/Process行为
+     * @param action
+     * @return
+     */
+    ActionGroup setActionFromFileInfo(Action action);
+
+    /**
+     * Get file access from access value
+     * @param accessLong
+     * @return
+     */
+    FileAccess getFileAccess(Long accessLong);
+
+    /**
+     * Set the process info for action
+     * @param action
+     * @param pid
+     */
+    void setActionProcessInfo(Action action, String pid);
 }
