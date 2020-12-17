@@ -63,6 +63,8 @@ public class ActionApplicationService {
 
     private Map<String, Map<String, Action>> writeFileMap = new ConcurrentHashMap<>();
 
+    private Map<String, Map<String, Long>> fdFileSeekMap = new ConcurrentHashMap<>();
+
     @PostConstruct
     public void init(){
         ACTION_FOLDER = new File(systemOsService.getActionFolderPath());
@@ -369,6 +371,7 @@ public class ActionApplicationService {
         socketFdNetworkMap.remove(pid);
         fdFileMap.remove(pid);
         writeFileMap.remove(pid);
+        fdFileSeekMap.remove(pid);
     }
 
     /**
@@ -398,6 +401,10 @@ public class ActionApplicationService {
                 systemOsService.setActionProcessInfo(action, pid);
             } else if(ActionType.isSecurity(action.getType())){
                 setActionSecurityInfo(action, pid);
+            } else if(action.getType() == ActionType.FILE_SEEK && SystemUtils.isLinux()){
+                //暂时只有linux有这种文件偏移操作，并且这种操作不用保存数据库
+                setActionFileSeekInfo(action, pid);
+                return null;
             }
 
             if(action != null){
@@ -409,6 +416,25 @@ public class ActionApplicationService {
         return null;
     }
 
+    private void setActionFileSeekInfo(Action action, String pid){
+        Map<String, Long> fdFileSeek = fdFileSeekMap.computeIfAbsent(pid, p -> new HashMap<>());
+        Long lastOffset = fdFileSeek.get(action.getFd());
+        Long offset = action.getOffset() == null ? 0 : action.getOffset();
+        if(action.getWhere() != null){
+            if(action.getWhere() == 1){
+                //1 - 从当前位置偏移（即上一次读写操作后的文件偏移量）
+                if(lastOffset != null && lastOffset.longValue() > 0){
+                    offset = lastOffset.longValue() + offset;
+                }
+            } else if(action.getWhere() == 2){
+                //2 - 从文件末尾向前偏移， 暂时不支持，默认为末尾写入
+                logger.error("出现从文件末尾向前偏移，暂时不支持这种记录!!! TaskID: {}, PID: {}, UUID: {}", action.getTaskId(), pid, action.getUuid());
+                offset = null;
+            }
+        }
+        fdFileSeek.put(action.getFd(), offset);
+        logger.info("Linux文件读写偏移, OFFSET: {}, PID: {}", offset, pid);
+    }
 
     private Action setActionFileInfo(Action action, String pid){
         if(action.getType() == ActionType.FILE_OPEN){
@@ -447,6 +473,12 @@ public class ActionApplicationService {
                     //查下是否有对上一个相同FD写入记录，有记录的话只做更新操作
                     Map<String, Action> actionMap = writeFileMap.computeIfAbsent(pid, p -> new HashMap<>());
                     Action originAction = actionMap.get(action.getFd());
+                    Long offset = action.getOffset();
+                    if(SystemUtils.isLinux()){
+                        //Linux下的偏移量要从“文件读写偏移定位”操作中读取
+                        Map<String, Long> fdOffsetMap = fdFileSeekMap.get(pid);
+                        offset = fdOffsetMap.get(action.getFd());
+                    }
                     if(originAction == null){
                         originAction = action;
                         originAction.setFileName(fileInfo.getFileName());
@@ -455,36 +487,37 @@ public class ActionApplicationService {
                         originAction.setBackup(fileInfo.getBackup());
                         originAction.setDeviceName(fileInfo.getDeviceName());
                         originAction.setActionGroup(fileInfo.getActionGroup());
-                        originAction.setWriteOffsets(action.getOffset() == null ? "" : String.valueOf(action.getOffset()));
+                        originAction.setWriteOffsets(offset == null ? "" : String.valueOf(offset));
                         originAction.setWriteBytes(String.valueOf(action.getBytes()));
                         actionMap.put(originAction.getFd(), originAction);
                     } else {
                         originAction.setTimestamp(action.getTimestamp());
+
                         //空的时候是写到最后，写到最后时仅仅直接修改已写入量，不再追加记录
-                        if(action.getOffset() == null){
+                        if(offset == null){
                             //取最后写入量，并且进行写入量重新计算填充
-                            String writeOffsets = action.getWriteOffsets() == null ? "" :  action.getWriteOffsets();
-                            int lastIndex = writeOffsets.lastIndexOf(',');
-                            String preOffset = null;
-                            String currentOffset;
+                            String writeBytes = action.getWriteBytes() == null ? "" :  action.getWriteBytes();
+                            int lastIndex = writeBytes.lastIndexOf(',');
+                            String preBytes = null;
+                            String lastBytes;
                             if(lastIndex >= 0){
-                                preOffset = writeOffsets.substring(0, lastIndex + 1);
-                                currentOffset = writeOffsets.substring(lastIndex + 1);
+                                preBytes = writeBytes.substring(0, lastIndex + 1);
+                                lastBytes = writeBytes.substring(lastIndex + 1);
                             } else {
-                                currentOffset = writeOffsets;
+                                lastBytes = writeBytes;
                             }
-                            //currentOffset为空表示原来的都是写入到最后的，不用做更新了
-                            if(currentOffset.length() > 0) {
-                                long offset = Long.parseLong(currentOffset);
-                                offset += action.getOffset();
-                                if(preOffset == null){
-                                    action.setWriteOffsets(String.valueOf(offset));
+                            //lastBytes为空是异常情况，正常lastBytes闭定有值
+                            if(lastBytes.length() > 0) {
+                                long bytes = Long.parseLong(lastBytes);
+                                bytes += action.getBytes();
+                                if(preBytes == null){
+                                    action.setWriteBytes(String.valueOf(bytes));
                                 } else {
-                                    action.setWriteOffsets(String.format("%s,%d", preOffset, action.getOffset()));
+                                    action.setWriteBytes(String.format("%s,%d", preBytes, bytes));
                                 }
                             }
                         } else {
-                            originAction.setWriteOffsets(String.format("%s,%d", originAction.getWriteOffsets(), action.getOffset()));
+                            originAction.setWriteOffsets(String.format("%s,%d", originAction.getWriteOffsets(), offset));
                             originAction.setWriteBytes(String.format("%s,%d", originAction.getWriteBytes(), action.getBytes()));
                         }
                     }
@@ -502,6 +535,7 @@ public class ActionApplicationService {
             action.setPath(action.getFile());
             action.setSensitivity(systemOsService.getFileSensitivity(action.getPath()));
         }
+
         return action;
     }
 

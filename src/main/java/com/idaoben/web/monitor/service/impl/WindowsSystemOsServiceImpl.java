@@ -182,7 +182,6 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
         if(!deviceInfoMap.containsKey(instanceId)){
             //重新获取一次信息
             String allDevicesJson = jniService.listAllDevices();
-            logger.info("找不到对应设备{}，进行设备列表查询", instanceId);
             try {
                 DeviceListJson deviceList = objectMapper.readValue(allDevicesJson, DeviceListJson.class);
                 Map<String, DeviceInfoJson> deviceInfoJsonMap = new HashMap<>();
@@ -196,6 +195,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
             } else {
                 //找不到设备时传入一个空的缓存，避免下次重复查询了
                 deviceInfoMap.put(instanceId, null);
+                logger.info("找不到对应设备{}", instanceId);
             }
         } else {
             deviceInfoJson = deviceInfoMap.get(instanceId);

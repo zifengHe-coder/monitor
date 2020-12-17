@@ -29,6 +29,9 @@ public class ActionType {
     //文件写入
     public static final int FILE_WRITE = 8193;
 
+    //文件读写偏移定位
+    public static final int FILE_SEEK = 8195;
+
     //文件删除
     public static final int FILE_DELETE = 8196;
 
