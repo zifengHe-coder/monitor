@@ -83,6 +83,10 @@ public class Action {
     @Column
     private FileSensitivity sensitivity;
 
+    @Description("被删除的文件")
+    @Transient
+    private String file;
+
     @Description("打开文件时要求的访问权限")
     @Column
     private Long access;
@@ -167,6 +171,22 @@ public class Action {
     @Description("设备名称")
     @Column
     private String deviceName;
+
+    @Description("目标对象名")
+    @Column
+    private String target;
+
+    @Description("本次修改操作需要修改的目标用户")
+    @Column
+    private String owner;
+
+    @Description("本次修改操作需要修改的目标用户组")
+    @Column(name = "target_group")
+    private String group;
+
+    @Description("DACL安全描述符字符串")
+    @Column
+    private String daclSdString;
 
     public String getUuid() {
         return uuid;
@@ -286,6 +306,14 @@ public class Action {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public void setFile(String file) {
+        this.file = file;
     }
 
     public FileSensitivity getSensitivity() {
@@ -462,5 +490,37 @@ public class Action {
 
     public void setDeviceName(String deviceName) {
         this.deviceName = deviceName;
+    }
+
+    public String getTarget() {
+        return target;
+    }
+
+    public void setTarget(String target) {
+        this.target = target;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
+    public String getDaclSdString() {
+        return daclSdString;
+    }
+
+    public void setDaclSdString(String daclSdString) {
+        this.daclSdString = daclSdString;
     }
 }

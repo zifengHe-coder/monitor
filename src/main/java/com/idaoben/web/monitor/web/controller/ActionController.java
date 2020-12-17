@@ -61,6 +61,13 @@ public class ActionController {
         return ApiPageResponse.createPageSuccess(result);
     }
 
+    @ApiOperation("查询对象权限行为")
+    @PostMapping("/listBySecurityType")
+    public ApiPageResponse<ActionSecurityDto> listBySecurityType(@RequestBody @Validated ApiPageRequest<ActionSecurityListCommand> request) {
+        Page<ActionSecurityDto> result = actionApplicationService.listBySecurityType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "timestamp")));
+        return ApiPageResponse.createPageSuccess(result);
+    }
+
     @ApiOperation("网络包下载")
     @GetMapping("downloadNetworkPackage")
     public void downloadNetworkPackage(String uuid, HttpServletResponse response) throws IOException {

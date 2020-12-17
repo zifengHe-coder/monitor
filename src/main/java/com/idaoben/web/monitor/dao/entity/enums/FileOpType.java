@@ -5,7 +5,8 @@ import com.idaoben.utils.valued_enum.DescribedValuedEnum;
 public enum FileOpType implements DescribedValuedEnum<Integer> {
 
     READ(1, "读"),
-    WRITE(2,"写");
+    WRITE(2,"写"),
+    DELETE(3, "删除");
 
     private final int value;
     private final String description;

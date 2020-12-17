@@ -76,13 +76,25 @@ public class ActionApplicationService {
         if(command.getOpType() != null){
             if(command.getOpType() == FileOpType.WRITE){
                 filters.eq(Action::getType, ActionType.FILE_WRITE);
-            } else {
+            } else if(command.getOpType() == FileOpType.READ){
                 filters.eq(Action::getType, ActionType.FILE_OPEN);
+            } else if(command.getOpType() == FileOpType.DELETE){
+                filters.eq(Action::getType, ActionType.FILE_DELETE);
             }
         }
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionFileDto.class).apply(actions, (domain, dto) -> {
-            dto.setOpType(domain.getType() == ActionType.FILE_WRITE ? FileOpType.WRITE : FileOpType.READ);
+            switch (domain.getType()){
+                case ActionType.FILE_WRITE:
+                    dto.setOpType(FileOpType.WRITE);
+                    break;
+                case ActionType.FILE_OPEN:
+                    dto.setOpType(FileOpType.READ);
+                    break;
+                case ActionType.FILE_DELETE:
+                    dto.setOpType(FileOpType.DELETE);
+                    break;
+            }
         });
     }
 
@@ -130,6 +142,14 @@ public class ActionApplicationService {
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionDeviceDto.class).apply(actions);
+    }
+
+    public Page<ActionSecurityDto> listBySecurityType(ActionSecurityListCommand command, Pageable pageable){
+        Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.SECURITY).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
+                .likeFuzzy(Action::getTarget, command.getTarget())
+                .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        Page<Action> actions = actionService.findPage(filters, pageable);
+        return DtoTransformer.asPage(ActionSecurityDto.class).apply(actions);
     }
 
     public File getNetworkFile(String uuid){
@@ -181,7 +201,8 @@ public class ActionApplicationService {
         RandomAccessFile randomAccessFile = new RandomAccessFile(newFile, "rw");
         FileInputStream offsetInputStream = new FileInputStream(offsetFile);
         //对write file进行偏移量计算并重新写入文件
-        if(StringUtils.isNotEmpty(action.getWriteOffsets()) && StringUtils.isNotEmpty(action.getWriteBytes())){
+        //WriteOffsets有可能是空字符串，表示只有一个写到最后的
+        if(action.getWriteOffsets() != null && StringUtils.isNotEmpty(action.getWriteBytes())){
             String[] offsets = action.getWriteOffsets().split(",");
             String[] bytes = action.getWriteBytes().split(",");
             for(int i = 0, size = bytes.length; i < size; i++){
@@ -375,6 +396,8 @@ public class ActionApplicationService {
                 setActionRegistryInfo(action, pid);
             } else if(ActionType.isProcessType(action.getType())){
                 systemOsService.setActionProcessInfo(action, pid);
+            } else if(ActionType.isSecurity(action.getType())){
+                setActionSecurityInfo(action, pid);
             }
 
             if(action != null){
@@ -474,6 +497,11 @@ public class ActionApplicationService {
                 return null;
             }
         }
+
+        if(action.getType() == ActionType.FILE_DELETE){
+            action.setPath(action.getFile());
+            action.setSensitivity(systemOsService.getFileSensitivity(action.getPath()));
+        }
         return action;
     }
 
@@ -502,5 +530,9 @@ public class ActionApplicationService {
 
     private void setActionRegistryInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.REGISTRY);
+    }
+
+    private void setActionSecurityInfo(Action action, String pid){
+        action.setActionGroup(ActionGroup.SECURITY);
     }
 }

@@ -29,6 +29,9 @@ public class ActionType {
     //文件写入
     public static final int FILE_WRITE = 8193;
 
+    //文件删除
+    public static final int FILE_DELETE = 8196;
+
     //注册表打开或创建键
     public static final int REGISTRY_OPEN_KEY = 12288;
 
@@ -55,6 +58,9 @@ public class ActionType {
     //进程间内存共享
     public static final int PROCESS_SHARE_MEMORY = 20482;
 
+    //修改对象安全描述符
+    public static final int SECURITY_UPDATE = 24576;
+
     public static boolean isFileType(int access){
         return access == FILE_OPEN || access == FILE_WRITE;
     }
@@ -69,5 +75,9 @@ public class ActionType {
 
     public static boolean isProcessType(int access){
         return access == PROCESS_OPEN || access == PROCESS_OPEN_LINUX || access == PROCESS_INJECT || access == PROCESS_MESSAGE_SEND;
+    }
+
+    public static boolean isSecurity(int access){
+        return access == SECURITY_UPDATE;
     }
 }
