@@ -259,7 +259,7 @@
       },
       //停止监控程序所有进程
       stopMonitor() {
-        this.$confirm('确定停止监听？', '提示', {
+        this.$confirm('停止监听时有可能引起应用异常退出，请先做好应用的数据保存再停止监听', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消'
         }).then(() => {

@@ -28,7 +28,6 @@ export default {
       url: this.$api.systemGetSystemOs,
       method: 'GET'
     }).then(r => {
-      console.log(r)
       if(r.code === '0'){
         let system = r.data === 1 ? 'windows' : 'linux';
         sessionStorage.setItem('system',system);

@@ -133,9 +133,8 @@
       }
     },
     created() {
-      console.log(sessionStorage.getItem('system'));
       if (sessionStorage.getItem('system') === 'windows') {
-        this.tabLabels.splice(0, 0, {
+        this.tabLabels.splice(1, 0, {
           label: '注册表',
           value: '3'
         })
@@ -160,6 +159,7 @@
             case '下载文件':
               this.downloadFile(row);
             case '下载对比文件':
+              this.downloadCompareFile(row)
           }
         } else if (this.currentTab == '1') {
           this.downloadNetworkPackage(row);
@@ -193,6 +193,13 @@
         let path = encodeURIComponent(data.path)
         a.href = window.location.origin + this.$api.systemDownloadFile + `?path=${path}`;
         a.download = 'package';
+        a.click();
+      },
+      // 下载对比文件
+      downloadCompareFile(data){
+        let a = document.createElement('a');
+        a.href = window.location.origin + this.$api.actionDownloadWriteFilePackage + `?uuid=${data.uuid}`;
+        a.download = 'compareFile';
         a.click();
       },
       changeButtonText(row) {
@@ -460,13 +467,15 @@
               options: [{
                 label: '启动进程',
                 value: 16384
-              }, {
-                label: '进程注入',
-                value: 20480
-              }, {
-                label: '消息通讯',
-                value: 20481
-              }]
+              }, 
+              // {
+              //   label: '进程注入',
+              //   value: 20480
+              // }, {
+              //   label: '消息通讯',
+              //   value: 20481
+              // }
+              ]
             }, {
               type: 'datePicker',
               prop: 'operatingTime',
@@ -504,6 +513,22 @@
               prop: 'cmdLine',
               label: '命令行'
             }]
+            sessionStorage.getItem('system') === 'windows'
+            ? this.searchLabels[1].options = this.searchLabels[1].options.concat([
+              {
+                label: '进程注入',
+                value: 20480
+              }, {
+                label: '消息通讯',
+                value: 20481
+              }
+            ])
+            : this.searchLabels[1].options = this.searchLabels[1].options.concat([
+              {
+                label: '进程间内存共享',
+                value: 20482
+              }
+            ])
             this.hasOperation = true
             this.labelWidth = 60;
             break;
@@ -652,6 +677,7 @@
         }
       },
       getList(params) {
+        console.log(params)
         let postParams = this.handleParams(params);
         // 处理时间
         if (params.data.operatingTime_date) {
