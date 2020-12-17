@@ -90,4 +90,6 @@ public interface MonitoringService {
      */
     void removeMonitoringPids(MonitoringTask task, Collection pids);
 
+    //void setMonitoringPidToError(String softwareId, );
+
 }

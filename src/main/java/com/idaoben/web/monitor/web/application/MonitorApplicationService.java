@@ -106,6 +106,7 @@ public class MonitorApplicationService {
                 logger.info("启动PID: {}的注入监听。", pid);
                 boolean result = systemOsService.attachAndInjectHooks(pid);
                 if(result){
+                    logger.error("注入进程成功，SoftwareId: {}, PID：{}", softwareId, pid);
                     monitoringService.addMonitoringPid(monitoringTask, String.valueOf(pid));
                 } else {
                     monitoringTask.getErrorPids().add(String.valueOf(pid));
