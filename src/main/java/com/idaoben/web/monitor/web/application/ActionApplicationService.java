@@ -490,6 +490,7 @@ public class ActionApplicationService {
 
         if(action.getType() == ActionType.FILE_DELETE){
             action.setPath(action.getFile());
+            action.setSensitivity(systemOsService.getFileSensitivity(action.getPath()));
         }
         return action;
     }
