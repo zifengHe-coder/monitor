@@ -105,7 +105,7 @@
         progressDetailKey: 'progressDetail',
         softwareDetail: {},
         processList: [],
-        opTypeLists: ['读', '写'],
+        opTypeLists: ['读', '写','删除'],
         sensitivityLists: ['低', '中', '高'],
         funcApi: null, // 对应的tabs的列表的接口
         typeLists: {
@@ -162,7 +162,9 @@
             case '下载文件':
               this.downloadFile(row);
             case '下载对比文件':
-              this.downloadCompareFile(row)
+              this.downloadCompareFile(row);
+            case '删除文件':
+              this.deleteFile(row);
           }
         } else if (this.currentTab == '1') {
           this.downloadNetworkPackage(row);
@@ -205,6 +207,8 @@
         a.download = 'compareFile';
         a.click();
       },
+      // 删除文件
+      deleteFile(data){},
       changeButtonText(row) {
         let text = '';
         if (this.currentTab === '2') {
@@ -217,6 +221,8 @@
             }
           } else if (row.opType === '写') {
             text = '下载对比文件';
+          } else{
+            text = '删除文件'
           }
         } else if (this.currentTab === '1') {
           text = '下载网络包'
@@ -571,7 +577,7 @@
             this.searchLabels = [{
               type: 'input',
               prop: 'target',
-              label: '目表'
+              label: '目标'
             }]
             this.tableLabels = [{
               type: 'timestamp',
