@@ -181,7 +181,8 @@ public class ActionApplicationService {
         RandomAccessFile randomAccessFile = new RandomAccessFile(newFile, "rw");
         FileInputStream offsetInputStream = new FileInputStream(offsetFile);
         //对write file进行偏移量计算并重新写入文件
-        if(StringUtils.isNotEmpty(action.getWriteOffsets()) && StringUtils.isNotEmpty(action.getWriteBytes())){
+        //WriteOffsets有可能是空字符串，表示只有一个写到最后的
+        if(action.getWriteOffsets() != null && StringUtils.isNotEmpty(action.getWriteBytes())){
             String[] offsets = action.getWriteOffsets().split(",");
             String[] bytes = action.getWriteBytes().split(",");
             for(int i = 0, size = bytes.length; i < size; i++){
