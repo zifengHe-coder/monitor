@@ -211,11 +211,11 @@ public class SoftwareApplicationService {
                 ProcessJson parentProcess = pidProcessMap.get(processJson.getParentPid());
                 String softwareId = null;
                 if(parentProcess != null){
-                    softwareId = getSoftwareIdFromImageName(parentProcess.getImageName());
+                    softwareId = getSoftwareIdFromImageName(parentProcess.getImageName(), true);
                 }
                 if(softwareId == null){
                     //无父对象，或父对象找不到的，则单独添加
-                    softwareId = getSoftwareIdFromImageName(processJson.getImageName());
+                    softwareId = getSoftwareIdFromImageName(processJson.getImageName(), false);
                 }
                 if(softwareId == null) {
                     //找不到softwareId的，现从正在监听的id列表中反向查询
@@ -253,8 +253,12 @@ public class SoftwareApplicationService {
         }
     }
 
-    private String getSoftwareIdFromImageName(String imageName){
+    private String getSoftwareIdFromImageName(String imageName, boolean isParent){
         if(SystemUtils.isWindows()){
+            if(isParent && "explorer.exe".equals(imageName)){
+                //如果父进程是explorer.exe的，不把他当作explorer.exe的软件
+                return null;
+            }
             return exeNameSoftwareIdMap.get(imageName.toLowerCase());
         } else {
             //For linux
