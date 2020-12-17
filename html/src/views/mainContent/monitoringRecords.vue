@@ -94,6 +94,9 @@
           }, {
             label: '网络访问',
             value: '1'
+          }, {
+            label: '对象权限',
+            value: '6'
           }
         ],
         currentTab: '2',
@@ -563,6 +566,36 @@
             this.hasOperation = false
             this.labelWidth = 60;
             break;
+          case 6:
+            this.funcApi = this.$api.actionListBySecurityType;
+            this.searchLabels = [{
+              type: 'input',
+              prop: 'target',
+              label: '目表'
+            }]
+            this.tableLabels = [{
+              type: 'timestamp',
+              prop: 'timestamp',
+              columnOperable: 'none',
+              label: '操作时间'
+            },{
+              type: 'word',
+              prop: 'daclSdString',
+              label: '安全描述符'
+            },{
+              type: 'word',
+              prop: 'group',
+              label: '目标用户组'
+            },{
+              type: 'word',
+              prop: 'owner',
+              label: '目标用户'
+            },{
+              type: 'word',
+              prop: 'target',
+              label: '目标对象名'
+            }];
+            break;
           default:
             this.$router.push('/')
             break;
@@ -641,6 +674,8 @@
           case 'softwareDetail_5':
             // 命令行
             return params;
+          case 'softwareDetail_6':
+            return params;
         }
       },
       // 处理列表返回的结果
@@ -672,12 +707,12 @@
             })
             return data;
           case 'softwareDetail_5':
-            console.log(data)
+            return data;
+          case 'softwareDetail_6':
             return data;
         }
       },
       getList(params) {
-        console.log(params)
         let postParams = this.handleParams(params);
         // 处理时间
         if (params.data.operatingTime_date) {
@@ -700,6 +735,7 @@
             method: 'POST',
             data: postParams
           }).then((r) => {
+            console.log(r)
             if (r.code === '0') {
               this.tableData = this.handleResult(r.data);
               this.totalItems = r.totalItems;
