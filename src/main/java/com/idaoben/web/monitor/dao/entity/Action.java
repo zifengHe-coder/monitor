@@ -192,6 +192,10 @@ public class Action {
     @Column
     private String daclSdString;
 
+    @Description("权限掩码")
+    @Transient
+    private String mode;
+
     public String getUuid() {
         return uuid;
     }
@@ -534,5 +538,13 @@ public class Action {
 
     public void setDaclSdString(String daclSdString) {
         this.daclSdString = daclSdString;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 }

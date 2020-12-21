@@ -401,7 +401,7 @@ public class ActionApplicationService {
             } else if(ActionType.isProcessType(action.getType())){
                 systemOsService.setActionProcessInfo(action, pid);
             } else if(ActionType.isSecurity(action.getType())){
-                setActionSecurityInfo(action, pid);
+                action = setActionSecurityInfo(action, pid);
             } else if(action.getType() == ActionType.FILE_SEEK && SystemUtils.isLinux()){
                 //暂时只有linux有这种文件偏移操作，并且这种操作不用保存数据库
                 setActionFileSeekInfo(action, pid);
@@ -586,7 +586,29 @@ public class ActionApplicationService {
         action.setActionGroup(ActionGroup.REGISTRY);
     }
 
-    private void setActionSecurityInfo(Action action, String pid){
+    private Action setActionSecurityInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.SECURITY);
+        if(action.getType() == ActionType.SECURITY_FILE_UPDATE || action.getType() == ActionType.SECURITY_FILE_OWNER_UPDATE){
+            //处理只有fd无path出现的情况，从open file事件中获取对应path
+            if(StringUtils.isEmpty(action.getPath()) && StringUtils.isNotEmpty(action.getFd())){
+                Map<String, FileInfo> fdFileInfoMap = fdFileMap.get(pid);
+                if(fdFileInfoMap != null) {
+                    FileInfo fileInfo = fdFileInfoMap.get(action.getFd());
+                    if (fileInfo != null) {
+                        action.setPath(fileInfo.getPath());
+                    }
+                }
+            }
+            action.setTarget(action.getPath());
+            if(StringUtils.isEmpty(action.getTarget())){
+                return null;
+            }
+
+        }
+        if(action.getType() == ActionType.SECURITY_FILE_UPDATE){
+            //将权限掩码也设置到daclSdString字段，用于与linux一致
+            action.setDaclSdString(action.getMode());
+        }
+        return action;
     }
 }

@@ -66,6 +66,12 @@ public class ActionType {
     //修改对象安全描述符
     public static final int SECURITY_UPDATE = 24576;
 
+    //修改文件权限
+    public static final int SECURITY_FILE_UPDATE = 8199;
+
+    //修改文件拥有者
+    public static final int SECURITY_FILE_OWNER_UPDATE = 8200;
+
     public static boolean isFileType(int access){
         return access == FILE_OPEN || access == FILE_WRITE || access == FILE_DELETE_WINDOWS || access == FILE_DELETE_LINUX;
     }
@@ -83,6 +89,6 @@ public class ActionType {
     }
 
     public static boolean isSecurity(int access){
-        return access == SECURITY_UPDATE;
+        return access == SECURITY_UPDATE || access == SECURITY_FILE_UPDATE || access == SECURITY_FILE_OWNER_UPDATE;
     }
 }

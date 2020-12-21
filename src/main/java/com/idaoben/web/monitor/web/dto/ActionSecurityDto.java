@@ -35,7 +35,7 @@ public interface ActionSecurityDto {
     @Mapping
     String getGroup();
 
-    @ApiModelProperty("安全描述符")
+    @ApiModelProperty("Windows：安全描述符；Linux：文件权限")
     @Mapping
     String getDaclSdString();
 
