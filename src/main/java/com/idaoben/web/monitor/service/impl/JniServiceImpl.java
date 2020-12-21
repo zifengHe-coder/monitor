@@ -46,6 +46,19 @@ public class JniServiceImpl implements JniService {
     }
 
     @Override
+    public String queryProcessDetails(List<Integer> pids) {
+        StringBuilder sb = new StringBuilder();
+        StringUtils.join(pids, ',', Integer::toUnsignedString, sb);
+        String pidsStr = sb.toString();
+        int blockRef = utilityJni.QueryProcessDetails(pidsStr);
+        int blockSize = utilityJni.GetBlockSize(blockRef);
+        byte[] buffer = new byte[blockSize];
+        utilityJni.ReadBlock(blockRef, buffer,0, blockSize);
+        utilityJni.FreeBlock(blockRef);
+        return new String(buffer);
+    }
+
+    @Override
     public String queryLinkInfos(List<String> links) {
         int blockRef = utilityJni.QueryLinkInfos(StringUtils.join(links, '|'));
         int blockSize = utilityJni.GetBlockSize(blockRef);

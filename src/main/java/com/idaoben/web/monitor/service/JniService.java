@@ -8,6 +8,8 @@ public interface JniService {
 
     String listAllProcesses();
 
+    String queryProcessDetails(List<Integer> pids);
+
     String queryLinkInfos(List<String> links);
 
     boolean attachAndInjectHooks(int pid);

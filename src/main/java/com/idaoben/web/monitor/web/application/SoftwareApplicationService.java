@@ -1,5 +1,7 @@
 package com.idaoben.web.monitor.web.application;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DateTimeUtils;
@@ -7,10 +9,7 @@ import com.idaoben.web.monitor.dao.entity.Favorite;
 import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
 import com.idaoben.web.monitor.exception.ErrorCode;
-import com.idaoben.web.monitor.service.FavoriteService;
-import com.idaoben.web.monitor.service.MonitoringService;
-import com.idaoben.web.monitor.service.SoftwareService;
-import com.idaoben.web.monitor.service.SystemOsService;
+import com.idaoben.web.monitor.service.*;
 import com.idaoben.web.monitor.service.impl.MonitoringTask;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.FileListCommand;
@@ -31,6 +30,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Component
@@ -53,11 +53,19 @@ public class SoftwareApplicationService {
     @Resource
     private MonitoringService monitoringService;
 
+    @Resource
+    private JniService jniService;
+
+    @Resource
+    private ObjectMapper objectMapper;
+
     private Map<String, SoftwareDto> softwareMap;
 
     private Map<String, String> exeNameSoftwareIdMap = new HashMap<>();
 
     private Map<String, List<ProcessJson>> processMaps = new HashMap();
+
+    private Map<Integer, String> pidUserMap = new ConcurrentHashMap<>();
 
     public List<SoftwareDto> getSystemSoftware(){
         List<String> favoriteSoftwareIds = favoriteService.findAll().stream().map(Favorite::getSoftwareId).collect(Collectors.toList());
@@ -150,7 +158,12 @@ public class SoftwareApplicationService {
             for(ProcessJson processJson : processJsons){
                 ProcessDto process = new ProcessDto();
                 process.setPid(String.valueOf(processJson.getPid()));
-                process.setUser(processJson.getUser());
+                //Windows平台的用户名需要单独查询
+                if(SystemUtils.isWindows()){
+                    process.setUser(getPidUser(processJson.getPid()));
+                } else {
+                    process.setUser(processJson.getUser());
+                }
                 process.setName(processJson.getImageName());
                 process.setCpu(processJson.getCpuTime());
                 process.setMemory(Long.parseLong(processJson.getWsPrivateBytes()) / 1024);
@@ -174,6 +187,30 @@ public class SoftwareApplicationService {
             detail.setProcesses(processes);
         }
         return detail;
+    }
+
+    private String getPidUser(Integer pid){
+        //当前方法实现会因为pid重用导致user名称不变引起错误的问题，暂时没有很好的快速清理pidUser缓存的方法
+        if(pidUserMap.containsKey(pid)){
+            return pidUserMap.get(pid);
+        } else {
+            List<Integer> pids = Collections.singletonList(pid);
+            String processDetailContent = jniService.queryProcessDetails(pids);
+            try {
+                ProcessDetailsJson processDetailsJson = objectMapper.readValue(processDetailContent, ProcessDetailsJson.class);
+                if(processDetailsJson != null){
+                    List<ProcessJson> processJsons = processDetailsJson.getDetails();
+                    if(!CollectionUtils.isEmpty(processJsons)){
+                        String user = processJsons.get(0).getUser();
+                        pidUserMap.put(pid, user);
+                        return user;
+                    }
+                }
+            } catch (JsonProcessingException e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
+        return null;
     }
 
     private SoftwareDto getSoftwareInfo(Software software){
