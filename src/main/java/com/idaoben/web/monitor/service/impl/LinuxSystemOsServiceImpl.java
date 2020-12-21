@@ -65,7 +65,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     public List<ProcessJson> listAllProcesses() {
         List<ProcessJson> processJsons = new ArrayList<>();
         try {
-            Process process = Runtime.getRuntime().exec("ps -e -o pid,ppid,pcpu,size,cmd");
+            Process process = Runtime.getRuntime().exec("ps -e -o pid,ppid,user,pcpu,size,cmd");
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
                     StandardCharsets.UTF_8));
             //first line is title, ignore it.
@@ -77,7 +77,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
                 params.add(builder);
                 for(int i = 0, size = line.length(); i < size; i++){
                     char temp  = line.charAt(i);
-                    if(temp != ' ' || params.size() == 5){
+                    if(temp != ' ' || params.size() == 6){
                         builder.append(temp);
                     } else {
                         if(builder.length() > 0){
@@ -89,9 +89,10 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
                 ProcessJson processJson = new ProcessJson();
                 processJson.setPid(Integer.parseInt(params.get(0).toString()));
                 processJson.setParentPid(Integer.parseInt(params.get(1).toString()));
-                processJson.setCpuTime(params.get(2).toString());
-                processJson.setWsPrivateBytes(params.get(3).toString());
-                processJson.setImageName(params.get(4).toString());
+                processJson.setUser(params.get(2).toString());
+                processJson.setCpuTime(params.get(3).toString());
+                processJson.setWsPrivateBytes(params.get(4).toString());
+                processJson.setImageName(params.get(5).toString());
                 processJsons.add(processJson);
             }
         } catch (IOException e) {

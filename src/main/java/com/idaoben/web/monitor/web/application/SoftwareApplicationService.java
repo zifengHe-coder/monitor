@@ -150,9 +150,15 @@ public class SoftwareApplicationService {
             for(ProcessJson processJson : processJsons){
                 ProcessDto process = new ProcessDto();
                 process.setPid(String.valueOf(processJson.getPid()));
+                process.setUser(processJson.getUser());
                 process.setName(processJson.getImageName());
                 //TODO：CPU使用时间待补充
-                process.setMemory(Float.parseFloat(processJson.getWsPrivateBytes()) / 1024);
+                if(StringUtils.isNotEmpty(processJson.getCpuTime())){
+                    if(SystemUtils.isLinux()){
+                        process.setCpu(processJson.getCpuTime());
+                    }
+                }
+                process.setMemory(Long.parseLong(processJson.getWsPrivateBytes()) / 1024);
                 if(systemOsService.isAutoMonitorChildProcess()){
                     //需要自动监听子进程的，则根据具体的当前监听进程判断
                     MonitorStatus monitorStatus;
