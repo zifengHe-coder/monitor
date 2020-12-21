@@ -12,6 +12,9 @@ public class ActionDeviceListCommand {
     @ApiModelProperty("进程PID")
     private String pid;
 
+    @ApiModelProperty("用户名")
+    private String user;
+
     @ApiModelProperty("设备名称")
     private String deviceName;
 
@@ -35,6 +38,14 @@ public class ActionDeviceListCommand {
 
     public void setPid(String pid) {
         this.pid = pid;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
     }
 
     public String getDeviceName() {

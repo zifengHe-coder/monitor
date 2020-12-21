@@ -77,28 +77,34 @@ public class MonitorApplicationService {
         }
 
         List<Integer> pids = null;
+        List<String> users = null;
         if(SystemUtils.isWindows()){
             //启动所有pid的监听线程
             List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
             if(processes != null){
                 pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
+                users = processes.stream().map(processJsonDto -> processJsonDto.getUser()).collect(Collectors.toList());
             }
         } else {
             //Find the main process
             Integer pid = null;
+            String user = null;
             List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
             if(processes != null){
                 pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
                 for(ProcessJson process : processes){
                     if(process.getParentPid().intValue() == 1 || pids.contains(process.getParentPid())){
                         pid = process.getPid();
+                        user = process.getUser();
                         break;
                     }
                 }
                 if(pid == null){
                     pid = processes.get(0).getPid();
+                    user = processes.get(0).getUser();
                 }
                 pids = Arrays.asList(pid);
+                users = Arrays.asList(user);
             }
         }
         if(pids != null){
@@ -113,7 +119,7 @@ public class MonitorApplicationService {
                     logger.error("注入进程失败，SoftwareId: {}, PID：{}", softwareId, pid);
                 }
             }
-            task.setPids(monitoringService.getMonitoringPids(monitoringTask));
+            task.setPidUsers(pids, users);
             task = taskService.save(task);
             monitoringTask.setTaskId(task.getId());
             for(String pid : monitoringService.getMonitoringPids(monitoringTask)){
@@ -124,7 +130,7 @@ public class MonitorApplicationService {
         }
     }
 
-    public void startMonitorPid(String softwareId, String pid){
+    public void startMonitorPid(String softwareId, String pid, String user){
         MonitoringTask monitoringTask = monitoringService.getMonitoringTask(softwareId);
         if(monitoringTask == null){
             //当前软件未监听，不做处理
@@ -137,7 +143,7 @@ public class MonitorApplicationService {
             monitoringService.addMonitoringPid(monitoringTask, pid);
             actionApplicationService.startActionScan(pid, monitoringTask.getTaskId());
             Task task = taskService.findStrictly(monitoringTask.getTaskId());
-            task.setPids(monitoringService.getMonitoringPids(monitoringTask));
+            task.addPidUser(pid, user);
             taskService.save(task);
         } else {
             monitoringTask.getErrorPids().add(pid);

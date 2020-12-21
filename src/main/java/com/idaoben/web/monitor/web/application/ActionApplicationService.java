@@ -11,6 +11,7 @@ import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SystemOsService;
+import com.idaoben.web.monitor.service.TaskService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
@@ -22,11 +23,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
@@ -53,6 +57,9 @@ public class ActionApplicationService {
     @Resource
     private MonitoringService monitoringService;
 
+    @Resource
+    private TaskService taskService;
+
     private Map<String, ActionHanlderThread> handlingThreads = new ConcurrentHashMap<>();
 
     private Map<String, Long> actionSkipMap = new ConcurrentHashMap<>();
@@ -72,6 +79,7 @@ public class ActionApplicationService {
     }
 
     public Page<ActionFileDto> listByFileType(ActionFileListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.FILE).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getFileName, command.getFileName()).eq(Action::getSensitivity, command.getSensitivity())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
@@ -84,6 +92,7 @@ public class ActionApplicationService {
                 filters.in(Action::getType, ActionType.FILE_DELETE_LINUX, ActionType.FILE_DELETE_WINDOWS);
             }
         }
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionFileDto.class).apply(actions, (domain, dto) -> {
             switch (domain.getType()){
@@ -98,29 +107,40 @@ public class ActionApplicationService {
                     dto.setOpType(FileOpType.DELETE);
                     break;
             }
+            setActionUser(dto, pidUsers);
         });
     }
 
     public Page<ActionRegistryDto> listByRegistryType(ActionRegistryListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.REGISTRY).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getKey, command.getKey()).likeFuzzy(Action::getValueName, command.getValueName()).eq(Action::getValueType, command.getValueType())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
-        return DtoTransformer.asPage(ActionRegistryDto.class).apply(actions);
+        return DtoTransformer.asPage(ActionRegistryDto.class).apply(actions, (domain, dto) -> {
+            setActionUser(dto, pidUsers);
+        });
     }
 
     public Page<ActionProcessDto> listByProcessType(ActionProcessListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.PROCESS).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getCmdLine, command.getCmdLine()).eq(Action::getType, command.getType())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
-        return DtoTransformer.asPage(ActionProcessDto.class).apply(actions);
+        return DtoTransformer.asPage(ActionProcessDto.class).apply(actions, (domain, dto) -> {
+            setActionUser(dto, pidUsers);
+        });
     }
 
     public Page<ActionNetworkDto> listByNetworkType(ActionNetworkListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.NETWORK).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getHost, command.getHost()).eq(Action::getPort, command.getPort()).eq(Action::getType, command.getType())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionNetworkDto.class).apply(actions, (domain, dto) -> {
             //简单的协议分析
@@ -136,23 +156,57 @@ public class ActionApplicationService {
             } else if(domain.getType() == ActionType.NETWORK_UDP_SEND || domain.getType() == ActionType.NETWORK_UDP_RECEIVE){
                 dto.setProtocol("UDP");
             }
+
+            setActionUser(dto, pidUsers);
         });
     }
 
     public Page<ActionDeviceDto> listByDeviceType(ActionDeviceListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.DEVICE).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getCmdLine, command.getDeviceName())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
-        return DtoTransformer.asPage(ActionDeviceDto.class).apply(actions);
+        return DtoTransformer.asPage(ActionDeviceDto.class).apply(actions, (domain, dto) -> {
+            setActionUser(dto, pidUsers);
+        });
     }
 
     public Page<ActionSecurityDto> listBySecurityType(ActionSecurityListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.SECURITY).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getTarget, command.getTarget())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
-        return DtoTransformer.asPage(ActionSecurityDto.class).apply(actions);
+        return DtoTransformer.asPage(ActionSecurityDto.class).apply(actions, (domain, dto) -> {
+            setActionUser(dto, pidUsers);
+        });
+    }
+
+    private void setActionUser(ActionBaseDto dto, Map<String, String> pidUsers){
+        if(pidUsers != null && pidUsers.containsKey(dto.getPid())){
+            dto.setUser(pidUsers.get(dto.getPid()));
+        }
+    }
+
+    private void addUserFilter(Filters filters, Map<String, String> pidUsers, String user){
+        if(StringUtils.isNotEmpty(user) && pidUsers != null){
+            List<String> pids = new ArrayList<>();
+            for(Map.Entry<String, String> pidUser : pidUsers.entrySet()){
+                if(pidUser.getValue().contains(user)){
+                    pids.add(pidUser.getKey());
+                }
+            }
+
+            if(!CollectionUtils.isEmpty(pids)){
+                filters.in(Action::getPid, pids);
+            } else {
+                //设置一个肯定查询不到的结果
+                filters.eq(Action::getUuid, "-1");
+            }
+        }
     }
 
     public File getNetworkFile(String uuid){

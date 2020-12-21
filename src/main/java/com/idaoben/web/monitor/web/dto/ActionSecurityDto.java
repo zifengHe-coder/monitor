@@ -1,27 +1,13 @@
 package com.idaoben.web.monitor.web.dto;
 
+import com.idaoben.utils.dto_assembler.annotation.EnableAssembling;
 import com.idaoben.utils.dto_assembler.annotation.Mapping;
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-import java.time.ZonedDateTime;
-
-public interface ActionSecurityDto {
-
-    @ApiModelProperty("唯一标识符")
-    @Mapping
-    String getUuid();
-
-    @ApiModelProperty("关联的任务ID")
-    @Mapping
-    Long getTaskId();
-
-    @ApiModelProperty("进程ID")
-    @Mapping
-    String getPid();
-
-    @ApiModelProperty("日志时间戳")
-    @Mapping
-    ZonedDateTime getTimestamp();
+@ApiModel
+@EnableAssembling
+public interface ActionSecurityDto extends ActionBaseDto{
 
     @ApiModelProperty("目标对象名")
     @Mapping

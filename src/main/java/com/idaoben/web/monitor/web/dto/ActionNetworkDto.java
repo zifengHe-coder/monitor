@@ -5,27 +5,9 @@ import com.idaoben.utils.dto_assembler.annotation.Mapping;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-import java.time.ZonedDateTime;
-
 @ApiModel
 @EnableAssembling
-public interface ActionNetworkDto {
-
-    @ApiModelProperty("唯一标识符")
-    @Mapping
-    String getUuid();
-
-    @ApiModelProperty("关联的任务ID")
-    @Mapping
-    Long getTaskId();
-
-    @ApiModelProperty("进程ID")
-    @Mapping
-    String getPid();
-
-    @ApiModelProperty("日志时间戳")
-    @Mapping
-    ZonedDateTime getTimestamp();
+public interface ActionNetworkDto extends ActionBaseDto{
 
     @ApiModelProperty("类型：4096:发起网络连接, 4097:TCP数据发送, 4098：TCP数据接收")
     @Mapping

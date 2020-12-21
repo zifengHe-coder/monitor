@@ -14,6 +14,9 @@ public class ActionFileListCommand {
     @ApiModelProperty("进程PID")
     private String pid;
 
+    @ApiModelProperty("用户名")
+    private String user;
+
     @ApiModelProperty("读写类型")
     private FileOpType opType;
 
@@ -43,6 +46,14 @@ public class ActionFileListCommand {
 
     public void setPid(String pid) {
         this.pid = pid;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
     }
 
     public FileOpType getOpType() {
