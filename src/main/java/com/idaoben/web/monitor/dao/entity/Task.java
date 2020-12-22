@@ -114,13 +114,16 @@ public class Task extends IdentifiableObject {
     }
 
     public Map<String, String> getPidUsers(){
-        Map<String, String> pidUsers = null;
+        Map<String, String> pidUsers = new HashMap<>();
         if (!StringUtils.isEmpty(pids)) {
-            pidUsers = new HashMap<>();
             String[] pidUserStrs = StringUtils.split(pids, ",");
-            for (String pidUserStr : pidUserStrs) {
-                String[] tempPidUser = StringUtils.split(pidUserStr, ":");
-                pidUsers.put(tempPidUser[0], tempPidUser[1]);
+            if(pidUserStrs != null){
+                for (String pidUserStr : pidUserStrs) {
+                    String[] tempPidUser = StringUtils.split(pidUserStr, ":");
+                    if(tempPidUser != null){
+                        pidUsers.put(tempPidUser[0], tempPidUser[1]);
+                    }
+                }
             }
         }
         return pidUsers;

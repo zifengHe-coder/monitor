@@ -5,6 +5,7 @@ import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
 import com.idaoben.web.monitor.dao.entity.enums.ActionType;
 import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
 import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
+import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.DeviceFileUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
@@ -125,17 +126,28 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     }
 
     @Override
-    public boolean attachAndInjectHooks(int pid) {
+    public String attachAndInjectHooks(int pid) {
         try {
             Process process = Runtime.getRuntime().exec(String.format("%s -a %d", TRACER_CMD, pid));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
+                    StandardCharsets.UTF_8));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                logger.info(line);
+                line = StringUtils.substringAfter(line, "[tracer] ");
+                if(line != null && line.startsWith("Could not attach to process")){
+                    return ErrorCode.MONITOR_PROCESS_ERROR_LINUX;
+                }
+            }
+
             if(process != null && process.pid() > 1){
                 pidTracerProcessMap.put(pid, Pair.of(false, process));
-                return true;
+                return null;
             }
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
-        return false;
+        return ErrorCode.MONITOR_PROCESS_ERROR_LINUX;
     }
 
     @Override

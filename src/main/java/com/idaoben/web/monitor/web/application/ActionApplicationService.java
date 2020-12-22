@@ -345,6 +345,8 @@ public class ActionApplicationService {
         handlePidAction(pid, taskId, thread, 0);
     }
 
+    private final static int MAX_RETRY_TIME = 10;
+
     private void handlePidAction(String pid, Long taskId, ActionHanlderThread thread, int retry){
         File pidFolder = new File(ACTION_FOLDER, pid);
         if(!pidFolder.exists()){
@@ -353,12 +355,12 @@ public class ActionApplicationService {
             } catch (InterruptedException e) {
                 logger.error(e.getMessage(), e);
             }
-            if(retry < 10 && !thread.isFinish()){
+            if(retry < MAX_RETRY_TIME && !thread.isFinish()){
                 logger.error("进程action文件夹未生成， 尝试等待后重试，PID: {}", pid);
                 retry ++;
                 handlePidAction(pid, taskId, thread, retry);
             } else {
-                logger.error("进程action文件夹重试{}次后仍未生成， 停止监听并置为监听失败，PID: {}", pid);
+                logger.error("进程action文件夹重试{}次后仍未生成， 停止监听并置为监听失败，PID: {}", MAX_RETRY_TIME, pid);
                 monitoringService.setMonitoringPidToError(pid);
                 clearPidCache(pid);
             }
