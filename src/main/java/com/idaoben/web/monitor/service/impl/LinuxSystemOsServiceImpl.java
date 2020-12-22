@@ -43,6 +43,8 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     private static final String PROCESS_TYPE_SEPARATOR = "/dev/shm/";
 
+    private static final String SYS_DEVICE_TYPE_SEPARATOR = "/sys/devices/";
+
     @PostConstruct
     public void init(){
         sensitivityPaths = new String[]{"/bin", "/boot", "/data", "/root", "/sbin", "/sys"};
@@ -212,9 +214,10 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
                 action.setPath("");
                 return ActionGroup.PROCESS;
             } else {
-                action.setDeviceName(path);
                 return ActionGroup.DEVICE;
             }
+        } else if(path.startsWith(SYS_DEVICE_TYPE_SEPARATOR)){
+            return ActionGroup.DEVICE;
         }
         return ActionGroup.FILE;
     }

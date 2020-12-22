@@ -452,6 +452,8 @@ public class ActionApplicationService {
             } else if(ActionType.isFileType(action.getType())){
                 //设置文件信息
                 action = setActionFileInfo(action, pid);
+            } else if(ActionType.isDeviceType(action.getType())){
+                action = setActionDeviceInfo(action, pid);
             } else if(ActionType.isRegistryType(action.getType())){
                 setActionRegistryInfo(action, pid);
             } else if(ActionType.isProcessType(action.getType())){
@@ -666,5 +668,20 @@ public class ActionApplicationService {
             action.setDaclSdString(action.getMode());
         }
         return action;
+    }
+
+    private Action setActionDeviceInfo(Action action, String pid){
+        Map<String, FileInfo> fdFileInfoMap = fdFileMap.get(pid);
+        if(fdFileInfoMap != null) {
+            FileInfo fileInfo = fdFileInfoMap.get(action.getFd());
+            if (fileInfo != null) {
+                action.setPath(fileInfo.getPath());
+                action.setFileName(fileInfo.getFileName());
+                action.setDeviceName(fileInfo.getDeviceName());
+                action.setActionGroup(ActionGroup.DEVICE);
+                return action;
+            }
+        }
+        return null;
     }
 }

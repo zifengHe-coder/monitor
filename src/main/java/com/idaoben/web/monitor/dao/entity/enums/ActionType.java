@@ -72,8 +72,15 @@ public class ActionType {
     //修改文件拥有者
     public static final int SECURITY_FILE_OWNER_UPDATE = 8200;
 
+    //设备控制
+    public static final int DEVICE_CONTROL = 8201;
+
     public static boolean isFileType(int access){
         return access == FILE_OPEN || access == FILE_WRITE || access == FILE_DELETE_WINDOWS || access == FILE_DELETE_LINUX;
+    }
+
+    public static boolean isDeviceType(int access){
+        return access == DEVICE_CONTROL;
     }
 
     public static boolean isNetworkType(int access){
