@@ -4,7 +4,7 @@
     <div class="softwareDetail">
       <div class="softwareInfo">
         <div class="softwareName">
-          <img :src="softwareData.base64Icon" alt="" />
+          <img v-if="system!=='linux'" :src="softwareData.base64Icon" alt="" />
           <span>{{ softwareData.softwareName }}</span>
           <span>{{ softwareData.monitoring ? "监听中" : "未监听" }}</span>
         </div>
@@ -112,6 +112,11 @@
         systemLists: ['windows', 'linux']
       };
     },
+    computed:{
+      system(){
+        return sessionStorage.getItem('system')
+      }
+    },
     created() {
       if (this.$route.params.data) {
         sessionStorage.setItem(
@@ -178,7 +183,7 @@
                   this.processList = r.data.processes.map((item, index) => {
                     let obj = {};
                     obj.id = Number(index) > 9 ? Number(index) + 1 : '0' + (Number(index) + 1);
-                    obj.processName = item.name + '/exe/' + r.data.base64Icon;
+                    obj.processName = this.system === 'linux' ?  item.name : item.name + '/exe/' + r.data.base64Icon;
                     obj.pid = item.pid;
                     obj.wsPrivateBytes = Math.floor(item.memory);
                     obj.user = item.user;

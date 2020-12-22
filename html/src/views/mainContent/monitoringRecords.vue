@@ -2,7 +2,7 @@
   <div id="monitoringRecords">
     <div class="progressDetail">
       <div>
-        <img v-if="detailOnff" :src="softwareDetail.base64Icon" class="icon" />
+        <img v-if="detailOnff && system!=='linux'" :src="softwareDetail.base64Icon" class="icon" />
         <span class="name" v-if="detailOnff">{{softwareDetail.softwareName}}</span>
         <span class="status"
           :style="{color: progressStatus === '已完成' ? '#f7d666' : '#0cab51'}">{{progressStatus}}</span>
@@ -142,8 +142,14 @@
           value: '3'
         })
       }
+      console.log(JSON.parse(JSON.stringify(this.tableLabels)))
       this.changeConfig(this.currentTab);
       this.initData();
+    },
+    computed:{
+      system(){
+        return sessionStorage.getItem('system')
+      }
     },
     watch: {
       "$store.state.progressDetail": {
@@ -208,7 +214,9 @@
         a.click();
       },
       // 删除文件
-      deleteFile(data) {},
+      deleteFile(data) {
+        console.log(data)
+      },
       changeButtonText(row) {
         let text = '';
         if (this.currentTab === '2') {
@@ -356,6 +364,9 @@
               }, {
                 label: '写',
                 value: 2
+              }, {
+                label: '删除',
+                value: 3
               }]
             }, {
               type: 'input',

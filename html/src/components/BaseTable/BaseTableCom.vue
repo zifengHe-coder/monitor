@@ -88,6 +88,7 @@
               <!-- 图片 -->
               <div v-else-if="item.type === 'image'">
                 <img
+                  v-if="handleRowImage(scope.row,item.prop)"
                   :src="handleRowImage(scope.row,item.prop)"
                   style="vertical-align: middle;height: 18px;width: 18px;"
                 />
