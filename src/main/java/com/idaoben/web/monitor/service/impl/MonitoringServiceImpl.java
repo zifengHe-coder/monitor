@@ -1,12 +1,11 @@
 package com.idaoben.web.monitor.service.impl;
 
 import com.idaoben.web.monitor.service.MonitoringService;
+import com.idaoben.web.monitor.web.dto.ProcessJson;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -15,6 +14,8 @@ public class MonitoringServiceImpl implements MonitoringService {
     private Map<String, MonitoringTask> monitoringSoftwareTaskMap = new ConcurrentHashMap<>();
 
     private Map<String, String> pidSoftwareIdMap = new ConcurrentHashMap<>();
+
+    private Map<String, List<ProcessJson>> processMaps = new HashMap();
 
     public MonitoringTask getMonitoringTask(String softwareId){
         return monitoringSoftwareTaskMap.get(softwareId);
@@ -94,4 +95,13 @@ public class MonitoringServiceImpl implements MonitoringService {
         }
     }
 
+    @Override
+    public List<ProcessJson> getProcessPids(String softwareId){
+        return processMaps.get(softwareId);
+    }
+
+    @Override
+    public void setProcessMaps(Map<String, List<ProcessJson>> processMaps) {
+        this.processMaps = processMaps;
+    }
 }

@@ -453,7 +453,7 @@ public class ActionApplicationService {
                 //设置文件信息
                 action = setActionFileInfo(action, pid);
             } else if(ActionType.isDeviceType(action.getType())){
-                action = setActionDeviceInfo(action, pid);
+                setActionDeviceInfo(action, pid);
             } else if(ActionType.isRegistryType(action.getType())){
                 setActionRegistryInfo(action, pid);
             } else if(ActionType.isProcessType(action.getType())){
@@ -536,7 +536,9 @@ public class ActionApplicationService {
                     if(SystemUtils.isLinux()){
                         //Linux下的偏移量要从“文件读写偏移定位”操作中读取
                         Map<String, Long> fdOffsetMap = fdFileSeekMap.get(pid);
-                        offset = fdOffsetMap.get(action.getFd());
+                        if(fdOffsetMap != null){
+                            offset = fdOffsetMap.get(action.getFd());
+                        }
                     }
                     if(originAction == null){
                         originAction = action;
@@ -670,18 +672,9 @@ public class ActionApplicationService {
         return action;
     }
 
-    private Action setActionDeviceInfo(Action action, String pid){
-        Map<String, FileInfo> fdFileInfoMap = fdFileMap.get(pid);
-        if(fdFileInfoMap != null) {
-            FileInfo fileInfo = fdFileInfoMap.get(action.getFd());
-            if (fileInfo != null) {
-                action.setPath(fileInfo.getPath());
-                action.setFileName(fileInfo.getFileName());
-                action.setDeviceName(fileInfo.getDeviceName());
-                action.setActionGroup(ActionGroup.DEVICE);
-                return action;
-            }
-        }
-        return null;
+    private void setActionDeviceInfo(Action action, String pid){
+        action.setActionGroup(ActionGroup.DEVICE);
+        DeviceInfoJson deviceInfo = systemOsService.getDeviceInfo(action.getPath());
+        action.setDeviceName(deviceInfo == null ? "未知设备" : deviceInfo.getFriendlyName());
     }
 }

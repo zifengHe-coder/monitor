@@ -10,6 +10,7 @@ import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.*;
+import com.idaoben.web.monitor.service.impl.LinuxSystemOsServiceImpl;
 import com.idaoben.web.monitor.service.impl.MonitoringTask;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.FileListCommand;
@@ -62,8 +63,6 @@ public class SoftwareApplicationService {
     private Map<String, SoftwareDto> softwareMap;
 
     private Map<String, String> exeNameSoftwareIdMap = new HashMap<>();
-
-    private Map<String, List<ProcessJson>> processMaps = new HashMap();
 
     private Map<Integer, String> pidUserMap = new ConcurrentHashMap<>();
 
@@ -153,7 +152,7 @@ public class SoftwareApplicationService {
         if(monitoringTask != null){
             detail.setTaskId(monitoringTask.getTaskId());
         }
-        List<ProcessJson> processJsons = processMaps.get(softwareDto.getId());
+        List<ProcessJson> processJsons = monitoringService.getProcessPids(softwareDto.getId());
         if(!CollectionUtils.isEmpty(processJsons)){
             List<ProcessDto> processes = new ArrayList<>();
             for(ProcessJson processJson : processJsons){
@@ -206,10 +205,6 @@ public class SoftwareApplicationService {
             getSystemSoftware();
         }
         return softwareMap.get(softwareId);
-    }
-
-    public List<ProcessJson> getProcessPids(String softwareId){
-        return processMaps.get(softwareId);
     }
 
     @Scheduled(cron = "*/1 * * * * ?")
@@ -306,7 +301,7 @@ public class SoftwareApplicationService {
                 }
             }
 
-            processMaps = tempProcessMaps;
+            monitoringService.setProcessMaps(tempProcessMaps);
         }
     }
 
@@ -332,6 +327,10 @@ public class SoftwareApplicationService {
             return exeNameSoftwareIdMap.get(imageName.toLowerCase());
         } else {
             //For linux
+            if(imageName.contains(LinuxSystemOsServiceImpl.TRACER_CMD)){
+                //Don't show the tracer process
+                return null;
+            }
             for(SoftwareDto software : softwareMap.values()){
                 if(imageName.contains(software.getExeName())){
                     return software.getId();
