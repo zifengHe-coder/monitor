@@ -105,7 +105,7 @@
         progressDetailKey: 'progressDetail',
         softwareDetail: {},
         processList: [],
-        opTypeLists: ['读', '写','删除'],
+        opTypeLists: ['读', '写', '删除'],
         sensitivityLists: ['低', '中', '高'],
         funcApi: null, // 对应的tabs的列表的接口
         typeLists: {
@@ -201,14 +201,14 @@
         a.click();
       },
       // 下载对比文件
-      downloadCompareFile(data){
+      downloadCompareFile(data) {
         let a = document.createElement('a');
         a.href = window.location.origin + this.$api.actionDownloadWriteFilePackage + `?uuid=${data.uuid}`;
         a.download = 'compareFile';
         a.click();
       },
       // 删除文件
-      deleteFile(data){},
+      deleteFile(data) {},
       changeButtonText(row) {
         let text = '';
         if (this.currentTab === '2') {
@@ -221,7 +221,7 @@
             }
           } else if (row.opType === '写') {
             text = '下载对比文件';
-          } else{
+          } else {
             text = '删除文件'
           }
         } else if (this.currentTab === '1') {
@@ -268,6 +268,10 @@
             this.funcApi = this.$api.actionListByNetworkType;
             this.searchLabels = [{
               type: 'input',
+              prop: 'user',
+              label: '用户名'
+            },{
+              type: 'input',
               prop: 'host',
               label: '目标IP'
             }, {
@@ -296,6 +300,10 @@
               format: 'yyyy-MM-dd HH:mm:ss'
             }]
             this.tableLabels = [{
+                type: 'word',
+                prop: 'user',
+                label: '用户名'
+              }, {
                 type: 'timestamp',
                 prop: 'timestamp',
                 columnOperable: 'none',
@@ -335,6 +343,10 @@
           case 2:
             this.funcApi = this.$api.actionListByFileType;
             this.searchLabels = [{
+              type: 'input',
+              prop: 'user',
+              label: '用户名'
+            },{
               type: 'select',
               prop: 'opType',
               label: '读写类型',
@@ -371,6 +383,10 @@
               format: 'yyyy-MM-dd HH:mm:ss'
             }]
             this.tableLabels = [{
+                type: 'word',
+                prop: 'user',
+                label: '用户名'
+              }, {
               type: 'timestamp',
               prop: 'timestamp',
               columnOperable: 'none',
@@ -400,6 +416,10 @@
             this.funcApi = this.$api.actionListByRegistryType;
             this.searchLabels = [{
               type: 'input',
+              prop: 'user',
+              label: '用户名'
+            },{
+              type: 'input',
               prop: 'key',
               label: '目标键'
             }, {
@@ -419,6 +439,10 @@
               format: 'yyyy-MM-dd HH:mm:ss'
             }]
             this.tableLabels = [{
+                type: 'word',
+                prop: 'user',
+                label: '用户名'
+              }, {
               type: 'timestamp',
               prop: 'timestamp',
               columnOperable: 'none',
@@ -467,6 +491,10 @@
             this.funcApi = this.$api.actionListByProcessType;
             this.searchLabels = [{
               type: 'input',
+              prop: 'user',
+              label: '用户名'
+            },{
+              type: 'input',
               prop: 'commandLine',
               label: '命令行'
             }, {
@@ -474,16 +502,16 @@
               prop: 'type',
               label: '调用类型',
               options: [{
-                label: '启动进程',
-                value: 16384
-              }, 
-              // {
-              //   label: '进程注入',
-              //   value: 20480
-              // }, {
-              //   label: '消息通讯',
-              //   value: 20481
-              // }
+                  label: '启动进程',
+                  value: 16384
+                },
+                // {
+                //   label: '进程注入',
+                //   value: 20480
+                // }, {
+                //   label: '消息通讯',
+                //   value: 20481
+                // }
               ]
             }, {
               type: 'datePicker',
@@ -493,6 +521,10 @@
               format: 'yyyy-MM-dd HH:mm:ss'
             }]
             this.tableLabels = [{
+                type: 'word',
+                prop: 'user',
+                label: '用户名'
+              }, {
               type: 'timestamp',
               prop: 'timestamp',
               columnOperable: 'none',
@@ -522,22 +554,18 @@
               prop: 'cmdLine',
               label: '命令行'
             }]
-            sessionStorage.getItem('system') === 'windows'
-            ? this.searchLabels[1].options = this.searchLabels[1].options.concat([
-              {
+            sessionStorage.getItem('system') === 'windows' ?
+              this.searchLabels[2].options = this.searchLabels[2].options.concat([{
                 label: '进程注入',
                 value: 20480
               }, {
                 label: '消息通讯',
                 value: 20481
-              }
-            ])
-            : this.searchLabels[1].options = this.searchLabels[1].options.concat([
-              {
+              }]) :
+              this.searchLabels[2].options = this.searchLabels[2].options.concat([{
                 label: '进程间内存共享',
                 value: 20482
-              }
-            ])
+              }])
             this.hasOperation = true
             this.labelWidth = 60;
             break;
@@ -545,6 +573,10 @@
           case 5:
             this.funcApi = this.$api.actionListByDeviceType;
             this.searchLabels = [{
+              type: 'input',
+              prop: 'user',
+              label: '用户名'
+            },{
               type: 'input',
               prop: 'fileName',
               label: '设备名称'
@@ -556,6 +588,10 @@
               format: 'yyyy-MM-dd HH:mm:ss'
             }]
             this.tableLabels = [{
+                type: 'word',
+                prop: 'user',
+                label: '用户名'
+              }, {
               type: 'timestamp',
               prop: 'timestamp',
               columnOperable: 'none',
@@ -576,35 +612,43 @@
             this.funcApi = this.$api.actionListBySecurityType;
             this.searchLabels = [{
               type: 'input',
+              prop: 'user',
+              label: '用户名'
+            },{
+              type: 'input',
               prop: 'target',
               label: '目标'
             }]
             this.tableLabels = [{
+                type: 'word',
+                prop: 'user',
+                label: '用户名'
+              }, {
               type: 'timestamp',
               prop: 'timestamp',
               columnOperable: 'none',
               label: '操作时间'
-            },{
+            }, {
               type: 'word',
               prop: 'daclSdString',
               label: '安全描述符'
-            },{
+            }, {
               type: 'word',
               prop: 'group',
               label: '目标用户组'
-            },{
+            }, {
               type: 'word',
               prop: 'owner',
               label: '目标用户'
-            },{
+            }, {
               type: 'word',
               prop: 'target',
               label: '目标对象名'
             }];
             if (sessionStorage.getItem('system') === 'linux') {
-              this.tableLabels[1].label='文件权限'
-            }else{
-              this.tableLabels[1].label='安全描述符'
+              this.tableLabels[2].label = '文件权限'
+            } else {
+              this.tableLabels[2].label = '安全描述符'
             }
             break;
           default:
@@ -749,7 +793,6 @@
             method: 'POST',
             data: postParams
           }).then((r) => {
-            console.log(r)
             if (r.code === '0') {
               this.tableData = this.handleResult(r.data);
               this.totalItems = r.totalItems;
