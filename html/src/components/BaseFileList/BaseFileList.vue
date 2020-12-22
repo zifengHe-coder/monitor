@@ -145,6 +145,7 @@
               path: path,
               name: name,
             });
+            this.inputPath = this.path[this.path.length-1].path;
             this.selectItem = {};
             this.fileList = [];
             r.data.forEach((item) => {
@@ -159,7 +160,6 @@
       },
       // 面包屑跳转
       goList(path, name) {
-        this.inputPath = '';
         for (let i = this.path.length - 1; i >= 0; i--) {
           if (this.path[i].path !== path) {
             this.path.pop();
@@ -178,6 +178,7 @@
         }).then((r) => {
           if (r.code == "0") {
             this.fileList = [];
+            this.inputPath = this.path[this.path.length-1].path;
             r.data.forEach((item) => {
               this.fileList.push({
                 path: item.path,
