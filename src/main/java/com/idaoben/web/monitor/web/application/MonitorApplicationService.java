@@ -110,13 +110,18 @@ public class MonitorApplicationService {
         if(pids != null){
             for(Integer pid : pids){
                 logger.info("启动PID: {}的注入监听。", pid);
-                boolean result = systemOsService.attachAndInjectHooks(pid);
-                if(result){
+                String resultCode = systemOsService.attachAndInjectHooks(pid);
+                if(resultCode == null){
                     logger.error("注入进程成功，SoftwareId: {}, PID：{}", softwareId, pid);
                     monitoringService.addMonitoringPid(monitoringTask, String.valueOf(pid));
                 } else {
                     monitoringTask.getErrorPids().add(String.valueOf(pid));
                     logger.error("注入进程失败，SoftwareId: {}, PID：{}", softwareId, pid);
+                    if(!systemOsService.isAutoMonitorChildProcess()){
+                        //cLose monitoring
+                        monitoringService.removeMonitoringTask(softwareId);
+                        throw ServiceException.of(resultCode);
+                    }
                 }
             }
             task.setPidUsers(pids, users);
@@ -137,8 +142,8 @@ public class MonitorApplicationService {
             return;
         }
         logger.info("启动单个PID: {}的注入监听。", pid);
-        boolean result = systemOsService.attachAndInjectHooks(Integer.parseInt(pid));
-        if(result){
+        String resultCode = systemOsService.attachAndInjectHooks(Integer.parseInt(pid));
+        if(resultCode == null){
             //注入成功，增加pid到监听缓存和更新task的监听进程
             monitoringService.addMonitoringPid(monitoringTask, pid);
             actionApplicationService.startActionScan(pid, monitoringTask.getTaskId());

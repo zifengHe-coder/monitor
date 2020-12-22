@@ -6,6 +6,7 @@ import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
 import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
 import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
+import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.JniService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.DeviceFileUtils;
@@ -182,8 +183,9 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     }
 
     @Override
-    public boolean attachAndInjectHooks(int pid) {
-        return jniService.attachAndInjectHooks(pid);
+    public String attachAndInjectHooks(int pid) {
+        boolean result = jniService.attachAndInjectHooks(pid);
+        return result ? null : ErrorCode.MONITOR_PROCESS_ERROR_WINDOWS;
     }
 
     @Override

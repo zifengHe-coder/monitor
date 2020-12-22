@@ -175,7 +175,15 @@ public class SoftwareApplicationService {
                     process.setMonitorStatus(monitorStatus);
                 } else {
                     //只要判断当前主进程是否正在监听即可
-                    process.setMonitorStatus(detail.isMonitoring() ? MonitorStatus.MONITORING : MonitorStatus.NOT_MONITOR);
+                    if(monitoringTask != null){
+                        if(!monitoringTask.getErrorPids().isEmpty()){
+                            process.setMonitorStatus(MonitorStatus.ERROR);
+                        } else {
+                            process.setMonitorStatus(MonitorStatus.MONITORING);
+                        }
+                    } else {
+                        process.setMonitorStatus(MonitorStatus.NOT_MONITOR);
+                    }
                 }
                 processes.add(process);
             }
@@ -255,11 +263,7 @@ public class SoftwareApplicationService {
                     softwareId = monitoringService.getMonitoringSoftwareIdByPid(String.valueOf(processJson.getPid()));
                 }
                 if(softwareId != null){
-                    List<ProcessJson> softwareProcesses = tempProcessMaps.get(softwareId);
-                    if(softwareProcesses == null){
-                        softwareProcesses = new ArrayList<>();
-                        tempProcessMaps.put(softwareId, softwareProcesses);
-                    }
+                    List<ProcessJson> softwareProcesses = tempProcessMaps.computeIfAbsent(softwareId, key -> new ArrayList<>());
                     softwareProcesses.add(processJson);
 
                     if(systemOsService.isAutoMonitorChildProcess()){

@@ -42,16 +42,16 @@ public interface SystemOsService {
      * Start process with hook
      * @param commandLine
      * @param currentDirectory
-     * @return
+     * @return pid, less than 1 is error
      */
     int startProcessWithHooks(String commandLine, String currentDirectory);
 
     /**
      * Attach and inject hooks
      * @param pid
-     * @return
+     * @retur error code, null is success
      */
-    boolean attachAndInjectHooks(int pid);
+    String attachAndInjectHooks(int pid);
 
     /**
      * Remove hooks
