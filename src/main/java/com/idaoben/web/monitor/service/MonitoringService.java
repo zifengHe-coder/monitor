@@ -1,8 +1,11 @@
 package com.idaoben.web.monitor.service;
 
 import com.idaoben.web.monitor.service.impl.MonitoringTask;
+import com.idaoben.web.monitor.web.dto.ProcessJson;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface MonitoringService {
@@ -93,8 +96,20 @@ public interface MonitoringService {
     /**
      * 设置正在监听的PID为监听失败
      * @param softwareId
-     * @param pid
+     * @param softwareId
      */
-    void setMonitoringPidToError(String pid);
+    void setMonitoringPidToError(String softwareId);
 
+    /**
+     * Get Process IDs by softwareID
+     * @param softwareId
+     * @return
+     */
+    List<ProcessJson> getProcessPids(String softwareId);
+
+    /**
+     * Set process map
+     * @param processMaps
+     */
+    void setProcessMaps(Map<String, List<ProcessJson>> processMaps);
 }

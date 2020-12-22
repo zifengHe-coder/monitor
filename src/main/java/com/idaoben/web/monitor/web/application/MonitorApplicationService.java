@@ -56,7 +56,7 @@ public class MonitorApplicationService {
             throw ServiceException.of(ErrorCode.MONITOR_ON_GOING);
         }
         //启动监听
-        if(CollectionUtils.isEmpty(softwareApplicationService.getProcessPids(softwareId))){
+        if(CollectionUtils.isEmpty(monitoringService.getProcessPids(softwareId))){
             throw ServiceException.of(ErrorCode.SOFTWARE_NOT_RUNING);
         }
 
@@ -80,7 +80,7 @@ public class MonitorApplicationService {
         List<String> users = null;
         if(SystemUtils.isWindows()){
             //启动所有pid的监听线程
-            List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
+            List<ProcessJson> processes = monitoringService.getProcessPids(softwareId);
             if(processes != null){
                 pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
                 users = processes.stream().map(processJsonDto -> processJsonDto.getUser()).collect(Collectors.toList());
@@ -89,7 +89,7 @@ public class MonitorApplicationService {
             //Find the main process
             Integer pid = null;
             String user = null;
-            List<ProcessJson> processes = softwareApplicationService.getProcessPids(softwareId);
+            List<ProcessJson> processes = monitoringService.getProcessPids(softwareId);
             if(processes != null){
                 pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
                 for(ProcessJson process : processes){
@@ -188,7 +188,7 @@ public class MonitorApplicationService {
             throw ServiceException.of(ErrorCode.MONITOR_ON_GOING);
         }
         //启动监听
-        if(!CollectionUtils.isEmpty(softwareApplicationService.getProcessPids(softwareId))){
+        if(!CollectionUtils.isEmpty(monitoringService.getProcessPids(softwareId))){
             throw ServiceException.of(ErrorCode.SOFTWARE_RUNING);
         }
 

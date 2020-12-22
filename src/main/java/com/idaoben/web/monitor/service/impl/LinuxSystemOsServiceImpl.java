@@ -6,6 +6,7 @@ import com.idaoben.web.monitor.dao.entity.enums.ActionType;
 import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
 import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import com.idaoben.web.monitor.exception.ErrorCode;
+import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.utils.DeviceFileUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +35,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     private static final Logger logger = LoggerFactory.getLogger(LinuxSystemOsServiceImpl.class);
 
-    private static final String TRACER_CMD = System.getProperty("user.dir") + "/res/exe/tracer";
+    public static final String TRACER_CMD = System.getProperty("user.dir") + "/res/exe/tracer";
 
     private Map<Integer, Pair<Boolean, Process>> pidTracerProcessMap = new ConcurrentHashMap<>();
 
@@ -44,6 +46,9 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     private static final String PROCESS_TYPE_SEPARATOR = "/dev/shm/";
 
     private static final String SYS_DEVICE_TYPE_SEPARATOR = "/sys/devices/";
+
+    @Resource
+    private MonitoringService monitoringService;
 
     @PostConstruct
     public void init(){
@@ -163,9 +168,18 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
         Pair<Boolean, Process> processPair = pidTracerProcessMap.remove(pid);
         if(processPair != null){
             if(processPair.getLeft()){
-                //User kill -9 to kill the process
+                //Use kill -9 to kill the tracer process and all app process
                 try {
-                    Runtime.getRuntime().exec(String.format("kill -9 %d", pid));
+                    String softwareId = monitoringService.getMonitoringSoftwareIdByPid(String.valueOf(pid));
+                    if(softwareId != null){
+                        List<ProcessJson> processJsons = monitoringService.getProcessPids(softwareId);
+                        if(processJsons != null){
+                            for(ProcessJson processJson : processJsons){
+                                Runtime.getRuntime().exec(String.format("kill -9 %d", processJson.getPid()));
+                            }
+                        }
+                    }
+                    Runtime.getRuntime().exec(String.format("kill -9 %d", processPair.getRight().pid()));
                 } catch (IOException e) {
                     logger.error(e.getMessage(), e);
                 }
@@ -183,7 +197,20 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     @Override
     public DeviceInfoJson getDeviceInfo(String instanceId) {
-        return null;
+        if(instanceId == null){
+            return null;
+        }
+        DeviceInfoJson deviceInfo = new DeviceInfoJson();
+        deviceInfo.setInstanceId(instanceId);
+        if(instanceId.startsWith("/dev/video")){
+            deviceInfo.setFriendlyName("摄像设备");
+        } else if(instanceId.startsWith("/dev/audio")){
+            deviceInfo.setFriendlyName("音频设备");
+        }
+        if(deviceInfo.getFriendlyName() == null){
+            return null;
+        }
+        return deviceInfo;
     }
 
     @Override
@@ -205,6 +232,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     @Override
     public ActionGroup setActionFromFileInfo(Action action) {
+        //Linux device don't handler from file
         String path = action.getPath();
         if(path.startsWith(DEVICE_TYPE_SEPARATOR)){
             if(path.startsWith(PROCESS_TYPE_SEPARATOR)){
@@ -214,10 +242,10 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
                 action.setPath("");
                 return ActionGroup.PROCESS;
             } else {
-                return ActionGroup.DEVICE;
+                return null;
             }
         } else if(path.startsWith(SYS_DEVICE_TYPE_SEPARATOR)){
-            return ActionGroup.DEVICE;
+            return null;
         }
         return ActionGroup.FILE;
     }
