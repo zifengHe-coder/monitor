@@ -601,6 +601,11 @@
               prop: 'target',
               label: '目标对象名'
             }];
+            if (sessionStorage.getItem('system') === 'linux') {
+              this.tableLabels[1].label='文件权限'
+            }else{
+              this.tableLabels[1].label='安全描述符'
+            }
             break;
           default:
             this.$router.push('/')
@@ -713,8 +718,11 @@
             })
             return data;
           case 'softwareDetail_5':
+            // 设备控制
             return data;
           case 'softwareDetail_6':
+            // 权限对象
+
             return data;
         }
       },
