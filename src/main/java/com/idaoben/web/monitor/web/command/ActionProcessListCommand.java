@@ -12,6 +12,9 @@ public class ActionProcessListCommand {
     @ApiModelProperty("进程PID")
     private String pid;
 
+    @ApiModelProperty("用户名")
+    private String user;
+
     @ApiModelProperty("命令行")
     private String cmdLine;
 
@@ -38,6 +41,14 @@ public class ActionProcessListCommand {
 
     public void setPid(String pid) {
         this.pid = pid;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
     }
 
     public String getCmdLine() {

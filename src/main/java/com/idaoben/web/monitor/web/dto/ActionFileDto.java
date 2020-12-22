@@ -7,27 +7,9 @@ import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-import java.time.ZonedDateTime;
-
 @ApiModel
 @EnableAssembling
-public interface ActionFileDto {
-
-    @ApiModelProperty("唯一标识符")
-    @Mapping
-    String getUuid();
-
-    @ApiModelProperty("关联的任务ID")
-    @Mapping
-    Long getTaskId();
-
-    @ApiModelProperty("进程ID")
-    @Mapping
-    String getPid();
-
-    @ApiModelProperty("日志时间戳")
-    @Mapping
-    ZonedDateTime getTimestamp();
+public interface ActionFileDto extends ActionBaseDto{
 
     @ApiModelProperty("文件路径")
     @Mapping

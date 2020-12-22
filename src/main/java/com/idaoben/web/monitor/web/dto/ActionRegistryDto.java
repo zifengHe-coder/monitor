@@ -5,27 +5,9 @@ import com.idaoben.utils.dto_assembler.annotation.Mapping;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-import java.time.ZonedDateTime;
-
 @ApiModel
 @EnableAssembling
-public interface ActionRegistryDto {
-
-    @ApiModelProperty("唯一标识符")
-    @Mapping
-    String getUuid();
-
-    @ApiModelProperty("关联的任务ID")
-    @Mapping
-    Long getTaskId();
-
-    @ApiModelProperty("进程ID")
-    @Mapping
-    String getPid();
-
-    @ApiModelProperty("日志时间戳")
-    @Mapping
-    ZonedDateTime getTimestamp();
+public interface ActionRegistryDto extends ActionBaseDto{
 
     @ApiModelProperty("行为类型")
     @Mapping

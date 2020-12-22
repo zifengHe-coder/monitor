@@ -10,6 +10,8 @@ public class ProcessJson {
 
     private Integer pid;
 
+    private String user;
+
     private String wsPrivateBytes;
 
     public String getCpuTime() {
@@ -44,6 +46,14 @@ public class ProcessJson {
         this.pid = pid;
     }
 
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
     public String getWsPrivateBytes() {
         return wsPrivateBytes;
     }
@@ -59,6 +69,7 @@ public class ProcessJson {
                 ", imageName='" + imageName + '\'' +
                 ", parentPid=" + parentPid +
                 ", pid=" + pid +
+                ", user='" + user + '\'' +
                 ", wsPrivateBytes='" + wsPrivateBytes + '\'' +
                 '}';
     }

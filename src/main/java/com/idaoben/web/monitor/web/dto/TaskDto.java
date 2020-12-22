@@ -42,7 +42,7 @@ public interface TaskDto {
     @Mapping
     String getExePath();
 
-    @ApiModelProperty("pid列表，逗号分隔")
+    @ApiModelProperty("用户进程列表，格式pid1:user1,pid2:user2")
     @Mapping
     String getPids();
 

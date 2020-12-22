@@ -2,13 +2,13 @@ package com.idaoben.web.monitor.dao.entity;
 
 import com.idaoben.web.common.entity.Description;
 import com.idaoben.web.common.entity.IdentifiableObject;
-import org.apache.tomcat.util.buf.StringUtils;
+import org.springframework.util.StringUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.time.ZonedDateTime;
-import java.util.Collection;
+import java.util.*;
 
 @Entity
 @Table(name = "t_task")
@@ -35,8 +35,8 @@ public class Task extends IdentifiableObject {
     @Column
     private String exePath;
 
-    @Description("pid列表，逗号分隔")
-    @Column
+    @Description("用户进程列表，格式pid1:user1,pid2:user2")
+    @Column(length = 1000)
     private String pids;
 
     @Description("是否已完成")
@@ -83,8 +83,47 @@ public class Task extends IdentifiableObject {
         this.pids = pids;
     }
 
-    public void setPids(Collection<String> pids){
-        this.pids = StringUtils.join(pids, ',');
+    public void setPidUsers(Collection<Integer> pids, Collection<String> users){
+        Iterator<Integer> pidIt = pids.iterator();
+        Iterator<String> userIt = users.iterator();
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        while (pidIt.hasNext() && userIt.hasNext()){
+            Integer pid = pidIt.next();
+            String user = userIt.next();
+            if(first){
+                first = false;
+            } else {
+                sb.append(',');
+            }
+            sb.append(pid.toString()).append(':').append(user);
+
+        }
+        this.pids = sb.toString();
+    }
+
+    public void addPidUser(String pid, String user){
+        if(StringUtils.isEmpty(pids)){
+            setPidUsers(Collections.singletonList(Integer.valueOf(pid)),  Collections.singletonList(user));
+        } else {
+            Set<String> pids = getPidUsers().keySet();
+            if(!pids.contains(pid)){
+                this.pids += String.format(",%s:%s", pid, user);
+            }
+        }
+    }
+
+    public Map<String, String> getPidUsers(){
+        Map<String, String> pidUsers = null;
+        if (!StringUtils.isEmpty(pids)) {
+            pidUsers = new HashMap<>();
+            String[] pidUserStrs = StringUtils.split(pids, ",");
+            for (String pidUserStr : pidUserStrs) {
+                String[] tempPidUser = StringUtils.split(pidUserStr, ":");
+                pidUsers.put(tempPidUser[0], tempPidUser[1]);
+            }
+        }
+        return pidUsers;
     }
 
     public String getExePath() {

@@ -12,6 +12,9 @@ public class ActionRegistryListCommand {
     @ApiModelProperty("进程PID")
     private String pid;
 
+    @ApiModelProperty("用户名")
+    private String user;
+
     @ApiModelProperty("目标键")
     private String key;
 
@@ -41,6 +44,14 @@ public class ActionRegistryListCommand {
 
     public void setPid(String pid) {
         this.pid = pid;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
     }
 
     public String getKey() {

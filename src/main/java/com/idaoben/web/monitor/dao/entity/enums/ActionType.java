@@ -29,8 +29,13 @@ public class ActionType {
     //文件写入
     public static final int FILE_WRITE = 8193;
 
+    //文件读写偏移定位
+    public static final int FILE_SEEK = 8195;
+
     //文件删除
-    public static final int FILE_DELETE = 8196;
+    public static final int FILE_DELETE_LINUX = 8196;
+
+    public static final int FILE_DELETE_WINDOWS = 8198;
 
     //注册表打开或创建键
     public static final int REGISTRY_OPEN_KEY = 12288;
@@ -61,8 +66,14 @@ public class ActionType {
     //修改对象安全描述符
     public static final int SECURITY_UPDATE = 24576;
 
+    //修改文件权限
+    public static final int SECURITY_FILE_UPDATE = 8199;
+
+    //修改文件拥有者
+    public static final int SECURITY_FILE_OWNER_UPDATE = 8200;
+
     public static boolean isFileType(int access){
-        return access == FILE_OPEN || access == FILE_WRITE;
+        return access == FILE_OPEN || access == FILE_WRITE || access == FILE_DELETE_WINDOWS || access == FILE_DELETE_LINUX;
     }
 
     public static boolean isNetworkType(int access){
@@ -78,6 +89,6 @@ public class ActionType {
     }
 
     public static boolean isSecurity(int access){
-        return access == SECURITY_UPDATE;
+        return access == SECURITY_UPDATE || access == SECURITY_FILE_UPDATE || access == SECURITY_FILE_OWNER_UPDATE;
     }
 }

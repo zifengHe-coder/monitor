@@ -107,6 +107,10 @@ public class Action {
     @Transient
     private Long offset;
 
+    @Description("从何处开始偏移。0 - 从文件起始位置偏移；1 - 从当前位置偏移（即上一次读写操作后的文件偏移量）；2 - 从文件末尾向前偏移")
+    @Transient
+    private Integer where;
+
     @Description("多个写入数据时的偏移量集合，逗号分隔")
     @Column(name = "write_offsets", columnDefinition = "MEDIUMTEXT COMMENT '偏移量'")
     private String writeOffsets;
@@ -187,6 +191,10 @@ public class Action {
     @Description("DACL安全描述符字符串")
     @Column
     private String daclSdString;
+
+    @Description("权限掩码")
+    @Transient
+    private String mode;
 
     public String getUuid() {
         return uuid;
@@ -364,6 +372,14 @@ public class Action {
         this.offset = offset;
     }
 
+    public Integer getWhere() {
+        return where;
+    }
+
+    public void setWhere(Integer where) {
+        this.where = where;
+    }
+
     public String getWriteOffsets() {
         return writeOffsets;
     }
@@ -522,5 +538,13 @@ public class Action {
 
     public void setDaclSdString(String daclSdString) {
         this.daclSdString = daclSdString;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 }

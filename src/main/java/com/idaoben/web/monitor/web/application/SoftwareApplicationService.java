@@ -1,5 +1,7 @@
 package com.idaoben.web.monitor.web.application;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DateTimeUtils;
@@ -7,10 +9,7 @@ import com.idaoben.web.monitor.dao.entity.Favorite;
 import com.idaoben.web.monitor.dao.entity.Software;
 import com.idaoben.web.monitor.dao.entity.enums.MonitorStatus;
 import com.idaoben.web.monitor.exception.ErrorCode;
-import com.idaoben.web.monitor.service.FavoriteService;
-import com.idaoben.web.monitor.service.MonitoringService;
-import com.idaoben.web.monitor.service.SoftwareService;
-import com.idaoben.web.monitor.service.SystemOsService;
+import com.idaoben.web.monitor.service.*;
 import com.idaoben.web.monitor.service.impl.MonitoringTask;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.FileListCommand;
@@ -31,6 +30,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Component
@@ -53,11 +53,19 @@ public class SoftwareApplicationService {
     @Resource
     private MonitoringService monitoringService;
 
+    @Resource
+    private JniService jniService;
+
+    @Resource
+    private ObjectMapper objectMapper;
+
     private Map<String, SoftwareDto> softwareMap;
 
     private Map<String, String> exeNameSoftwareIdMap = new HashMap<>();
 
     private Map<String, List<ProcessJson>> processMaps = new HashMap();
+
+    private Map<Integer, String> pidUserMap = new ConcurrentHashMap<>();
 
     public List<SoftwareDto> getSystemSoftware(){
         List<String> favoriteSoftwareIds = favoriteService.findAll().stream().map(Favorite::getSoftwareId).collect(Collectors.toList());
@@ -150,9 +158,10 @@ public class SoftwareApplicationService {
             for(ProcessJson processJson : processJsons){
                 ProcessDto process = new ProcessDto();
                 process.setPid(String.valueOf(processJson.getPid()));
+                process.setUser(processJson.getUser());
                 process.setName(processJson.getImageName());
-                //TODO：CPU使用时间待补充
-                process.setMemory(Float.parseFloat(processJson.getWsPrivateBytes()) / 1024);
+                process.setCpu(processJson.getCpuTime());
+                process.setMemory(Long.parseLong(processJson.getWsPrivateBytes()) / 1024);
                 if(systemOsService.isAutoMonitorChildProcess()){
                     //需要自动监听子进程的，则根据具体的当前监听进程判断
                     MonitorStatus monitorStatus;
@@ -201,12 +210,36 @@ public class SoftwareApplicationService {
             getSystemSoftware();
         }
         List<ProcessJson> processJsons = systemOsService.listAllProcesses();
+
         Map<String, List<ProcessJson>> tempProcessMaps = new HashMap<>();
         if(!CollectionUtils.isEmpty(processJsons)){
+
             Map<Integer, ProcessJson> pidProcessMap = new HashMap<>();
             processJsons.forEach(processJsonDto -> pidProcessMap.put(processJsonDto.getPid(), processJsonDto));
+
+            //Windows平台移除pidUserMap中已经关闭的进程
+            if(SystemUtils.isWindows()) {
+                Set<Integer> pids = pidUserMap.keySet();
+                for (Integer pid : pids) {
+                    if (!pidProcessMap.containsKey(pid)) {
+                        pidProcessMap.remove(pid);
+                    }
+                }
+            }
+
             //把所有进程组装到对应的软件中
+            List<Integer> checkUserPids = new ArrayList<>();
             for(ProcessJson processJson : processJsons){
+                //Windows平台需要再次去查询对应进程的用户ID
+                if(SystemUtils.isWindows()){
+                    String user = pidUserMap.get(processJson.getPid());
+                    if(user == null){
+                        checkUserPids.add(processJson.getPid());
+                    } else {
+                        processJson.setUser(user);
+                    }
+                }
+
                 //先找父对象是否存在，存在父对象时直接挂到父对象的进程列表中
                 ProcessJson parentProcess = pidProcessMap.get(processJson.getParentPid());
                 String softwareId = null;
@@ -235,8 +268,27 @@ public class SoftwareApplicationService {
                         //Only Windows Need to auto add monitor
                         if(SystemUtils.isWindows() && monitoringService.isMonitoring(softwareId)
                                 && !monitoringService.isPidMonitoringError(softwareId, pidStr) && !monitoringService.isPidMonitoring(softwareId, pidStr)){
-                            monitorApplicationService.startMonitorPid(softwareId, pidStr);
+                            String user = processJson.getUser();
+                            //Windows平台如果当前processJson无user信息，则重新获取
+                            if(user == null && SystemUtils.isWindows()){
+                                List<ProcessJson> pidUsers = getPidUsers(Collections.singletonList(processJson.getPid()));
+                                if(!CollectionUtils.isEmpty(pidUsers)){
+                                    user = pidUsers.get(0).getUser();
+                                }
+                            }
+                            monitorApplicationService.startMonitorPid(softwareId, pidStr, user);
                         }
+                    }
+                }
+            }
+
+            //Windows平台把需要重新查询用户的进程再次查询用户信息
+            if(SystemUtils.isWindows() && !checkUserPids.isEmpty()){
+                List<ProcessJson> pidUsers = getPidUsers(checkUserPids);
+                for(ProcessJson process : pidUsers){
+                    ProcessJson processJson = pidProcessMap.get(process.getPid());
+                    if(processJson != null){
+                        processJson.setUser(process.getUser());
                     }
                 }
             }
@@ -251,6 +303,19 @@ public class SoftwareApplicationService {
 
             processMaps = tempProcessMaps;
         }
+    }
+
+    private List<ProcessJson> getPidUsers(List<Integer> pids){
+        String processDetailContent = jniService.queryProcessDetails(pids);
+        try {
+            ProcessDetailsJson processDetailsJson = objectMapper.readValue(processDetailContent, ProcessDetailsJson.class);
+            if(processDetailsJson != null){
+                return processDetailsJson.getDetails();
+            }
+        } catch (JsonProcessingException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return null;
     }
 
     private String getSoftwareIdFromImageName(String imageName, boolean isParent){

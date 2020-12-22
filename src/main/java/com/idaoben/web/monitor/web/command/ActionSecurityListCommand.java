@@ -12,6 +12,9 @@ public class ActionSecurityListCommand {
     @ApiModelProperty("进程PID")
     private String pid;
 
+    @ApiModelProperty("用户名")
+    private String user;
+
     @ApiModelProperty("目标对象")
     private String target;
 
@@ -35,6 +38,14 @@ public class ActionSecurityListCommand {
 
     public void setPid(String pid) {
         this.pid = pid;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
     }
 
     public String getTarget() {

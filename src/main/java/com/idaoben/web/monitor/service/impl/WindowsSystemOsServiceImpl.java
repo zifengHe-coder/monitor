@@ -25,6 +25,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,6 +48,8 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     private static String[] sensitivityPaths;
 
     private static final String[] FILE_TYPE_SEPARATORS = new String[]{"\\??\\", "\\\\??\\"};
+
+    private Map<Integer, Long> pidCpuTimeMap = new HashMap<>();
 
     @PostConstruct
     public void init(){
@@ -148,6 +152,22 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
         try {
             ProcessListJson processListJson = objectMapper.readValue(processContent, ProcessListJson.class);
             if(processListJson != null){
+                //计算CPU使用率
+                //1、计算本次所有进程的cpu占用时间差deltaCpuTime，pid是0的是空闲进程时间
+                //2、每个进程自己的cpu占用时间差 pidDeltaCpuTime / deltaCpuTime * 100% 就是当前进程的cpu占用率
+                long deltaCpuTime = 0;
+                Map<Integer, Long> pidDeltaCpuTimeMap = new HashMap<>();
+                for(ProcessJson processJson : processListJson.getProcesses()){
+                    long lastCpuTime = pidCpuTimeMap.getOrDefault(processJson.getPid(), 0l);
+                    long thisCpuTime = Long.parseLong(processJson.getCpuTime());
+                    long pidDeltaCpuTime =  thisCpuTime > lastCpuTime ? thisCpuTime - lastCpuTime : 0l;
+                    deltaCpuTime += pidDeltaCpuTime;
+                    pidCpuTimeMap.put(processJson.getPid(), thisCpuTime);
+                    pidDeltaCpuTimeMap.put(processJson.getPid(), pidDeltaCpuTime);
+                }
+                for(ProcessJson processJson : processListJson.getProcesses()){
+                    processJson.setCpuTime(new BigDecimal(pidDeltaCpuTimeMap.get(processJson.getPid()) * 100).divide(new BigDecimal(deltaCpuTime), 1, RoundingMode.HALF_UP).toString());
+                }
                 return processListJson.getProcesses();
             }
         } catch (JsonProcessingException e) {
@@ -182,7 +202,6 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
         if(!deviceInfoMap.containsKey(instanceId)){
             //重新获取一次信息
             String allDevicesJson = jniService.listAllDevices();
-            logger.info("找不到对应设备{}，进行设备列表查询", instanceId);
             try {
                 DeviceListJson deviceList = objectMapper.readValue(allDevicesJson, DeviceListJson.class);
                 Map<String, DeviceInfoJson> deviceInfoJsonMap = new HashMap<>();
@@ -196,6 +215,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
             } else {
                 //找不到设备时传入一个空的缓存，避免下次重复查询了
                 deviceInfoMap.put(instanceId, null);
+                logger.info("找不到对应设备{}", instanceId);
             }
         } else {
             deviceInfoJson = deviceInfoMap.get(instanceId);

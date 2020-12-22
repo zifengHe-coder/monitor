@@ -11,6 +11,7 @@ import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SystemOsService;
+import com.idaoben.web.monitor.service.TaskService;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
@@ -22,11 +23,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
@@ -53,6 +57,9 @@ public class ActionApplicationService {
     @Resource
     private MonitoringService monitoringService;
 
+    @Resource
+    private TaskService taskService;
+
     private Map<String, ActionHanlderThread> handlingThreads = new ConcurrentHashMap<>();
 
     private Map<String, Long> actionSkipMap = new ConcurrentHashMap<>();
@@ -63,6 +70,8 @@ public class ActionApplicationService {
 
     private Map<String, Map<String, Action>> writeFileMap = new ConcurrentHashMap<>();
 
+    private Map<String, Map<String, Long>> fdFileSeekMap = new ConcurrentHashMap<>();
+
     @PostConstruct
     public void init(){
         ACTION_FOLDER = new File(systemOsService.getActionFolderPath());
@@ -70,6 +79,7 @@ public class ActionApplicationService {
     }
 
     public Page<ActionFileDto> listByFileType(ActionFileListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.FILE).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getFileName, command.getFileName()).eq(Action::getSensitivity, command.getSensitivity())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
@@ -79,9 +89,10 @@ public class ActionApplicationService {
             } else if(command.getOpType() == FileOpType.READ){
                 filters.eq(Action::getType, ActionType.FILE_OPEN);
             } else if(command.getOpType() == FileOpType.DELETE){
-                filters.eq(Action::getType, ActionType.FILE_DELETE);
+                filters.in(Action::getType, ActionType.FILE_DELETE_LINUX, ActionType.FILE_DELETE_WINDOWS);
             }
         }
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionFileDto.class).apply(actions, (domain, dto) -> {
             switch (domain.getType()){
@@ -91,33 +102,45 @@ public class ActionApplicationService {
                 case ActionType.FILE_OPEN:
                     dto.setOpType(FileOpType.READ);
                     break;
-                case ActionType.FILE_DELETE:
+                case ActionType.FILE_DELETE_LINUX:
+                case ActionType.FILE_DELETE_WINDOWS:
                     dto.setOpType(FileOpType.DELETE);
                     break;
             }
+            setActionUser(dto, pidUsers);
         });
     }
 
     public Page<ActionRegistryDto> listByRegistryType(ActionRegistryListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.REGISTRY).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getKey, command.getKey()).likeFuzzy(Action::getValueName, command.getValueName()).eq(Action::getValueType, command.getValueType())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
-        return DtoTransformer.asPage(ActionRegistryDto.class).apply(actions);
+        return DtoTransformer.asPage(ActionRegistryDto.class).apply(actions, (domain, dto) -> {
+            setActionUser(dto, pidUsers);
+        });
     }
 
     public Page<ActionProcessDto> listByProcessType(ActionProcessListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.PROCESS).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getCmdLine, command.getCmdLine()).eq(Action::getType, command.getType())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
-        return DtoTransformer.asPage(ActionProcessDto.class).apply(actions);
+        return DtoTransformer.asPage(ActionProcessDto.class).apply(actions, (domain, dto) -> {
+            setActionUser(dto, pidUsers);
+        });
     }
 
     public Page<ActionNetworkDto> listByNetworkType(ActionNetworkListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.NETWORK).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getHost, command.getHost()).eq(Action::getPort, command.getPort()).eq(Action::getType, command.getType())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionNetworkDto.class).apply(actions, (domain, dto) -> {
             //简单的协议分析
@@ -133,23 +156,57 @@ public class ActionApplicationService {
             } else if(domain.getType() == ActionType.NETWORK_UDP_SEND || domain.getType() == ActionType.NETWORK_UDP_RECEIVE){
                 dto.setProtocol("UDP");
             }
+
+            setActionUser(dto, pidUsers);
         });
     }
 
     public Page<ActionDeviceDto> listByDeviceType(ActionDeviceListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.DEVICE).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getCmdLine, command.getDeviceName())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
-        return DtoTransformer.asPage(ActionDeviceDto.class).apply(actions);
+        return DtoTransformer.asPage(ActionDeviceDto.class).apply(actions, (domain, dto) -> {
+            setActionUser(dto, pidUsers);
+        });
     }
 
     public Page<ActionSecurityDto> listBySecurityType(ActionSecurityListCommand command, Pageable pageable){
+        Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.SECURITY).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getTarget, command.getTarget())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+        addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
-        return DtoTransformer.asPage(ActionSecurityDto.class).apply(actions);
+        return DtoTransformer.asPage(ActionSecurityDto.class).apply(actions, (domain, dto) -> {
+            setActionUser(dto, pidUsers);
+        });
+    }
+
+    private void setActionUser(ActionBaseDto dto, Map<String, String> pidUsers){
+        if(pidUsers != null && pidUsers.containsKey(dto.getPid())){
+            dto.setUser(pidUsers.get(dto.getPid()));
+        }
+    }
+
+    private void addUserFilter(Filters filters, Map<String, String> pidUsers, String user){
+        if(StringUtils.isNotEmpty(user) && pidUsers != null){
+            List<String> pids = new ArrayList<>();
+            for(Map.Entry<String, String> pidUser : pidUsers.entrySet()){
+                if(pidUser.getValue().contains(user)){
+                    pids.add(pidUser.getKey());
+                }
+            }
+
+            if(!CollectionUtils.isEmpty(pids)){
+                filters.in(Action::getPid, pids);
+            } else {
+                //设置一个肯定查询不到的结果
+                filters.eq(Action::getUuid, "-1");
+            }
+        }
     }
 
     public File getNetworkFile(String uuid){
@@ -369,6 +426,7 @@ public class ActionApplicationService {
         socketFdNetworkMap.remove(pid);
         fdFileMap.remove(pid);
         writeFileMap.remove(pid);
+        fdFileSeekMap.remove(pid);
     }
 
     /**
@@ -397,7 +455,11 @@ public class ActionApplicationService {
             } else if(ActionType.isProcessType(action.getType())){
                 systemOsService.setActionProcessInfo(action, pid);
             } else if(ActionType.isSecurity(action.getType())){
-                setActionSecurityInfo(action, pid);
+                action = setActionSecurityInfo(action, pid);
+            } else if(action.getType() == ActionType.FILE_SEEK && SystemUtils.isLinux()){
+                //暂时只有linux有这种文件偏移操作，并且这种操作不用保存数据库
+                setActionFileSeekInfo(action, pid);
+                return null;
             }
 
             if(action != null){
@@ -409,6 +471,25 @@ public class ActionApplicationService {
         return null;
     }
 
+    private void setActionFileSeekInfo(Action action, String pid){
+        Map<String, Long> fdFileSeek = fdFileSeekMap.computeIfAbsent(pid, p -> new HashMap<>());
+        Long lastOffset = fdFileSeek.get(action.getFd());
+        Long offset = action.getOffset() == null ? 0 : action.getOffset();
+        if(action.getWhere() != null){
+            if(action.getWhere() == 1){
+                //1 - 从当前位置偏移（即上一次读写操作后的文件偏移量）
+                if(lastOffset != null && lastOffset.longValue() > 0){
+                    offset = lastOffset.longValue() + offset;
+                }
+            } else if(action.getWhere() == 2){
+                //2 - 从文件末尾向前偏移， 暂时不支持，默认为末尾写入
+                logger.error("出现从文件末尾向前偏移，暂时不支持这种记录!!! TaskID: {}, PID: {}, UUID: {}", action.getTaskId(), pid, action.getUuid());
+                offset = null;
+            }
+        }
+        fdFileSeek.put(action.getFd(), offset);
+        logger.info("Linux文件读写偏移, OFFSET: {}, PID: {}", offset, pid);
+    }
 
     private Action setActionFileInfo(Action action, String pid){
         if(action.getType() == ActionType.FILE_OPEN){
@@ -447,6 +528,12 @@ public class ActionApplicationService {
                     //查下是否有对上一个相同FD写入记录，有记录的话只做更新操作
                     Map<String, Action> actionMap = writeFileMap.computeIfAbsent(pid, p -> new HashMap<>());
                     Action originAction = actionMap.get(action.getFd());
+                    Long offset = action.getOffset();
+                    if(SystemUtils.isLinux()){
+                        //Linux下的偏移量要从“文件读写偏移定位”操作中读取
+                        Map<String, Long> fdOffsetMap = fdFileSeekMap.get(pid);
+                        offset = fdOffsetMap.get(action.getFd());
+                    }
                     if(originAction == null){
                         originAction = action;
                         originAction.setFileName(fileInfo.getFileName());
@@ -455,36 +542,37 @@ public class ActionApplicationService {
                         originAction.setBackup(fileInfo.getBackup());
                         originAction.setDeviceName(fileInfo.getDeviceName());
                         originAction.setActionGroup(fileInfo.getActionGroup());
-                        originAction.setWriteOffsets(action.getOffset() == null ? "" : String.valueOf(action.getOffset()));
+                        originAction.setWriteOffsets(offset == null ? "" : String.valueOf(offset));
                         originAction.setWriteBytes(String.valueOf(action.getBytes()));
                         actionMap.put(originAction.getFd(), originAction);
                     } else {
                         originAction.setTimestamp(action.getTimestamp());
+
                         //空的时候是写到最后，写到最后时仅仅直接修改已写入量，不再追加记录
-                        if(action.getOffset() == null){
+                        if(offset == null){
                             //取最后写入量，并且进行写入量重新计算填充
-                            String writeOffsets = action.getWriteOffsets() == null ? "" :  action.getWriteOffsets();
-                            int lastIndex = writeOffsets.lastIndexOf(',');
-                            String preOffset = null;
-                            String currentOffset;
+                            String writeBytes = action.getWriteBytes() == null ? "" :  action.getWriteBytes();
+                            int lastIndex = writeBytes.lastIndexOf(',');
+                            String preBytes = null;
+                            String lastBytes;
                             if(lastIndex >= 0){
-                                preOffset = writeOffsets.substring(0, lastIndex + 1);
-                                currentOffset = writeOffsets.substring(lastIndex + 1);
+                                preBytes = writeBytes.substring(0, lastIndex + 1);
+                                lastBytes = writeBytes.substring(lastIndex + 1);
                             } else {
-                                currentOffset = writeOffsets;
+                                lastBytes = writeBytes;
                             }
-                            //currentOffset为空表示原来的都是写入到最后的，不用做更新了
-                            if(currentOffset.length() > 0) {
-                                long offset = Long.parseLong(currentOffset);
-                                offset += action.getOffset();
-                                if(preOffset == null){
-                                    action.setWriteOffsets(String.valueOf(offset));
+                            //lastBytes为空是异常情况，正常lastBytes闭定有值
+                            if(lastBytes.length() > 0) {
+                                long bytes = Long.parseLong(lastBytes);
+                                bytes += action.getBytes();
+                                if(preBytes == null){
+                                    action.setWriteBytes(String.valueOf(bytes));
                                 } else {
-                                    action.setWriteOffsets(String.format("%s,%d", preOffset, action.getOffset()));
+                                    action.setWriteBytes(String.format("%s,%d", preBytes, bytes));
                                 }
                             }
                         } else {
-                            originAction.setWriteOffsets(String.format("%s,%d", originAction.getWriteOffsets(), action.getOffset()));
+                            originAction.setWriteOffsets(String.format("%s,%d", originAction.getWriteOffsets(), offset));
                             originAction.setWriteBytes(String.format("%s,%d", originAction.getWriteBytes(), action.getBytes()));
                         }
                     }
@@ -498,10 +586,30 @@ public class ActionApplicationService {
             }
         }
 
-        if(action.getType() == ActionType.FILE_DELETE){
+        if(action.getType() == ActionType.FILE_DELETE_LINUX){
+            action.setActionGroup(ActionGroup.FILE);
             action.setPath(action.getFile());
             action.setSensitivity(systemOsService.getFileSensitivity(action.getPath()));
+            action.setFileName(new File(action.getPath()).getName());
+        } else if(action.getType() == ActionType.FILE_DELETE_WINDOWS){
+            //Windows平台还需要从打开文件中找回备份文件
+            Map<String, FileInfo> fdFileInfoMap = fdFileMap.get(pid);
+            if(fdFileInfoMap != null) {
+                FileInfo fileInfo = fdFileInfoMap.get(action.getFd());
+                if (fileInfo != null) {
+                    action.setActionGroup(ActionGroup.FILE);
+                    action.setPath(fileInfo.getPath());
+                    action.setBackup(fileInfo.getBackup());
+                    action.setSensitivity(fileInfo.getSensitivity());
+                    action.setFileName(fileInfo.getFileName());
+                } else {
+                    return null;
+                }
+            } else {
+                return null;
+            }
         }
+
         return action;
     }
 
@@ -532,7 +640,29 @@ public class ActionApplicationService {
         action.setActionGroup(ActionGroup.REGISTRY);
     }
 
-    private void setActionSecurityInfo(Action action, String pid){
+    private Action setActionSecurityInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.SECURITY);
+        if(action.getType() == ActionType.SECURITY_FILE_UPDATE || action.getType() == ActionType.SECURITY_FILE_OWNER_UPDATE){
+            //处理只有fd无path出现的情况，从open file事件中获取对应path
+            if(StringUtils.isEmpty(action.getPath()) && StringUtils.isNotEmpty(action.getFd())){
+                Map<String, FileInfo> fdFileInfoMap = fdFileMap.get(pid);
+                if(fdFileInfoMap != null) {
+                    FileInfo fileInfo = fdFileInfoMap.get(action.getFd());
+                    if (fileInfo != null) {
+                        action.setPath(fileInfo.getPath());
+                    }
+                }
+            }
+            action.setTarget(action.getPath());
+            if(StringUtils.isEmpty(action.getTarget())){
+                return null;
+            }
+
+        }
+        if(action.getType() == ActionType.SECURITY_FILE_UPDATE){
+            //将权限掩码也设置到daclSdString字段，用于与linux一致
+            action.setDaclSdString(action.getMode());
+        }
+        return action;
     }
 }

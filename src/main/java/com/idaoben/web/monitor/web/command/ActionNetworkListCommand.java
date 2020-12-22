@@ -12,6 +12,9 @@ public class ActionNetworkListCommand {
     @ApiModelProperty("进程PID")
     private String pid;
 
+    @ApiModelProperty("用户名")
+    private String user;
+
     @ApiModelProperty("目标IP")
     private String host;
 
@@ -41,6 +44,14 @@ public class ActionNetworkListCommand {
 
     public void setPid(String pid) {
         this.pid = pid;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
     }
 
     public String getHost() {
