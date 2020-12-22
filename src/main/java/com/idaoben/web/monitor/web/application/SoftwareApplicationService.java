@@ -121,7 +121,8 @@ public class SoftwareApplicationService {
         Software software = new Software();
         software.setSoftwareName(file.getName());
         software.setCommandLine(command.getCommandLine());
-        software.setExecutePath(file.getParent());
+        String executePath = file.getParent();
+        software.setExecutePath(executePath == null ? "" : executePath);
         software.setExeName(file.getName());
         software.setExePath(file.getPath());
         softwareService.save(software);

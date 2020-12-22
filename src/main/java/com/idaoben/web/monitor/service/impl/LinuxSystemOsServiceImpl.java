@@ -12,6 +12,7 @@ import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -41,6 +42,8 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     private static final String DEVICE_TYPE_SEPARATOR = "/dev/";
 
     private static final String PROCESS_TYPE_SEPARATOR = "/dev/shm/";
+
+    private static final String SYS_DEVICE_TYPE_SEPARATOR = "/sys/devices/";
 
     @PostConstruct
     public void init(){
@@ -104,9 +107,11 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     @Override
     public int startProcessWithHooks(String commandLine, String currentDirectory) {
+        BufferedReader reader = null;
         try {
-            Process process = Runtime.getRuntime().exec(String.format("%s %s", TRACER_CMD, commandLine));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
+            String[] cmdArray ={"/bin/bash", "-c", String.format("%s %s", TRACER_CMD, commandLine)};
+            Process process = Runtime.getRuntime().exec(cmdArray);
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
                     StandardCharsets.UTF_8));
             String line;
             while ((line = reader.readLine()) != null) {
@@ -121,31 +126,34 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
             }
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
+        } finally {
+            IOUtils.closeQuietly(reader);
         }
         return -1;
     }
 
     @Override
     public String attachAndInjectHooks(int pid) {
+        BufferedReader reader = null;
         try {
-            Process process = Runtime.getRuntime().exec(String.format("%s -a %d", TRACER_CMD, pid));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
+            String[] cmdArray ={"/bin/bash", "-c", String.format("%s -a %d", TRACER_CMD, pid)};
+            Process process = Runtime.getRuntime().exec(cmdArray);
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
                     StandardCharsets.UTF_8));
             String line;
             while ((line = reader.readLine()) != null) {
                 logger.info(line);
-                line = StringUtils.substringAfter(line, "[tracer] ");
-                if(line != null && line.startsWith("Could not attach to process")){
-                    return ErrorCode.MONITOR_PROCESS_ERROR_LINUX;
+                //Console will show the success pid, eg: {"pid":"18205"}
+                String pidPrefix = "{\"pid\":\"";
+                if(line.startsWith(pidPrefix)){
+                    pidTracerProcessMap.put(pid, Pair.of(false, process));
+                    return null;
                 }
-            }
-
-            if(process != null && process.pid() > 1){
-                pidTracerProcessMap.put(pid, Pair.of(false, process));
-                return null;
             }
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
+        } finally {
+            IOUtils.closeQuietly(reader);
         }
         return ErrorCode.MONITOR_PROCESS_ERROR_LINUX;
     }
@@ -206,9 +214,10 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
                 action.setPath("");
                 return ActionGroup.PROCESS;
             } else {
-                action.setDeviceName(path);
                 return ActionGroup.DEVICE;
             }
+        } else if(path.startsWith(SYS_DEVICE_TYPE_SEPARATOR)){
+            return ActionGroup.DEVICE;
         }
         return ActionGroup.FILE;
     }
