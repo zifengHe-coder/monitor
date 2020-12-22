@@ -84,6 +84,11 @@
           },
           {
             type: "word",
+            prop: "user",
+            label: "用户名",
+          },
+          {
+            type: "word",
             prop: "cpu",
             label: "CPU(%)"
           },
@@ -176,7 +181,8 @@
                     obj.processName = item.name + '/exe/' + r.data.base64Icon;
                     obj.pid = item.pid;
                     obj.wsPrivateBytes = Math.floor(item.memory);
-                    obj.cpu = (0).toFixed(2);
+                    obj.user = item.user;
+                    obj.cpu = item.cpu;
                     obj.status = this.monitorStatus[item.monitorStatus - 1];
                     return obj;
                   })
