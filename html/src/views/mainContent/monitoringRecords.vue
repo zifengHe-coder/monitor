@@ -448,6 +448,23 @@
               label: '值键类型',
               options: this.dataTypes
             }, {
+              type: 'select',
+              prop: 'type',
+              label: '操作类型',
+              options: [{
+                label: '注册表打开或创建键',
+                value: 12288
+              },{
+                label: '注册表删除键',
+                value: 12290
+              },{
+                label: '注册表删除值键',
+                value: 12291
+              },{
+                label: '注册表设置值键',
+                value: 12294
+              }]
+            }, {
               type: 'datePicker',
               prop: 'operatingTime',
               label: '操作时间',
@@ -582,7 +599,7 @@
                 label: '进程间内存共享',
                 value: 20482
               }])
-            this.hasOperation = true
+            this.hasOperation = false
             this.labelWidth = 60;
             break;
             break;
