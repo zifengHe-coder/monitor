@@ -3,7 +3,7 @@
     :close-on-click-modal="false">
     <div class="pathBox">
       <el-input @keyup.enter.native="enterPath" v-model="inputPath" size="mini" placeholder="请输入路径" />
-      <el-button @click="enterPath" size="mini" style="margin-left: 5px;" type="primary">进入</el-button>
+      <el-button @click="enterPath" size="mini" style="margin-left: 5px;" type="primary">添加运行命令</el-button>
     </div>
     <div class="listContent">
       <div class="topTitle">
@@ -62,37 +62,43 @@
       enterPath() {
         if (this.inputPath) {
           this.$http({
-            url: this.$api.softwareListFiles,
+            url: this.$api.softwareAddCmdSoftware,
             method: "POST",
             data: {
               data: {
-                path: this.inputPath
+                commandLine: this.inputPath
               }
             }
           }).then(r => {
             if (r.code === '0') {
-              let pathArr = this.inputPath.split('/');
-              let originPath = ''
-              let path = pathArr.map(item => {
-                if(originPath.length === 1){
-                  originPath = originPath.substr(0,originPath.length-1);
-                }
-                originPath += '/' + item
-                return {
-                  name: item,
-                  path: originPath
-                }
+              this.$message({
+                type: 'success',
+                message: '操作成功'
               })
-              this.path = path;
-              this.selectItem = {};
-              this.fileList = [];
-              r.data.forEach((item) => {
-                this.fileList.push({
-                  path: item.path,
-                  name: item.name,
-                  isDirectory: item.directory
-                })
-              });
+              this.$listeners.cancel();
+              this.$store.dispatch('resetSoftwareList')
+              // let pathArr = this.inputPath.split('/');
+              // let originPath = ''
+              // let path = pathArr.map(item => {
+              //   if(originPath.length === 1){
+              //     originPath = originPath.substr(0,originPath.length-1);
+              //   }
+              //   originPath += '/' + item
+              //   return {
+              //     name: item,
+              //     path: originPath
+              //   }
+              // })
+              // this.path = path;
+              // this.selectItem = {};
+              // this.fileList = [];
+              // r.data.forEach((item) => {
+              //   this.fileList.push({
+              //     path: item.path,
+              //     name: item.name,
+              //     isDirectory: item.directory
+              //   })
+              // });
             }
           })
         }

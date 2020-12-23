@@ -5,6 +5,7 @@ let apiArr = [
   "software/addFavorite", // 添加收藏
   "software/removeFavorite", // 移出收藏
   "software/addSoftware", // 添加软件
+  "software/addCmdSoftware", // 通过命令行添加软件
 
   "monitor/startAndMonitor", // 开启并监听软件
   "monitor/startMonitor", // 监听软件
