@@ -6,7 +6,9 @@ public class SystemUtils {
 
     private static String osHome;
 
-    private static String userHome;
+    private static final String userHome = System.getProperty("user.home");
+
+    private static final String userName = System.getProperty("user.name");
 
     private static SystemOs systemOs;
 
@@ -24,10 +26,11 @@ public class SystemUtils {
     }
 
     public static String getUserHome(){
-        if(userHome == null){
-            userHome = System.getProperty("user.home");
-        }
         return userHome;
+    }
+
+    public static String getUserName() {
+        return userName;
     }
 
     public static SystemOs getSystemOs(){

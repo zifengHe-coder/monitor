@@ -48,7 +48,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
 
     private static String[] sensitivityPaths;
 
-    private static final String[] FILE_TYPE_SEPARATORS = new String[]{"\\??\\", "\\\\??\\"};
+    private static final String[] FILE_TYPE_SEPARATORS = new String[]{"\\??\\", "\\\\?\\"};
 
     private Map<Integer, Long> pidCpuTimeMap = new HashMap<>();
 
