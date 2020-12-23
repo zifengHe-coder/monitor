@@ -14,7 +14,7 @@
           </div>
           <div>
             <span class="label">文件大小</span>
-            <span class="value">{{detail.fileSize}}M</span>
+            <span class="value" v-if="detail.fileSize">{{detail.fileSize}}M</span>
           </div>
           <div>
             <span class="label">创建时间</span>

@@ -14,7 +14,7 @@
         </p>
         <p>
           <span>文件大小</span>
-          <span>{{ softwareData.fileSize}}M</span>
+          <span v-if="softwareData.fileSize">{{ softwareData.fileSize}}M</span>
         </p>
         <p>
           <span>创建时间</span>
