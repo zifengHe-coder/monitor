@@ -21,7 +21,7 @@ public class ActionNetworkListCommand {
     @ApiModelProperty("目标端口")
     private Integer port;
 
-    @ApiModelProperty("类型：4096:发起网络连接, 4097:TCP数据发送, 4098：TCP数据接收")
+    @ApiModelProperty("类型：4096:发起网络连接, 4097:TCP数据发送, 4098：TCP数据接收, 4099: UDP数据发送, 4100: UDP数据接收")
     private Integer type;
 
     @ApiModelProperty("操作开始时间")

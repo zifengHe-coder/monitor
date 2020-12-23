@@ -13,7 +13,6 @@ import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -46,6 +45,8 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     private static final String PROCESS_TYPE_SEPARATOR = "/dev/shm/";
 
     private static final String SYS_DEVICE_TYPE_SEPARATOR = "/sys/devices/";
+
+    private static final String PRINTER_DEVICE_KEYWORD = "cups.so";
 
     @Resource
     private MonitoringService monitoringService;
@@ -112,11 +113,11 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     @Override
     public int startProcessWithHooks(String commandLine, String currentDirectory) {
-        BufferedReader reader = null;
         try {
-            String[] cmdArray ={"/bin/bash", "-c", String.format("%s %s", TRACER_CMD, commandLine)};
-            Process process = Runtime.getRuntime().exec(cmdArray);
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
+            String cmd = String.format("%s -- %s", TRACER_CMD, commandLine);
+            logger.info("startProcessWithHooks cmd: {}", cmd);
+            Process process = Runtime.getRuntime().exec(cmd);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
                     StandardCharsets.UTF_8));
             String line;
             while ((line = reader.readLine()) != null) {
@@ -131,19 +132,17 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
             }
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
-        } finally {
-            IOUtils.closeQuietly(reader);
         }
         return -1;
     }
 
     @Override
     public String attachAndInjectHooks(int pid) {
-        BufferedReader reader = null;
         try {
-            String[] cmdArray ={"/bin/bash", "-c", String.format("%s -a %d", TRACER_CMD, pid)};
-            Process process = Runtime.getRuntime().exec(cmdArray);
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
+            String cmd = String.format("%s -a %d", TRACER_CMD, pid);
+            logger.info("attachAndInjectHooks cmd: {}", cmd);
+            Process process = Runtime.getRuntime().exec(cmd);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
                     StandardCharsets.UTF_8));
             String line;
             while ((line = reader.readLine()) != null) {
@@ -157,8 +156,6 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
             }
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
-        } finally {
-            IOUtils.closeQuietly(reader);
         }
         return ErrorCode.MONITOR_PROCESS_ERROR_LINUX;
     }
@@ -206,8 +203,11 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
             deviceInfo.setFriendlyName("摄像设备");
         } else if(instanceId.startsWith("/dev/audio")){
             deviceInfo.setFriendlyName("音频设备");
+        } else if(instanceId.startsWith("/dev")){
+            deviceInfo.setFriendlyName("未知设备");
         }
         if(deviceInfo.getFriendlyName() == null){
+            logger.info("检测到设备控制行为，但设备路径不符合：{}", instanceId);
             return null;
         }
         return deviceInfo;
@@ -232,7 +232,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     @Override
     public ActionGroup setActionFromFileInfo(Action action) {
-        //Linux device don't handler from file
+        //Linux device don't handler from file except printer
         String path = action.getPath();
         if(path.startsWith(DEVICE_TYPE_SEPARATOR)){
             if(path.startsWith(PROCESS_TYPE_SEPARATOR)){
@@ -246,6 +246,9 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
             }
         } else if(path.startsWith(SYS_DEVICE_TYPE_SEPARATOR)){
             return null;
+        } else if(path.contains(PRINTER_DEVICE_KEYWORD)){
+            action.setDeviceName("打印设备");
+            return ActionGroup.DEVICE;
         }
         return ActionGroup.FILE;
     }

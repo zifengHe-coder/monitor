@@ -48,7 +48,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
 
     private static String[] sensitivityPaths;
 
-    private static final String[] FILE_TYPE_SEPARATORS = new String[]{"\\??\\", "\\\\??\\"};
+    private static final String[] FILE_TYPE_SEPARATORS = new String[]{"\\??\\", "\\\\?\\"};
 
     private Map<Integer, Long> pidCpuTimeMap = new HashMap<>();
 
@@ -222,6 +222,11 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
         } else {
             deviceInfoJson = deviceInfoMap.get(instanceId);
         }
+        if(deviceInfoJson == null){
+            deviceInfoJson = new DeviceInfoJson();
+            deviceInfoJson.setInstanceId(instanceId);
+            deviceInfoJson.setFriendlyName("未知设备");
+        }
         return deviceInfoJson;
     }
 
@@ -256,8 +261,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
                 String instanceId = StringUtils.substringBeforeLast(path, "\\").replace("#", "\\").toUpperCase();
                 //要再去掉最后一个反斜杠后面的部分
                 instanceId = StringUtils.substringBeforeLast(instanceId, "\\");
-                DeviceInfoJson deviceInfo = getDeviceInfo(instanceId);
-                action.setDeviceName(deviceInfo == null ? "未知设备" : deviceInfo.getFriendlyName());
+                action.setDeviceName(getDeviceInfo(instanceId).getFriendlyName());
                 return ActionGroup.DEVICE;
             }
 

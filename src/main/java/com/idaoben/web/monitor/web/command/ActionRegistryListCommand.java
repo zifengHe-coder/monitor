@@ -15,6 +15,9 @@ public class ActionRegistryListCommand {
     @ApiModelProperty("用户名")
     private String user;
 
+    @ApiModelProperty("操作类型：12288:注册表打开或创建键, 12290:注册表删除键, 12291：注册表删除值键, 12294: 注册表设置值键")
+    private Integer type;
+
     @ApiModelProperty("目标键")
     private String key;
 
@@ -52,6 +55,14 @@ public class ActionRegistryListCommand {
 
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public Integer getType() {
+        return type;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
     }
 
     public String getKey() {

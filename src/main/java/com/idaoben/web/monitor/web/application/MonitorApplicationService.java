@@ -208,7 +208,8 @@ public class MonitorApplicationService {
             task.setSoftwareId(softwareId);
             task.setSoftwareName(software.getSoftwareName());
             task.setExePath(software.getExePath());
-            task.setPids(pidStr);
+            //启动软件的进程肯定是当前用户的
+            task.addPidUser(pidStr, SystemUtils.getUserName());
             task = taskService.save(task);
             MonitoringTask monitoringTask = new MonitoringTask();
             monitoringTask.setSoftwareId(softwareId);

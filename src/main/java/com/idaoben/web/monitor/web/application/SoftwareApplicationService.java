@@ -115,8 +115,7 @@ public class SoftwareApplicationService {
             throw ServiceException.of(ErrorCode.SOFTWARE_ALREADY_EXISTS);
         }
         //Get the exe file
-        String exePath = StringUtils.substringBefore(command.getCommandLine(), " ");
-        File file = new File(exePath);
+        File file = getExeFileFromCmd(command.getCommandLine());
         Software software = new Software();
         software.setSoftwareName(file.getName());
         software.setCommandLine(command.getCommandLine());
@@ -125,6 +124,11 @@ public class SoftwareApplicationService {
         software.setExeName(file.getName());
         software.setExePath(file.getPath());
         softwareService.save(software);
+    }
+
+    private File getExeFileFromCmd(String cmd){
+        String exePath = StringUtils.substringBefore(cmd, " ");
+        return new File(exePath);
     }
 
     public void addFavorite(SoftwareIdCommand command){
@@ -331,13 +335,10 @@ public class SoftwareApplicationService {
                 //Don't show the tracer process
                 return null;
             }
-            for(SoftwareDto software : softwareMap.values()){
-                if(imageName.contains(software.getExeName())){
-                    return software.getId();
-                }
-            }
+            //Get exeName, the same method for addCmdSoftware
+            File exeFile = getExeFileFromCmd(imageName);
+            return exeNameSoftwareIdMap.get(exeFile.getName());
         }
-        return null;
     }
 
     public List<FileDto> listFiles(FileListCommand command){

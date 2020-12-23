@@ -114,7 +114,7 @@ public class ActionApplicationService {
     public Page<ActionRegistryDto> listByRegistryType(ActionRegistryListCommand command, Pageable pageable){
         Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.REGISTRY).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
-                .likeFuzzy(Action::getKey, command.getKey()).likeFuzzy(Action::getValueName, command.getValueName()).eq(Action::getValueType, command.getValueType())
+                .eq(Action::getType, command.getType()).likeFuzzy(Action::getKey, command.getKey()).likeFuzzy(Action::getValueName, command.getValueName()).eq(Action::getValueType, command.getValueType())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
         addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
@@ -453,7 +453,7 @@ public class ActionApplicationService {
                 //设置文件信息
                 action = setActionFileInfo(action, pid);
             } else if(ActionType.isDeviceType(action.getType())){
-                setActionDeviceInfo(action, pid);
+                action = setActionDeviceInfo(action, pid);
             } else if(ActionType.isRegistryType(action.getType())){
                 setActionRegistryInfo(action, pid);
             } else if(ActionType.isProcessType(action.getType())){
@@ -672,9 +672,13 @@ public class ActionApplicationService {
         return action;
     }
 
-    private void setActionDeviceInfo(Action action, String pid){
+    private Action setActionDeviceInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.DEVICE);
         DeviceInfoJson deviceInfo = systemOsService.getDeviceInfo(action.getPath());
-        action.setDeviceName(deviceInfo == null ? "未知设备" : deviceInfo.getFriendlyName());
+        if(deviceInfo != null){
+            action.setDeviceName(deviceInfo.getFriendlyName());
+            return action;
+        }
+        return null;
     }
 }

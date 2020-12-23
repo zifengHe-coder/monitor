@@ -1,6 +1,6 @@
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 SCRIPT_DIR=`dirname ${SCRIPT_PATH}`
-BASE_DIR=`cd ${SCRIPT_DIR}/.. && pwd`
+BASE_DIR=`cd ${SCRIPT_DIR} && pwd`
 PROJ_DIR=`cd ${BASE_DIR}/.. && pwd`
 DATA_DIR="${PROJ_DIR}/data"
 PROJ_NAME=`basename ${BASE_DIR}`
