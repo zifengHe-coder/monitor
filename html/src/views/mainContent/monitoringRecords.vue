@@ -298,6 +298,12 @@
               }, {
                 label: 'TCP数据接收',
                 value: 4098
+              }, {
+                label: 'UDP数据发送',
+                value: 4099
+              }, {
+                label: 'UDP数据接收',
+                value: 4100
               }]
             }, {
               type: 'datePicker',
