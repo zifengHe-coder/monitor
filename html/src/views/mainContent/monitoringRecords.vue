@@ -142,7 +142,6 @@
           value: '3'
         })
       }
-      console.log(JSON.parse(JSON.stringify(this.tableLabels)))
       this.changeConfig(this.currentTab);
       this.initData();
     },
@@ -220,7 +219,7 @@
       changeButtonText(row) {
         let text = '';
         if (this.currentTab === '2') {
-          if (row.opType === '读') {
+          if (row.opType === '读' || row.opType === '删除') {
             let platform = sessionStorage.getItem(`${this.softwareDetail.softwareName}System`);
             if (platform === 'windows' && (row.path.indexOf('127.0.0.1') > -1 || row.path.indexOf('localhost') > -1)) {
               text = '打开文件位置';
@@ -229,8 +228,6 @@
             }
           } else if (row.opType === '写') {
             text = '下载对比文件';
-          } else {
-            text = '删除文件'
           }
         } else if (this.currentTab === '1') {
           text = '下载网络包'
@@ -243,6 +240,8 @@
         const arr = ['1', '2', '4']
         if (arr.includes(this.currentTab)) {
           if (this.currentTab === '4' && row.type !== this.typeLists[20481]) {
+            return false;
+          }else if(this.currentTab === '1' && row.type !== this.typeLists[4096]){
             return false;
           } else {
             return true;
@@ -784,7 +783,7 @@
       getList(params) {
         let postParams = this.handleParams(params);
         // 处理时间
-        if (params.data.operatingTime_date) {
+        if (params.data && params.data.operatingTime_date) {
           postParams.data.startTime = this.$utils.funcData.formDateGMT(params.data.operatingTime_date[0]);
           postParams.data.endTime = this.$utils.funcData.formDateGMT(params.data.operatingTime_date[1]);
           delete postParams.data.operatingTimeStart;
