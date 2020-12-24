@@ -84,35 +84,36 @@ public class MonitorApplicationService {
 
         List<Integer> pids = null;
         List<String> users = null;
-        if(SystemUtils.isWindows()){
+        //不启动并监听的话，Linux和Windows可以保持同样一次监听多个进程的逻辑
+        //if(SystemUtils.isWindows()){
             //启动所有pid的监听线程
             List<ProcessJson> processes = monitoringService.getProcessPids(softwareId);
             if(processes != null){
                 pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
                 users = processes.stream().map(processJsonDto -> processJsonDto.getUser()).collect(Collectors.toList());
             }
-        } else {
-            //Find the main process
-            Integer pid = null;
-            String user = null;
-            List<ProcessJson> processes = monitoringService.getProcessPids(softwareId);
-            if(processes != null){
-                pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
-                for(ProcessJson process : processes){
-                    if(process.getParentPid().intValue() == 1 || pids.contains(process.getParentPid())){
-                        pid = process.getPid();
-                        user = process.getUser();
-                        break;
-                    }
-                }
-                if(pid == null){
-                    pid = processes.get(0).getPid();
-                    user = processes.get(0).getUser();
-                }
-                pids = Arrays.asList(pid);
-                users = Arrays.asList(user);
-            }
-        }
+//        } else {
+//            //Find the main process
+//            Integer pid = null;
+//            String user = null;
+//            List<ProcessJson> processes = monitoringService.getProcessPids(softwareId);
+//            if(processes != null){
+//                pids = processes.stream().map(processJsonDto -> processJsonDto.getPid()).collect(Collectors.toList());
+//                for(ProcessJson process : processes){
+//                    if(process.getParentPid().intValue() == 1 || pids.contains(process.getParentPid())){
+//                        pid = process.getPid();
+//                        user = process.getUser();
+//                        break;
+//                    }
+//                }
+//                if(pid == null){
+//                    pid = processes.get(0).getPid();
+//                    user = processes.get(0).getUser();
+//                }
+//                pids = Arrays.asList(pid);
+//                users = Arrays.asList(user);
+//            }
+//        }
         if(pids != null){
             for(Integer pid : pids){
                 logger.info("启动PID: {}的注入监听。", pid);

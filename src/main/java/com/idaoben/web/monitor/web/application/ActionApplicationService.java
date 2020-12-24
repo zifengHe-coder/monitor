@@ -493,7 +493,7 @@ public class ActionApplicationService {
             }
         }
         fdFileSeek.put(action.getFd(), offset);
-        logger.info("Linux文件读写偏移, OFFSET: {}, PID: {}", offset, pid);
+        //logger.info("Linux文件读写偏移, OFFSET: {}, PID: {}", offset, pid);
     }
 
     private Action setActionFileInfo(Action action, String pid){

@@ -171,6 +171,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
         if(processPair != null){
             if(processPair.getLeft()){
                 //Use kill -9 to kill the tracer process and all app process
+                logger.info("Use kill -9 to stop tracer, pid: {}", pid);
                 try {
                     String softwareId = monitoringService.getMonitoringSoftwareIdByPid(String.valueOf(pid));
                     if(softwareId != null){
@@ -186,6 +187,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
                     logger.error(e.getMessage(), e);
                 }
             } else {
+                logger.info("Use process destroy to stop tracer, pid: {}", pid);
                 processPair.getRight().destroy();
             }
         }
