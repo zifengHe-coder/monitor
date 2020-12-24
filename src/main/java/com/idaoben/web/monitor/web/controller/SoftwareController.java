@@ -54,6 +54,13 @@ public class SoftwareController {
         return ApiResponse.createSuccess();
     }
 
+    @ApiOperation("删除添加的软件")
+    @PostMapping("/removeSoftware")
+    public ApiResponse<Void> removeSoftware(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
+        softwareApplicationService.removeSoftware(request.getPayload());
+        return ApiResponse.createSuccess();
+    }
+
     @ApiOperation("添加收藏")
     @PostMapping("/addFavorite")
     public ApiResponse<Void> addFavorite(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){

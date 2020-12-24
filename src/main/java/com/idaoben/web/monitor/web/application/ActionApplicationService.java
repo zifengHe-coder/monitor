@@ -6,12 +6,16 @@ import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
-import com.idaoben.web.monitor.dao.entity.enums.*;
+import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
+import com.idaoben.web.monitor.dao.entity.enums.ActionType;
+import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
+import com.idaoben.web.monitor.dao.entity.enums.FileOpType;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.TaskService;
+import com.idaoben.web.monitor.utils.DownloadUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
@@ -27,6 +31,7 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -281,6 +286,20 @@ public class ActionApplicationService {
         return zipFile;
     }
 
+    public void downloadDeleteFile(String uuid, HttpServletResponse response) throws IOException{
+        Action action = actionService.findStrictly(uuid);
+        if(action.getActionGroup() != ActionGroup.FILE || (action.getType() != ActionType.FILE_DELETE_WINDOWS && action.getType() != ActionType.FILE_DELETE_LINUX)){
+            throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
+        }
+        File folder = new File(String.format(ACTION_BACKUP_FOLDER_PATH, action.getTaskId(), action.getPid()));
+        if(!folder.exists()){
+            folder = new File(ACTION_FOLDER, action.getPid());
+        }
+        File backupFile = new File(folder, StringUtils.substringAfterLast(action.getBackup(), SystemUtils.FILE_SEPARATOR));
+        DownloadUtils.sendFileToClient(backupFile, action.getFileName(), response);
+
+    }
+
     private void compressZipFile(File backupFile, File writeFile, String fileName, File zipFile) throws IOException{
         if(!zipFile.exists()) {
             zipFile.createNewFile();
@@ -303,24 +322,6 @@ public class ActionApplicationService {
         IOUtils.closeQuietly(zos);
         IOUtils.closeQuietly(zipFileOs);
         IOUtils.closeQuietly(writeFileIs);
-    }
-
-    /**
-     * 扫描进程的action文件
-     */
-    //@Scheduled(cron = "*/1 * * * * ?")
-    public void scanAction() {
-        if(!ACTION_FOLDER.exists()){
-            return;
-        }
-        for(File pidFolder : ACTION_FOLDER.listFiles()){
-            if(pidFolder.isDirectory()){
-                String pid = pidFolder.getName();
-                //开启线程处理
-                //onGoingPids.add(pid);
-                //actionTaskExecutor.execute(() -> handlePidAction(pidFolder));
-            }
-        }
     }
 
     public void startActionScan(String pid, Long taskId){
@@ -448,7 +449,7 @@ public class ActionApplicationService {
 
             if(ActionType.isNetworkType(action.getType())){
                 //如果是发起网络链接的，缓存网络信息
-                setActionNetworkInfo(action, pid);
+                action = setActionNetworkInfo(action, pid);
             } else if(ActionType.isFileType(action.getType())){
                 //设置文件信息
                 action = setActionFileInfo(action, pid);
@@ -619,14 +620,17 @@ public class ActionApplicationService {
         return action;
     }
 
-    private void setActionNetworkInfo(Action action, String pid){
+    private Action setActionNetworkInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.NETWORK);
         //Windows平台所有发送和接收都带上了host和port，不用处理。只有Linux下需要处理
-        if(SystemUtils.getSystemOs() == SystemOs.LINUX){
+        if(SystemUtils.isLinux()){
             if(action.getType() == ActionType.NETWORK_OPEN){
-                if(StringUtils.isNotEmpty(action.getHost())){
+                //Linux下会有大量端口是0的IP可达链接信息，这部分不做记录
+                if(StringUtils.isNotEmpty(action.getHost()) && action.getPort() != null && action.getPort() != 0){
                     Map<Integer, NetworkInfo> socketFdNetworkInfoMap = socketFdNetworkMap.computeIfAbsent(pid, p -> new HashMap<>());
                     socketFdNetworkInfoMap.put(action.getSocketFd(), new NetworkInfo(action.getHost(), action.getPort()));
+                } else {
+                    return null;
                 }
             }
             if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
@@ -639,7 +643,14 @@ public class ActionApplicationService {
                     }
                 }
             }
+            //Linux平台下获取的udp数据可能包括其他非IP协议的数据包，例如ping命令的协议。这部分数据包端口为0，暂时都先过滤了
+            if(action.getType() == ActionType.NETWORK_UDP_SEND || action.getType() == ActionType.NETWORK_UDP_RECEIVE){
+                if(action.getPort() == null || action.getPort() == 0){
+                    return action;
+                }
+            }
         }
+        return action;
     }
 
     private void setActionRegistryInfo(Action action, String pid){

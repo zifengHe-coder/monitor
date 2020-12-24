@@ -3,6 +3,8 @@ package com.idaoben.web.monitor.service;
 import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.common.service.BaseService;
 
+import java.util.List;
+
 /**
  *
  * 应用行为服务service
@@ -10,5 +12,7 @@ import com.idaoben.web.common.service.BaseService;
  * @author  Daoben Code Generator
  */
 public interface ActionService extends BaseService<Action, String> {
+
+    void deleteByTaskIds(List<Long> taskIds);
 
 }

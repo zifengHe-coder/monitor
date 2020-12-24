@@ -81,4 +81,10 @@ public class ActionController {
         File file = actionApplicationService.getWriteFile(uuid);
         DownloadUtils.sendFileToClient(file, response);
     }
+
+    @ApiOperation("删除文件的备份下载")
+    @GetMapping("downloadDeleteFile")
+    public void downloadDeleteFile(String uuid, HttpServletResponse response) throws IOException {
+        actionApplicationService.downloadDeleteFile(uuid, response);
+    }
 }

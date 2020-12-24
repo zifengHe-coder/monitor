@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -34,7 +35,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     private static final Logger logger = LoggerFactory.getLogger(LinuxSystemOsServiceImpl.class);
 
-    public static final String TRACER_CMD = System.getProperty("user.dir") + "/res/exe/tracer";
+    public static final String TRACER_CMD = System.getProperty("user.dir") + "/res/tracer";
 
     private Map<Integer, Pair<Boolean, Process>> pidTracerProcessMap = new ConcurrentHashMap<>();
 
@@ -50,6 +51,9 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     @Resource
     private MonitoringService monitoringService;
+
+    @Value("${monitor.linux-user:}")
+    private String linuxUser;
 
     @PostConstruct
     public void init(){
@@ -114,7 +118,8 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     @Override
     public int startProcessWithHooks(String commandLine, String currentDirectory) {
         try {
-            String cmd = String.format("%s -- %s", TRACER_CMD, commandLine);
+            String cmd = StringUtils.isNotEmpty(linuxUser) ? String.format("%s -H --username %s -- %s", TRACER_CMD, linuxUser, commandLine)
+                    : String.format("%s -- %s", TRACER_CMD, commandLine);
             logger.info("startProcessWithHooks cmd: {}", cmd);
             Process process = Runtime.getRuntime().exec(cmd);
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),

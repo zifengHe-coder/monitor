@@ -3,7 +3,7 @@ package com.idaoben.web.monitor.jni;
 public class UtilityJni {
 
     static {
-        System.load(System.getProperty("user.dir") + "\\res\\dll\\Utility64.dll");
+        System.load(System.getProperty("user.dir") + "\\res\\Utility64.dll");
     }
 
     public native int ListAllDevices();

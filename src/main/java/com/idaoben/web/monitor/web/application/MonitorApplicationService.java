@@ -10,13 +10,16 @@ import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.TaskService;
 import com.idaoben.web.monitor.service.impl.MonitoringTask;
 import com.idaoben.web.monitor.utils.SystemUtils;
+import com.idaoben.web.monitor.web.command.IdCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.command.TaskListCommand;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
 import com.idaoben.web.monitor.web.dto.TaskDto;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -49,6 +52,9 @@ public class MonitorApplicationService {
 
     @Resource
     private MonitoringService monitoringService;
+
+    @Value("${monitor.linux-user:}")
+    private String linuxUser;
 
     public void startMonitor(SoftwareIdCommand command){
         String softwareId = command.getId();
@@ -208,8 +214,8 @@ public class MonitorApplicationService {
             task.setSoftwareId(softwareId);
             task.setSoftwareName(software.getSoftwareName());
             task.setExePath(software.getExePath());
-            //启动软件的进程肯定是当前用户的
-            task.addPidUser(pidStr, SystemUtils.getUserName());
+            //设置启动用户
+            task.addPidUser(pidStr, StringUtils.isNotEmpty(linuxUser) ? linuxUser : SystemUtils.getUserName());
             task = taskService.save(task);
             MonitoringTask monitoringTask = new MonitoringTask();
             monitoringTask.setSoftwareId(softwareId);
@@ -227,6 +233,10 @@ public class MonitorApplicationService {
     public Page<TaskDto> listTask(TaskListCommand command, Pageable pageable){
         Page<Task> tasks = taskService.findPage(Filters.query().eq(Task::getSoftwareId, command.getSoftwareId()).likeFuzzy(Task::getPids, command.getPid()).ge(Task::getStartTime, command.getStartTime()).le(Task::getStartTime, command.getEndTime()), pageable);
         return DtoTransformer.asPage(TaskDto.class).apply(tasks);
+    }
+
+    public void deleteTask(IdCommand command){
+        taskService.deleteTaskAndAction(command.getId());
     }
 
     public Set<String> getMonitoringSoftwareIds(){

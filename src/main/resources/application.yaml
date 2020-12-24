@@ -21,3 +21,4 @@ logging:
 
 monitor:
   auto-open-browser: false
+  linux-user:

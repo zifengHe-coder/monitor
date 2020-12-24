@@ -1,9 +1,20 @@
 package com.idaoben.web.monitor.service.impl;
 
-import com.idaoben.web.common.service.impl.BaseServiceImpl;
+import com.idaoben.web.common.entity.Filters;
+import com.idaoben.web.common.exception.ServiceException;
+import com.idaoben.web.common.service.impl.BaseServiceExImpl;
 import com.idaoben.web.monitor.dao.entity.Task;
+import com.idaoben.web.monitor.dao.repository.ActionRepository;
+import com.idaoben.web.monitor.dao.repository.TaskRepository;
+import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.TaskService;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
+import javax.annotation.Resource;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
 *
@@ -12,5 +23,39 @@ import org.springframework.stereotype.Service;
 * @author  Daoben Code Generator
 */
 @Service
-public class TaskServiceImpl extends BaseServiceImpl<Task, Long> implements TaskService {
+public class TaskServiceImpl extends BaseServiceExImpl<TaskRepository, Task, Long> implements TaskService {
+
+    @Resource
+    private ActionRepository actionRepository;
+
+    @Override
+    public void deleteBySoftwareId(String softwareId) {
+        getRepository().deleteBySoftwareId(softwareId);
+    }
+
+    @Override
+    public void deleteTaskAndAction(Long taskId) {
+        Task task = findStrictly(taskId);
+        if(!task.isComplete()){
+            throw ServiceException.of(ErrorCode.TASK_DELETE_RUNING_ERROR);
+        }
+        actionRepository.deleteByTaskIdIn(Collections.singletonList(task.getId()));
+        delete(task);
+    }
+
+    @Override
+    public void deleteTaskAndActionBySoftwareId(String softwareId) {
+        List<Task> tasks = findList(Filters.query().eq(Task::getSoftwareId, softwareId), null);
+        if(!CollectionUtils.isEmpty(tasks)){
+            for(Task task : tasks){
+                if(!task.isComplete()){
+                    throw ServiceException.of(ErrorCode.SOFTWARE_REMOVE_MONITORING_ERROR);
+                }
+            }
+            List<Long> taskIds = tasks.stream().map(Task::getId).collect(Collectors.toList());
+            deleteBySoftwareId(softwareId);
+            actionRepository.deleteByTaskIdIn(taskIds);
+        }
+    }
+
 }
