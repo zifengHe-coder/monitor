@@ -22,7 +22,7 @@
         </p>
       </div>
       <div class="softwareOperation">
-        <el-button plain class="softwareBtn" @click="openSoftware(softwareData.id)" v-show="processList.length === 0">
+        <el-button plain class="softwareBtn" @click="openSoftware(softwareData.id)" v-show="processList.length === 0 && !softwareData.monitoring">
           打开程序</el-button>
         <el-button plain class="softwareBtn" @click="startMonitor(softwareData.id)"
           v-show="processList.length>0 && !softwareData.monitoring">开始监听</el-button>
