@@ -160,16 +160,18 @@
     },
     methods: {
       changeClickEvent(row, buttonText) {
+        console.log(buttonText)
         if (this.currentTab == '2') {
           switch (buttonText) {
             case '打开文件位置':
               this.openFile(row);
+              break;
             case '下载文件':
               this.downloadFile(row);
+              break;
             case '下载对比文件':
               this.downloadCompareFile(row);
-            case '删除文件':
-              this.deleteFile(row);
+              break;
           }
         } else if (this.currentTab == '1') {
           this.downloadNetworkPackage(row);
@@ -199,9 +201,14 @@
       },
       // 下载文件
       downloadFile(data) {
+        let opType = data.opType;
         let a = document.createElement('a');
         let path = encodeURIComponent(data.path)
-        a.href = window.location.origin + this.$api.systemDownloadFile + `?path=${path}`;
+        if(opType === '删除'){
+          a.href = window.location.origin + this.$api.actionDownloadDeleteFile + `?uuid=${data.uuid}`;
+        }else{
+          a.href = window.location.origin + this.$api.systemDownloadFile + `?path=${path}`;
+        }
         a.download = 'package';
         a.click();
       },
@@ -211,10 +218,6 @@
         a.href = window.location.origin + this.$api.actionDownloadWriteFilePackage + `?uuid=${data.uuid}`;
         a.download = 'compareFile';
         a.click();
-      },
-      // 删除文件
-      deleteFile(data) {
-        console.log(data)
       },
       changeButtonText(row) {
         let text = '';

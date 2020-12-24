@@ -20,6 +20,7 @@ let apiArr = [
   "action/listBySecurityType", // 查询注册表行为
   "/api/action/downloadNetworkPackage", // 下载网络包
   "/api/action/downloadWriteFilePackage", // 下载对比文件
+  '/api/action/downloadDeleteFile', // 删除文件的备份下载
 
   "system/getSystemOs", // 查询当前系统
   "system/openFileFolder", // 打开文件位置
