@@ -15,6 +15,7 @@ import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.TaskService;
+import com.idaoben.web.monitor.utils.DownloadUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
@@ -30,6 +31,7 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -282,6 +284,20 @@ public class ActionApplicationService {
 
         compressZipFile(backupFile, newFile, action.getFileName(), zipFile);
         return zipFile;
+    }
+
+    public void downloadDeleteFile(String uuid, HttpServletResponse response) throws IOException{
+        Action action = actionService.findStrictly(uuid);
+        if(action.getActionGroup() != ActionGroup.FILE || (action.getType() != ActionType.FILE_DELETE_WINDOWS && action.getType() != ActionType.FILE_DELETE_LINUX)){
+            throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
+        }
+        File folder = new File(String.format(ACTION_BACKUP_FOLDER_PATH, action.getTaskId(), action.getPid()));
+        if(!folder.exists()){
+            folder = new File(ACTION_FOLDER, action.getPid());
+        }
+        File backupFile = new File(folder, StringUtils.substringAfterLast(action.getBackup(), SystemUtils.FILE_SEPARATOR));
+        DownloadUtils.sendFileToClient(backupFile, action.getFileName(), response);
+
     }
 
     private void compressZipFile(File backupFile, File writeFile, String fileName, File zipFile) throws IOException{

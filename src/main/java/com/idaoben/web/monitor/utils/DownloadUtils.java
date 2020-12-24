@@ -11,8 +11,11 @@ import java.net.URLEncoder;
 public class DownloadUtils {
 
     public static void sendFileToClient(File file, HttpServletResponse response) throws IOException {
+        sendFileToClient(file, file.getName(), response);
+    }
+
+    public static void sendFileToClient(File file, String name, HttpServletResponse response) throws IOException {
         if(file.exists()){
-            String name = file.getName();
             String type = URLConnection.getFileNameMap().getContentTypeFor(name);
             response.setContentType(type);
             response.setContentLength((int)file.length());
