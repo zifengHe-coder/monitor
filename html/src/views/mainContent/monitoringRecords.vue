@@ -241,7 +241,7 @@
         if (arr.includes(this.currentTab)) {
           if (this.currentTab === '4' && row.type !== this.typeLists[20481]) {
             return false;
-          }else if(this.currentTab === '1' && row.type !== this.typeLists[4096]){
+          }else if(this.currentTab === '1' && row.type === this.typeLists[4096]){
             return false;
           } else {
             return true;
