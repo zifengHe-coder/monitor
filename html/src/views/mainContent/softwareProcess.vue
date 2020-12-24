@@ -98,9 +98,10 @@
             label: "内存(K)"
           },
           {
-            type: "word",
+            type: "normalImage",
             prop: "status",
-            label: "状态"
+            label: "状态",
+            icon: require('@/assets/warning.png'),
           }
         ],
         totalItems: 0,
@@ -189,6 +190,7 @@
                     obj.user = item.user;
                     obj.cpu = item.cpu;
                     obj.status = this.monitorStatus[item.monitorStatus - 1];
+                    item.monitorStatus === 3 ? obj.showIcon = true : obj.showIcon = false;
                     return obj;
                   })
                 }

@@ -97,6 +97,27 @@
                 >{{handleRowText(scope.row,item.prop)}}</span>
               </div>
 
+              <!-- 普通icon图片 -->
+              <div v-else-if="item.type === 'normalImage'">
+                <span
+                  style="margin-left:5px"
+                >{{getCellWord(scope, item)}}</span>
+                <el-popover
+                  placement="top-start"
+                  title="警告"
+                  width="300"
+                  trigger="hover"
+                  content="进程完整性级别为不可信级或应用容器级，无法加载监听功能。完整性级别是Windows系统的安全机制。运行于不可信级或应用容器级的进程，Windows系统将限制其访问资源能力，因而无法正常加载监控功能。">
+                <img
+                  slot="reference"
+                  v-if="scope.row.showIcon"
+                  :src="item.icon"
+                  style="vertical-align: middle;height: 18px;width: 18px;"
+                />
+
+                </el-popover>
+              </div>
+
               <!-- 其他表单元素 -->
               <el-popover
                 v-else-if="item.columnOperable === 'part'"
