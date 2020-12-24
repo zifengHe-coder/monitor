@@ -223,8 +223,8 @@
         let text = '';
         if (this.currentTab === '2') {
           if (row.opType === '读' || row.opType === '删除') {
-            let platform = sessionStorage.getItem(`${this.softwareDetail.softwareName}System`);
-            if (platform === 'windows' && (row.path.indexOf('127.0.0.1') > -1 || row.path.indexOf('localhost') > -1)) {
+            let platform = sessionStorage.getItem('system');
+            if (platform === 'windows' && (location.origin.indexOf('127.0.0.1') > -1 || location.origin.indexOf('localhost') > -1)) {
               text = '打开文件位置';
             } else {
               text = '下载文件'
