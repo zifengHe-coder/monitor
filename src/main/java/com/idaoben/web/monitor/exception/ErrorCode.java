@@ -12,4 +12,6 @@ public class ErrorCode extends CommonErrorCode {
     public static final String BACKUP_FILE_NOT_FOUND = "2006";
     public static final String MONITOR_PROCESS_ERROR_LINUX = "2007";
     public static final String MONITOR_PROCESS_ERROR_WINDOWS = "2008";
+    public static final String SOFTWARE_REMOVE_MONITORING_ERROR = "2009";
+    public static final String TASK_DELETE_RUNING_ERROR = "2010";
 }

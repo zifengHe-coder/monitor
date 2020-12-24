@@ -10,6 +10,7 @@ import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.TaskService;
 import com.idaoben.web.monitor.service.impl.MonitoringTask;
 import com.idaoben.web.monitor.utils.SystemUtils;
+import com.idaoben.web.monitor.web.command.IdCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.command.TaskListCommand;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
@@ -232,6 +233,10 @@ public class MonitorApplicationService {
     public Page<TaskDto> listTask(TaskListCommand command, Pageable pageable){
         Page<Task> tasks = taskService.findPage(Filters.query().eq(Task::getSoftwareId, command.getSoftwareId()).likeFuzzy(Task::getPids, command.getPid()).ge(Task::getStartTime, command.getStartTime()).le(Task::getStartTime, command.getEndTime()), pageable);
         return DtoTransformer.asPage(TaskDto.class).apply(tasks);
+    }
+
+    public void deleteTask(IdCommand command){
+        taskService.deleteTaskAndAction(command.getId());
     }
 
     public Set<String> getMonitoringSoftwareIds(){

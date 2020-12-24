@@ -55,6 +55,9 @@ public class SoftwareApplicationService {
     private MonitoringService monitoringService;
 
     @Resource
+    private TaskService taskService;
+
+    @Resource
     private JniService jniService;
 
     @Resource
@@ -124,6 +127,11 @@ public class SoftwareApplicationService {
         software.setExeName(file.getName());
         software.setExePath(file.getPath());
         softwareService.save(software);
+    }
+
+    public void removeSoftware(SoftwareIdCommand command){
+        taskService.deleteTaskAndActionBySoftwareId(command.getId());
+        softwareService.delete(Long.parseLong(command.getId()));
     }
 
     private File getExeFileFromCmd(String cmd){
@@ -201,6 +209,7 @@ public class SoftwareApplicationService {
         BeanUtils.copyProperties(software, softwareDto, "id");
         softwareDto.setId(String.valueOf(software.getId()));
         softwareDto.setBase64Icon(systemOsService.getIconBase64(new File(software.getExePath())));
+        softwareDto.setAddByUser(true);
         return softwareDto;
     }
 

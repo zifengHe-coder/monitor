@@ -3,6 +3,8 @@ package com.idaoben.web.monitor.dao.repository;
 import com.idaoben.web.common.dao.BaseRepository;
 import com.idaoben.web.monitor.dao.entity.Action;
 
+import java.util.List;
+
 /**
 *
 * 应用行为 Dao接口
@@ -10,4 +12,7 @@ import com.idaoben.web.monitor.dao.entity.Action;
 * @author  Daoben Code Generator
 */
 public interface ActionRepository extends BaseRepository<Action, String> {
+
+    void deleteByTaskIdIn(List<Long> taskIds);
+
 }

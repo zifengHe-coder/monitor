@@ -10,4 +10,6 @@ import com.idaoben.web.monitor.dao.entity.Task;
 * @author  Daoben Code Generator
 */
 public interface TaskRepository extends BaseRepository<Task, Long> {
+
+    void deleteBySoftwareId(String softwareId);
 }

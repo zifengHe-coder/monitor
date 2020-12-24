@@ -40,6 +40,9 @@ public class SoftwareDto {
     @ApiModelProperty("文件创建时间")
     private ZonedDateTime fileCreationTime;
 
+    @ApiModelProperty("是否用户添加程序")
+    private boolean addByUser;
+
     public String getId() {
         return id;
     }
@@ -126,5 +129,13 @@ public class SoftwareDto {
 
     public void setFileCreationTime(ZonedDateTime fileCreationTime) {
         this.fileCreationTime = fileCreationTime;
+    }
+
+    public boolean isAddByUser() {
+        return addByUser;
+    }
+
+    public void setAddByUser(boolean addByUser) {
+        this.addByUser = addByUser;
     }
 }

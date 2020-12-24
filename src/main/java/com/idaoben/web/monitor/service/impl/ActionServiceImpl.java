@@ -1,9 +1,12 @@
 package com.idaoben.web.monitor.service.impl;
 
+import com.idaoben.web.common.service.impl.BaseServiceExImpl;
 import com.idaoben.web.monitor.dao.entity.Action;
-import com.idaoben.web.common.service.impl.BaseServiceImpl;
+import com.idaoben.web.monitor.dao.repository.ActionRepository;
 import com.idaoben.web.monitor.service.ActionService;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
 *
@@ -12,5 +15,11 @@ import org.springframework.stereotype.Service;
 * @author  Daoben Code Generator
 */
 @Service
-public class ActionServiceImpl extends BaseServiceImpl<Action, String> implements ActionService {
+public class ActionServiceImpl extends BaseServiceExImpl<ActionRepository, Action, String> implements ActionService {
+
+    @Override
+    public void deleteByTaskIds(List<Long> taskIds) {
+        getRepository().deleteByTaskIdIn(taskIds);
+    }
+
 }

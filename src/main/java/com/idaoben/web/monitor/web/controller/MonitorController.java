@@ -5,6 +5,7 @@ import com.idaoben.web.common.api.bean.ApiPageResponse;
 import com.idaoben.web.common.api.bean.ApiRequest;
 import com.idaoben.web.common.api.bean.ApiResponse;
 import com.idaoben.web.monitor.web.application.MonitorApplicationService;
+import com.idaoben.web.monitor.web.command.IdCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
 import com.idaoben.web.monitor.web.command.TaskListCommand;
 import com.idaoben.web.monitor.web.dto.TaskDto;
@@ -59,5 +60,12 @@ public class MonitorController {
     public ApiPageResponse<TaskDto> listTask(@RequestBody @Validated ApiPageRequest<TaskListCommand> request) {
         Page<TaskDto> result = monitorApplicationService.listTask(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "startTime")));
         return ApiPageResponse.createPageSuccess(result);
+    }
+
+    @ApiOperation("删除任务")
+    @PostMapping("/deleteTask")
+    public ApiResponse<Void> deleteTask(@RequestBody @Validated ApiRequest<IdCommand> request){
+        monitorApplicationService.deleteTask(request.getPayload());
+        return ApiResponse.createSuccess();
     }
 }

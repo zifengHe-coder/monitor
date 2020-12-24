@@ -11,4 +11,9 @@ import com.idaoben.web.monitor.dao.entity.Task;
  */
 public interface TaskService extends BaseService<Task, Long> {
 
+    void deleteBySoftwareId(String softwareId);
+
+    void deleteTaskAndAction(Long taskId);
+
+    void deleteTaskAndActionBySoftwareId(String softwareId);
 }
