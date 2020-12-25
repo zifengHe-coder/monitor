@@ -385,6 +385,8 @@ public class ActionApplicationService {
                     while (line != null || !thread.isFinish()){
                         if(line != null){
                             //处理当前行的json内容
+                            //RandomAccessFile读取的字符串是按ISO-8859-1编码读的，需要转回去UTF-8
+                            line = new String(line.getBytes("ISO-8859-1"), "UTF-8");
                             //logger.info("正在处理第{}行记录", readLine);
                             Action action = handleActionJson(line, pid, taskId, fileName);
                             //更新已处理文件指针
