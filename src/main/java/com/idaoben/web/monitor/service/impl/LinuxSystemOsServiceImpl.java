@@ -37,6 +37,8 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     public static final String TRACER_CMD = System.getProperty("user.dir") + "/res/tracer";
 
+    public static final String TRACER_DEBUG_LOG = System.getProperty("user.dir") + "/res/tracer_%d.log";
+
     private Map<Integer, Pair<Boolean, Process>> pidTracerProcessMap = new ConcurrentHashMap<>();
 
     private static String[] sensitivityPaths;
@@ -54,6 +56,9 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     @Value("${monitor.linux-user:}")
     private String linuxUser;
+
+    @Value("${monitor.tracer-debug:false}")
+    private boolean tracerDebug;
 
     @PostConstruct
     public void init(){
@@ -118,8 +123,14 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     @Override
     public int startProcessWithHooks(String commandLine, String currentDirectory) {
         try {
-            String cmd = StringUtils.isNotEmpty(linuxUser) ? String.format("%s -H --username %s -- %s", TRACER_CMD, linuxUser, commandLine)
-                    : String.format("%s -- %s", TRACER_CMD, commandLine);
+            String cmd;
+            if(tracerDebug){
+                cmd = StringUtils.isNotEmpty(linuxUser) ? String.format("%s -d %s -v 10 -H --username %s -- %s", TRACER_CMD, String.format(TRACER_DEBUG_LOG, System.currentTimeMillis()), linuxUser, commandLine)
+                        : String.format("%s -- %s", TRACER_CMD, commandLine);
+            } else {
+                cmd = StringUtils.isNotEmpty(linuxUser) ? String.format("%s -H --username %s -- %s", TRACER_CMD, linuxUser, commandLine)
+                        : String.format("%s -- %s", TRACER_CMD, commandLine);
+            }
             logger.info("startProcessWithHooks cmd: {}", cmd);
             Process process = Runtime.getRuntime().exec(cmd);
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
@@ -144,7 +155,12 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     @Override
     public String attachAndInjectHooks(int pid) {
         try {
-            String cmd = String.format("%s -a %d", TRACER_CMD, pid);
+            String cmd;
+            if(tracerDebug){
+                cmd = String.format("%s -d %s -v 10 -a %d", TRACER_CMD, String.format(TRACER_DEBUG_LOG, pid), pid);
+            } else {
+                cmd = String.format("%s -a %d", TRACER_CMD, pid);
+            }
             logger.info("attachAndInjectHooks cmd: {}", cmd);
             Process process = Runtime.getRuntime().exec(cmd);
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(),
