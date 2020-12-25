@@ -198,7 +198,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
                             }
                         }
                     }
-                    Runtime.getRuntime().exec(String.format("kill -9 %d", processPair.getRight().pid()));
+                    processPair.getRight().destroy();
                 } catch (IOException e) {
                     logger.error(e.getMessage(), e);
                 }
