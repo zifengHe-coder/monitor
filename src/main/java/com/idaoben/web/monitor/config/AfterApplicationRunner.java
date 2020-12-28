@@ -1,6 +1,5 @@
 package com.idaoben.web.monitor.config;
 
-import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.application.ActionApplicationService;
 import org.slf4j.Logger;
@@ -27,8 +26,8 @@ public class AfterApplicationRunner {
     @EventListener({ApplicationReadyEvent.class})
     public void openBrowser() throws Exception {
         try{
+            String url = String.format("http://127.0.0.01:%d/index.html", port);
             if(autoOpenBrowser && SystemUtils.isWindows()){
-                String url = String.format("http://127.0.0.01:%d/index.html", port);
                 if(Desktop.isDesktopSupported()){
                     Desktop.getDesktop().browse(new URI(url));
                 }else{
@@ -36,6 +35,7 @@ public class AfterApplicationRunner {
                     runtime.exec("rundll32 url.dll,FileProtocolHandler " + url);
                 }
             }
+            System.out.println(String.format("启动成功，请打开浏览器并访问：%s", url));
         }catch (Exception e){
             logger.error(e.getMessage(), e);
         }
