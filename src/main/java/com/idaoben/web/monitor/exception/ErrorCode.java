@@ -14,4 +14,5 @@ public class ErrorCode extends CommonErrorCode {
     public static final String MONITOR_PROCESS_ERROR_WINDOWS = "2008";
     public static final String SOFTWARE_REMOVE_MONITORING_ERROR = "2009";
     public static final String TASK_DELETE_RUNING_ERROR = "2010";
+    public static final String MONITOR_STOP_PARTIAL_ERROR = "2011";
 }

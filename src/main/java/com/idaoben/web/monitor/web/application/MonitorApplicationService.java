@@ -28,7 +28,6 @@ import org.springframework.util.CollectionUtils;
 import javax.annotation.Resource;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -164,22 +163,23 @@ public class MonitorApplicationService {
 
     }
 
-    public void stopMonitor(SoftwareIdCommand command){
-        stopMonitor(command.getId(), true);
+    public boolean stopMonitor(SoftwareIdCommand command){
+        return stopMonitor(command.getId(), true);
     }
 
-    public void stopMonitor(String softwareId, boolean needRemove){
+    public boolean stopMonitor(String softwareId, boolean needRemove){
         MonitoringTask monitoringTask = monitoringService.getMonitoringTask(softwareId);
+        boolean isAllSuccess = true;
         if(monitoringTask != null){
             List<String> successPids = new ArrayList<>();
             for(String pid : monitoringService.getMonitoringPids(monitoringTask)){
                 boolean result = needRemove ? systemOsService.removeHooks(Integer.valueOf(pid)) : true;
-                if(result){
-                    actionApplicationService.stopActionScan(pid);
-                    successPids.add(pid);
-                } else {
+                if(!result){
                     logger.error("解除注入进程错误，SoftwareId: {}, PID：{}", softwareId, pid);
+                    isAllSuccess = false;
                 }
+                actionApplicationService.stopActionScan(pid);
+                successPids.add(pid);
             }
             monitoringService.removeMonitoringPids(monitoringTask, successPids);
         }
@@ -187,6 +187,7 @@ public class MonitorApplicationService {
         //查询当前软件是否还有未完全的监听任务，把任务置为完成
         setTaskComplete(softwareId);
         monitoringService.removeMonitoringTask(softwareId);
+        return isAllSuccess;
     }
 
     public void startAndMonitor(SoftwareIdCommand command){

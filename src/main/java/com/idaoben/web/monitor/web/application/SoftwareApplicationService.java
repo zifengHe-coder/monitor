@@ -232,7 +232,16 @@ public class SoftwareApplicationService {
         if(!CollectionUtils.isEmpty(processJsons)){
 
             Map<Integer, ProcessJson> pidProcessMap = new HashMap<>();
-            processJsons.forEach(processJsonDto -> pidProcessMap.put(processJsonDto.getPid(), processJsonDto));
+            Iterator<ProcessJson> processIt = processJsons.iterator();
+            while (processIt.hasNext()){
+                ProcessJson process = processIt.next();
+                //忽略本应用和Linux下tracer的进程，避免这些进程进行监控和下面的进程树状处理（本软件打开的软件会被归类到本软件下）
+                if(SystemUtils.getCurrentPid().equals(String.valueOf(process.getPid())) || (SystemUtils.isLinux() && process.getImageName().startsWith(LinuxSystemOsServiceImpl.TRACER_CMD))){
+                    processIt.remove();
+                } else {
+                    pidProcessMap.put(process.getPid(), process);
+                }
+            }
 
             //Windows平台移除pidUserMap中已经关闭的进程
             if(SystemUtils.isWindows()) {
@@ -293,7 +302,7 @@ public class SoftwareApplicationService {
             checkAndAddUserPidsForWindows(processJson, checkUserPids);
 
             //通过进程名称查询对应的软件
-            String softwareId = getSoftwareIdFromImageName(processJson.getImageName(), parentProcess == null);
+            String softwareId = getSoftwareIdFromImageName(processJson, parentProcess == null);
             if(softwareId == null) {
                 //找不到softwareId的，现从正在监听的id列表中反向查询
                 softwareId = monitoringService.getMonitoringSoftwareIdByPid(String.valueOf(processJson.getPid()));
@@ -361,7 +370,8 @@ public class SoftwareApplicationService {
         return null;
     }
 
-    private String getSoftwareIdFromImageName(String imageName, boolean isRootNode){
+    private String getSoftwareIdFromImageName(ProcessJson process, boolean isRootNode){
+        String imageName = process.getImageName();
         if(SystemUtils.isWindows()){
             if(isRootNode && "explorer.exe".equals(imageName)){
                 //根进程为explorer.exe的不认为是系统对应软件
