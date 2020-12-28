@@ -22,7 +22,7 @@
             <span @click="goOther(itemInSLL)" class="software">
               <img v-if="system!=='linux'" :src="itemInSLL.base64Icon" style="width: 20px;height: 20px;vertical-align: -webkit-baseline-middle;" />
               <!-- 软件名称长度超出就显示提示框 -->
-              <el-tooltip :disabled="itemInSLL.softwareName.length<29" :content="itemInSLL.name" placement="top"
+              <el-tooltip :disabled="itemInSLL.softwareName.length<29" :content="itemInSLL.softwareName" placement="top"
                 effect="light">
                 <span class="softwareName">{{itemInSLL.softwareName}}</span>
               </el-tooltip>
@@ -33,6 +33,7 @@
               <img src="../../assets/starOn.png" style="width: 14px;" v-if="itemInSLL.favorite"
                 @click="removeFavorite(itemInSLL.id)" />
               <img src="../../assets/starOff.png" style="width: 14px;" v-else @click="addFavorite(itemInSLL.id)" />
+              <img src="../../assets/close.png" style="width: 14px;" :style="{'visibility':itemInSLL.addByUser ? 'visible' : 'hidden'}" @click="removeApp(itemInSLL.id)" />
             </span>
           </div>
         </div>
@@ -61,7 +62,7 @@
     computed:{
       system(){
         return sessionStorage.getItem('system')
-      }
+      },
     },
     watch: {
       "$store.state.softwareProcess.softwareList": {
@@ -72,6 +73,31 @@
       }
     },
     methods: {
+      // 移除手动添加的app
+      removeApp(id){
+        this.$confirm('移除程序后，程序所有的历史监控记录将会删除，是否继续？','提示',{
+          confirmButtonText: '确定',
+          cancelButtonText: '取消'
+        }).then(()=>{
+          this.$http({
+            url: this.$api.softwareRemoveSoftware,
+            method: 'POST',
+            data:{
+              data:{
+                id
+              }
+            }
+          }).then(r => {
+            if(r.code === '0'){
+              this.$message({
+                type: 'success',
+                message: '移除成功'
+              })
+              this.$store.dispatch('resetSoftwareList')
+            }
+          })
+        }).catch(_=>{})
+      },
       addFavorite(id) {
         this.$http({
           url: this.$api.softwareAddFavorite,

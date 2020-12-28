@@ -30,11 +30,11 @@
           :getTableData="searchHistoryList"
           :totalItems="totalItems"
           :comData="comData"
-          :operationWidth="100"
           :hasOperationBtn="true">
           <template v-slot:operationBtn="detail">
             <div> 
               <el-button size='mini' type="primary" @click="goDetail(detail.scope.row)">查看</el-button>
+              <el-button v-if="detail.scope.row.status==='已完成'" size='mini' type="primary" @click="deleteHistory(detail.scope.row)">删除</el-button>
             </div>
           </template>
         </BaseTableCom>
@@ -119,6 +119,9 @@ export default {
         params.data.startTime=this.$utils.funcData.formatTime(this.search.dateTime[0],'yyyy-MM-dd hh:mm:ss')
         params.data.endTime=this.$utils.funcData.formatTime(this.search.dateTime[1],'yyyy-MM-dd hh:mm:ss')
       }
+      if(this.search.keyword){
+        params.data.pid = this.search.keyword;
+      }
       params.data.softwareId = this.softwareId;
       this.$http({
         url: this.$api.monitorListTask,
@@ -148,7 +151,34 @@ export default {
     // 跳转历史记录详情
     goDetail(data){
       this.$router.push({path: `/programProgress/${this.softwareId}/${data.id}?isFromIndex=${false}&data=${JSON.stringify(data)}`})
-    }
+    },
+    // 删除单条历史
+    deleteHistory(data){
+      this.$confirm('是否删除该条监控历史记录？','提示',{
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      }).then(_=>{
+        this.$http({
+          url: this.$api.monitorDeleteTask,
+          method: "POST",
+          data:{
+            data:{
+              id: data.id
+            }
+          }
+        }).then(r => {
+          if(r.code === '0'){
+            this.$message({
+              type: 'success',
+              message: '删除成功'
+            })
+            this.reset();
+          }
+        })
+      }).catch(_=>{
+        
+      })
+    },
   }
 }
 </script>
