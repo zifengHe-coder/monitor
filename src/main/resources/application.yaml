@@ -21,4 +21,5 @@ logging:
 
 monitor:
   auto-open-browser: false
+  tracer-debug: false
   linux-user:

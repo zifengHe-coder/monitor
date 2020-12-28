@@ -27,11 +27,11 @@ public interface ActionProcessDto extends ActionBaseDto{
 
     @ApiModelProperty("消息发送目标窗口的句柄")
     @Mapping
-    Integer getDestHwnd();
+    Long getDestHwnd();
 
     @ApiModelProperty("消息发送源窗口的句柄")
     @Mapping
-    Integer getSrcHwnd();
+    Long getSrcHwnd();
 
     @ApiModelProperty("发送数据(HEX编码)")
     @Mapping

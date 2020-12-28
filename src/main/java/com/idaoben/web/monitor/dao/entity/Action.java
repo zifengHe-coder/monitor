@@ -120,7 +120,7 @@ public class Action {
     private String parent;
 
     @Description("注册表目标")
-    @Column
+    @Column(length = 2000)
     private String key;
 
     @Description("值键")
@@ -166,11 +166,11 @@ public class Action {
 
     @Description("消息发送目标窗口的句柄")
     @Column
-    private Integer destHwnd;
+    private Long destHwnd;
 
     @Description("消息发送源窗口的句柄")
     @Column
-    private Integer srcHwnd;
+    private Long srcHwnd;
 
     @Description("设备名称")
     @Column
@@ -484,19 +484,19 @@ public class Action {
         this.threadEntryAddress = threadEntryAddress;
     }
 
-    public Integer getDestHwnd() {
+    public Long getDestHwnd() {
         return destHwnd;
     }
 
-    public void setDestHwnd(Integer destHwnd) {
+    public void setDestHwnd(Long destHwnd) {
         this.destHwnd = destHwnd;
     }
 
-    public Integer getSrcHwnd() {
+    public Long getSrcHwnd() {
         return srcHwnd;
     }
 
-    public void setSrcHwnd(Integer srcHwnd) {
+    public void setSrcHwnd(Long srcHwnd) {
         this.srcHwnd = srcHwnd;
     }
 
