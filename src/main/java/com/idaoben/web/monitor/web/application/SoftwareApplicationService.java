@@ -338,7 +338,10 @@ public class SoftwareApplicationService {
     private String getSoftwareIdFromImageName(ProcessJson process, boolean isRootNode){
         String imageName = process.getImageName();
         if(SystemUtils.isWindows()){
-            imageName = imageName.toLowerCase();
+            //做管理员权限过滤，管理员权限下可以获取到应用进程全路径，普通用户下只能拿到名字。
+            //如firefox在管理员权限下获取到是\Device\HarddiskVolume4\Program Files\Mozilla Firefox\firefox.exe，普通用户下是firefox.exe
+            String exeName = StringUtils.substringAfterLast(imageName, "\\");
+            imageName = StringUtils.isNotEmpty(exeName) ? exeName.toLowerCase() : imageName.toLowerCase();
             if(isRootNode && "explorer.exe".equals(imageName)){
                 //根进程为explorer.exe的不认为是系统对应软件
                 return null;
