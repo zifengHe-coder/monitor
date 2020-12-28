@@ -373,11 +373,25 @@ public class SoftwareApplicationService {
     private String getSoftwareIdFromImageName(ProcessJson process, boolean isRootNode){
         String imageName = process.getImageName();
         if(SystemUtils.isWindows()){
+            imageName = imageName.toLowerCase();
             if(isRootNode && "explorer.exe".equals(imageName)){
                 //根进程为explorer.exe的不认为是系统对应软件
                 return null;
             }
-            return exeNameSoftwareIdMap.get(imageName.toLowerCase());
+            String softwareId = exeNameSoftwareIdMap.get(imageName);
+            //如果没有父节点，而且softwareId找不到的，可能是启动进程已经关闭，这时就不能直接通过imageName查询，只能从相关软件信息中模糊搜索
+            //例如Windows下TIM这个软件就有这种情况，快捷方式指向的是一个启动进程，启动后就会关闭
+            if(softwareId == null && isRootNode){
+                //查询所有软件列表中，含有本进程名称的软件
+                Set<Map.Entry<String, SoftwareDto>> entries = softwareMap.entrySet();
+                for(Map.Entry<String, SoftwareDto> entry : entries){
+                    if(imageName.startsWith(entry.getValue().getSoftwareName().toLowerCase())){
+                        softwareId = entry.getKey();
+                        break;
+                    }
+                }
+            }
+            return softwareId;
         } else {
             //For linux
             if(imageName.contains(LinuxSystemOsServiceImpl.TRACER_CMD)){
