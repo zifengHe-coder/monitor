@@ -1,10 +1,18 @@
 package com.idaoben.web.monitor.utils;
 
 import com.idaoben.web.monitor.dao.entity.enums.SystemOs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.management.ManagementFactory;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 
 public class SystemUtils {
+
+    private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
 
     private static String osHome;
 
@@ -49,6 +57,30 @@ public class SystemUtils {
             currentPid = ManagementFactory.getRuntimeMXBean().getSystemProperties().get("PID");
         }
         return currentPid;
+    }
+
+    public static String getIpAddress() {
+        try {
+            Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces();
+            InetAddress ip = null;
+            while (allNetInterfaces.hasMoreElements()) {
+                NetworkInterface netInterface = allNetInterfaces.nextElement();
+                if (netInterface.isLoopback() || netInterface.isVirtual() || !netInterface.isUp()) {
+                    continue;
+                } else {
+                    Enumeration<InetAddress> addresses = netInterface.getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        ip = addresses.nextElement();
+                        if (ip != null && ip instanceof Inet4Address) {
+                            return ip.getHostAddress();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return null;
     }
 
     public static boolean isWindows(){
