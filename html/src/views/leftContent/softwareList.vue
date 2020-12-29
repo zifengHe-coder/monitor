@@ -7,6 +7,16 @@
         添加程序
       </el-button>
     </div>
+    <div class="sub-header">
+      <el-button v-if="showMonitoringBtn" round class="sub-header-btn" @click="getMonitoringIds">
+        <i size="mini" class="el-icon-data-analysis" />
+        监控中程序
+      </el-button>
+      <el-button v-else round class="sub-header-btn" @click="getAll">
+        <i size="mini" class="el-icon-rank" />
+        全部程序
+      </el-button>
+    </div>
     <BaseFileList 
       v-if="dialogVisible"
       title="选择程序" 
@@ -49,7 +59,8 @@
           id: 'softwareList'
         },
         dialogVisible: false,
-        tableData: {}
+        tableData: {},
+        showMonitoringBtn: true
       }
     },
     created() {
@@ -167,7 +178,16 @@
       },
       getList() {
         this.$store.dispatch('getSoftwareList')
-      }
+      },
+      getAll(){
+        this.$store.dispatch('getSoftwareList');
+        this.showMonitoringBtn = true;
+      },
+      async getMonitoringIds(){
+        this.showMonitoringBtn = false;
+        await this.$store.dispatch('getMonitoringIds');
+        this.$forceUpdate();
+      },
     }
   }
 
@@ -196,6 +216,16 @@
       float: right;
       padding-top: 10px;
       padding-bottom: 10px;
+    }
+
+    .sub-header{
+      display: flex;
+      justify-content: flex-end;
+      padding: 0 20px;
+      .sub-header-btn{
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
     }
 
     .softwareList {
