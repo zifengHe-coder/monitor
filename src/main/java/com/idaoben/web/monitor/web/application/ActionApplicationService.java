@@ -153,8 +153,10 @@ public class ActionApplicationService {
                 int port = domain.getPort() == null ? -1 : domain.getPort();
                 if(port == 443){
                     dto.setProtocol("HTTPS");
-                } else if(port == 80){
+                } else if(port == 80) {
                     dto.setProtocol("HTTP");
+                } else if(port == 53){
+                    dto.setProtocol("DNS");
                 } else {
                     dto.setProtocol("TCP");
                 }
