@@ -1,5 +1,6 @@
 <template>
   <div style="padding: 20px 20px;height: calc(100% - 100px)">
+    <header>监控中程序</header>
     <BaseTableCom
       :tableData="tableData"
       :tableHeader="tableLabels"
@@ -59,18 +60,11 @@ export default {
     this.getOriginList();
     this.getSystem();
   },
-  watch:{
-    '$store.state.softwareList':{
-      handler(newVal){
-        newVal
-      },
-      deep: true,
-    },
-  },
   methods: {
     getOriginList(){
-      for(let k in this.$store.state.softwareProcess.softwareList){
-        this.tableData = this.tableData.concat(this.$store.state.softwareProcess.softwareList[k])
+      this.tableData = [];
+      for(let k in this.$store.state.softwareProcess.monitoringSoftware){
+        this.tableData = this.tableData.concat(this.$store.state.softwareProcess.monitoringSoftware[k])
       }
       this.tableData.forEach((item,index) => {
         item.sortKey = index+1 < 10 ? `0${index+1}` : index+1;
@@ -101,7 +95,7 @@ export default {
 <style scoped lang="less">
   /deep/ #baseTableCom{
     .tableDiv{
-      height: calc(100% - 50px);
+      height: calc(100% - 70px);
     }
   }
 </style>

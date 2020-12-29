@@ -3,6 +3,7 @@ import http from '@/request/http'
 export default {
   state: () => ({
     softwareList: {},
+    monitoringSoftware: [],
     monitoringIds: [], // 监听中软件的id集合
     comData: {
       id: 'softwareList'
@@ -61,18 +62,15 @@ export default {
       state.onff = value;
     },
     setMonitoringSoftwareList(state){
+      state.monitoringSoftware = [];
       let list = JSON.parse(JSON.stringify(state.softwareList));
       for(let k in list){
-        state.softwareList[k] = [];
-        for(let i=0; i<list[k].length;i++){
+        for(let i=0;i<list[k].length;i++){
           for(let j=0;j<state.monitoringIds.length;j++){
             if(list[k][i].id === state.monitoringIds[j]){
-              state.softwareList[k].push(list[k][i]);
+              state.monitoringSoftware.push(list[k][i])
             }
           }
-        }
-        if(state.softwareList[k].length === 0){
-          delete state.softwareList[k]
         }
       }
     },

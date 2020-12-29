@@ -8,14 +8,14 @@
       </el-button>
     </div>
     <div class="sub-header">
-      <el-button v-if="showMonitoringBtn" round class="sub-header-btn" @click="getMonitoringIds">
+      <el-button round class="sub-header-btn" @click="getMonitoringIds">
         <i size="mini" class="el-icon-data-analysis" />
         监控中程序
       </el-button>
-      <el-button v-else round class="sub-header-btn" @click="getAll">
+      <!-- <el-button v-else round class="sub-header-btn" @click="getAll">
         <i size="mini" class="el-icon-rank" />
         全部程序
-      </el-button>
+      </el-button> -->
     </div>
     <BaseFileList 
       v-if="dialogVisible"
@@ -60,7 +60,6 @@
         },
         dialogVisible: false,
         tableData: {},
-        showMonitoringBtn: true
       }
     },
     created() {
@@ -179,18 +178,8 @@
       getList() {
         this.$store.dispatch('getSoftwareList')
       },
-      getAll(){
-        this.$store.dispatch('getSoftwareList');
-        this.showMonitoringBtn = true;
-        this.$router.push({
-          path: '/index',
-          name: 'index'
-        })
-      },
       async getMonitoringIds(){
-        this.showMonitoringBtn = false;
         await this.$store.dispatch('getMonitoringIds');
-        this.$forceUpdate();
         this.$router.push({
           path: '/monitoringList',
           name: 'monitoringList',
