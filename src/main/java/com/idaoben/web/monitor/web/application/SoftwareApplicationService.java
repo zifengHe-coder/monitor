@@ -31,7 +31,6 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Component
@@ -66,8 +65,6 @@ public class SoftwareApplicationService {
     private Map<String, SoftwareDto> softwareMap;
 
     private Map<String, String> exeNameSoftwareIdMap = new HashMap<>();
-
-    private Map<Integer, String> pidUserMap = new ConcurrentHashMap<>();
 
     public List<SoftwareDto> getSystemSoftware(){
         List<String> favoriteSoftwareIds = favoriteService.findAll().stream().map(Favorite::getSoftwareId).collect(Collectors.toList());
@@ -232,79 +229,33 @@ public class SoftwareApplicationService {
         if(!CollectionUtils.isEmpty(processJsons)){
 
             Map<Integer, ProcessJson> pidProcessMap = new HashMap<>();
-            processJsons.forEach(processJsonDto -> pidProcessMap.put(processJsonDto.getPid(), processJsonDto));
-
-            //Windows平台移除pidUserMap中已经关闭的进程
-            if(SystemUtils.isWindows()) {
-                Set<Integer> pids = pidUserMap.keySet();
-                for (Integer pid : pids) {
-                    if (!pidProcessMap.containsKey(pid)) {
-                        pidProcessMap.remove(pid);
-                    }
+            Iterator<ProcessJson> processIt = processJsons.iterator();
+            while (processIt.hasNext()){
+                ProcessJson process = processIt.next();
+                //忽略本应用和Linux下tracer的进程，避免这些进程进行监控和下面的进程树状处理（本软件打开的软件会被归类到本软件下）
+                if(SystemUtils.getCurrentPid().equals(String.valueOf(process.getPid())) || (SystemUtils.isLinux() && process.getImageName().startsWith(LinuxSystemOsServiceImpl.TRACER_CMD))){
+                    processIt.remove();
+                } else {
+                    pidProcessMap.put(process.getPid(), process);
                 }
             }
+
+            //把进程组装成树状结构
+            List<ProcessJson> processTree = new ArrayList<>();
+            processJsons.forEach(process -> {
+                if(process.getParentPid() != null && process.getParentPid() != 0 && pidProcessMap.containsKey(process.getParentPid())){
+                    ProcessJson processParent = pidProcessMap.get(process.getParentPid());
+                    if(processParent.getChildren() == null){
+                        processParent.setChildren(new ArrayList<>());
+                    }
+                    processParent.getChildren().add(process);
+                } else {
+                    processTree.add(process);
+                }
+            });
 
             //把所有进程组装到对应的软件中
-            List<Integer> checkUserPids = new ArrayList<>();
-            for(ProcessJson processJson : processJsons){
-                //Windows平台需要再次去查询对应进程的用户ID
-                if(SystemUtils.isWindows()){
-                    String user = pidUserMap.get(processJson.getPid());
-                    if(user == null){
-                        checkUserPids.add(processJson.getPid());
-                    } else {
-                        processJson.setUser(user);
-                    }
-                }
-
-                //先找父对象是否存在，存在父对象时直接挂到父对象的进程列表中
-                ProcessJson parentProcess = pidProcessMap.get(processJson.getParentPid());
-                String softwareId = null;
-                if(parentProcess != null){
-                    softwareId = getSoftwareIdFromImageName(parentProcess.getImageName(), true);
-                }
-                if(softwareId == null){
-                    //无父对象，或父对象找不到的，则单独添加
-                    softwareId = getSoftwareIdFromImageName(processJson.getImageName(), false);
-                }
-                if(softwareId == null) {
-                    //找不到softwareId的，现从正在监听的id列表中反向查询
-                    softwareId = monitoringService.getMonitoringSoftwareIdByPid(String.valueOf(processJson.getPid()));
-                }
-                if(softwareId != null){
-                    List<ProcessJson> softwareProcesses = tempProcessMaps.computeIfAbsent(softwareId, key -> new ArrayList<>());
-                    softwareProcesses.add(processJson);
-
-                    if(systemOsService.isAutoMonitorChildProcess()){
-                        //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
-                        String pidStr = String.valueOf(processJson.getPid());
-                        //Only Windows Need to auto add monitor
-                        if(SystemUtils.isWindows() && monitoringService.isMonitoring(softwareId)
-                                && !monitoringService.isPidMonitoringError(softwareId, pidStr) && !monitoringService.isPidMonitoring(softwareId, pidStr)){
-                            String user = processJson.getUser();
-                            //Windows平台如果当前processJson无user信息，则重新获取
-                            if(user == null && SystemUtils.isWindows()){
-                                List<ProcessJson> pidUsers = getPidUsers(Collections.singletonList(processJson.getPid()));
-                                if(!CollectionUtils.isEmpty(pidUsers)){
-                                    user = pidUsers.get(0).getUser();
-                                }
-                            }
-                            monitorApplicationService.startMonitorPid(softwareId, pidStr, user);
-                        }
-                    }
-                }
-            }
-
-            //Windows平台把需要重新查询用户的进程再次查询用户信息
-            if(SystemUtils.isWindows() && !checkUserPids.isEmpty()){
-                List<ProcessJson> pidUsers = getPidUsers(checkUserPids);
-                for(ProcessJson process : pidUsers){
-                    ProcessJson processJson = pidProcessMap.get(process.getPid());
-                    if(processJson != null){
-                        processJson.setUser(process.getUser());
-                    }
-                }
-            }
+            handleProcessJson(processTree, null, tempProcessMaps);
 
             //判断当前是否有正在监控的进程已关闭的，如果已经关闭主动结束监听
             Set<String> monitoringSoftwareIds = monitoringService.getMonitoringSoftwareIds();
@@ -318,12 +269,65 @@ public class SoftwareApplicationService {
         }
     }
 
+    private void handleProcessJson(List<ProcessJson> processJsons, ProcessJson parentProcess, Map<String, List<ProcessJson>> tempProcessMaps){
+        for(ProcessJson processJson : processJsons){
+
+            //通过进程名称查询对应的软件
+            String softwareId = getSoftwareIdFromImageName(processJson, parentProcess == null);
+            if(softwareId == null) {
+                //找不到softwareId的，现从正在监听的id列表中反向查询
+                softwareId = monitoringService.getMonitoringSoftwareIdByPid(String.valueOf(processJson.getPid()));
+            }
+            if(softwareId != null){
+                //找到对应的softwareId了，做对应的设置，并且把所有子进程都设置到当前软件中
+                List<ProcessJson> softwareProcesses = tempProcessMaps.computeIfAbsent(softwareId, key -> new ArrayList<>());
+                addProcessToSoftware(softwareId, processJson, softwareProcesses);
+            } else {
+                //对子进程再进行处理
+                if(processJson.getChildren() != null){
+                    handleProcessJson(processJson.getChildren(), processJson, tempProcessMaps);
+                }
+
+            }
+        }
+    }
+
+    private void addProcessToSoftware(String softwareId, ProcessJson processJson, List<ProcessJson> softwareProcesses){
+        softwareProcesses.add(processJson);
+
+        //对需要自动加入监听的程序，进行自动监听
+        if(systemOsService.isAutoMonitorChildProcess()){
+            //判断是否当前软件正在监听，但是当前进程未在监控中，这时尝试重新监听，已监控失败的不再重试
+            String pidStr = String.valueOf(processJson.getPid());
+            //Only Windows Need to auto add monitor
+            if(SystemUtils.isWindows() && monitoringService.isMonitoring(softwareId)
+                    && !monitoringService.isPidMonitoringError(softwareId, pidStr) && !monitoringService.isPidMonitoring(softwareId, pidStr)){
+                String user = processJson.getUser();
+                //Windows平台如果当前processJson无user信息，则重新获取
+                if(user == null && SystemUtils.isWindows()){
+                    List<ProcessJson> pidUsers = getPidUsers(Collections.singletonList(processJson.getPid()));
+                    if(!CollectionUtils.isEmpty(pidUsers)){
+                        user = pidUsers.get(0).getUser();
+                    }
+                }
+                monitorApplicationService.startMonitorPid(softwareId, pidStr, user);
+            }
+        }
+
+        if(processJson.getChildren() != null){
+            for(ProcessJson child : processJson.getChildren()){
+                addProcessToSoftware(softwareId, child, softwareProcesses);
+            }
+        }
+    }
+
     private List<ProcessJson> getPidUsers(List<Integer> pids){
         String processDetailContent = jniService.queryProcessDetails(pids);
         try {
             ProcessDetailsJson processDetailsJson = objectMapper.readValue(processDetailContent, ProcessDetailsJson.class);
             if(processDetailsJson != null){
-                return processDetailsJson.getDetails();
+                List<ProcessJson> processes = processDetailsJson.getDetails();
+                return processes;
             }
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
@@ -331,13 +335,31 @@ public class SoftwareApplicationService {
         return null;
     }
 
-    private String getSoftwareIdFromImageName(String imageName, boolean isParent){
+    private String getSoftwareIdFromImageName(ProcessJson process, boolean isRootNode){
+        String imageName = process.getImageName();
         if(SystemUtils.isWindows()){
-            if(isParent && "explorer.exe".equals(imageName)){
-                //如果父进程是explorer.exe的，不把他当作explorer.exe的软件
+            //做管理员权限过滤，管理员权限下可以获取到应用进程全路径，普通用户下只能拿到名字。
+            //如firefox在管理员权限下获取到是\Device\HarddiskVolume4\Program Files\Mozilla Firefox\firefox.exe，普通用户下是firefox.exe
+            String exeName = StringUtils.substringAfterLast(imageName, "\\");
+            imageName = StringUtils.isNotEmpty(exeName) ? exeName.toLowerCase() : imageName.toLowerCase();
+            if(isRootNode && "explorer.exe".equals(imageName)){
+                //根进程为explorer.exe的不认为是系统对应软件
                 return null;
             }
-            return exeNameSoftwareIdMap.get(imageName.toLowerCase());
+            String softwareId = exeNameSoftwareIdMap.get(imageName);
+            //如果没有父节点，而且softwareId找不到的，可能是启动进程已经关闭，这时就不能直接通过imageName查询，只能从相关软件信息中模糊搜索
+            //例如Windows下TIM这个软件就有这种情况，快捷方式指向的是一个启动进程，启动后就会关闭
+            if(softwareId == null && isRootNode){
+                //查询所有软件列表中，含有本进程名称的软件
+                Set<Map.Entry<String, SoftwareDto>> entries = softwareMap.entrySet();
+                for(Map.Entry<String, SoftwareDto> entry : entries){
+                    if(imageName.startsWith(entry.getValue().getSoftwareName().toLowerCase())){
+                        softwareId = entry.getKey();
+                        break;
+                    }
+                }
+            }
+            return softwareId;
         } else {
             //For linux
             if(imageName.contains(LinuxSystemOsServiceImpl.TRACER_CMD)){

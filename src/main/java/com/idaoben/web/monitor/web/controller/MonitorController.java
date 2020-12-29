@@ -4,6 +4,8 @@ import com.idaoben.web.common.api.bean.ApiPageRequest;
 import com.idaoben.web.common.api.bean.ApiPageResponse;
 import com.idaoben.web.common.api.bean.ApiRequest;
 import com.idaoben.web.common.api.bean.ApiResponse;
+import com.idaoben.web.common.exception.ServiceException;
+import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.web.application.MonitorApplicationService;
 import com.idaoben.web.monitor.web.command.IdCommand;
 import com.idaoben.web.monitor.web.command.SoftwareIdCommand;
@@ -37,7 +39,10 @@ public class MonitorController {
     @ApiOperation("停止监控软件")
     @PostMapping("/stopMonitor")
     public ApiResponse<Void> stopMonitor(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
-        monitorApplicationService.stopMonitor(request.getPayload());
+        boolean isAllSuccess = monitorApplicationService.stopMonitor(request.getPayload());
+        if(!isAllSuccess){
+            throw ServiceException.of(ErrorCode.MONITOR_STOP_PARTIAL_ERROR);
+        }
         return ApiResponse.createSuccess();
     }
 

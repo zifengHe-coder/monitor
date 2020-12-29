@@ -1,5 +1,7 @@
 package com.idaoben.web.monitor.web.dto;
 
+import java.util.List;
+
 public class ProcessJson {
 
     private String cpuTime;
@@ -13,6 +15,8 @@ public class ProcessJson {
     private String user;
 
     private String wsPrivateBytes;
+
+    private List<ProcessJson> children;
 
     public String getCpuTime() {
         return cpuTime;
@@ -60,6 +64,14 @@ public class ProcessJson {
 
     public void setWsPrivateBytes(String wsPrivateBytes) {
         this.wsPrivateBytes = wsPrivateBytes;
+    }
+
+    public List<ProcessJson> getChildren() {
+        return children;
+    }
+
+    public void setChildren(List<ProcessJson> children) {
+        this.children = children;
     }
 
     @Override
