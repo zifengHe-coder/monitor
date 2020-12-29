@@ -3,6 +3,7 @@ import http from '@/request/http'
 export default {
   state: () => ({
     softwareList: {},
+    monitoringIds: [], // 监听中软件的id集合
     comData: {
       id: 'softwareList'
     },
@@ -58,7 +59,24 @@ export default {
     },
     setOnff(state, value) {
       state.onff = value;
-    }
+    },
+    setMonitoringSoftwareList(state){
+      let list = JSON.parse(JSON.stringify(state.softwareList));
+      for(let k in list){
+        state.softwareList[k] = [];
+        for(let i=0; i<list[k].length;i++){
+          for(let j=0;j<state.monitoringIds.length;j++){
+            if(list[k][i].id === state.monitoringIds[j]){
+              state.softwareList[k].push(list[k][i]);
+            }
+          }
+        }
+        if(state.softwareList[k].length === 0){
+          delete state.softwareList[k]
+        }
+      }
+      console.log(JSON.parse(JSON.stringify(state.softwareList)))
+    },
   },
   getters: {
     getSoftwareList(state) {
@@ -69,6 +87,26 @@ export default {
     }
   },
   actions: {
+    getMonitoringIds({commit,state}){
+      return new Promise(resolve=>{
+        http({
+          url: api.monitorGetMonitoringIds,
+          method: "GET"
+        }).then(r => {
+          if(r.code === '0'){
+            if(r.data.length > 0){
+              state.monitoringIds = r.data;
+            }else{
+              state.monitoringIds = [];
+            }
+            commit('setMonitoringSoftwareList')
+            resolve();
+          }
+        }).catch(err => {
+          console.log(err)
+        })
+      })
+    },
     getSoftwareList({ commit, state }, forceGet = true) {
       return new Promise((res, rej) => {
         if (!state.onff) {

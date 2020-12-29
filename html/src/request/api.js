@@ -13,6 +13,7 @@ let apiArr = [
   "monitor/stopMonitor", // 停止监控
   "monitor/listTask", // 历史监控任务查询
   "monitor/deleteTask", // 删除任务
+  "monitor/getMonitoringIds", // 获取当前正再监听的软件id
 
   "action/listByFileType", // 查询文件读写醒胃
   "action/listByNetworkType", // 查询网络访问行为
