@@ -75,7 +75,6 @@ export default {
           delete state.softwareList[k]
         }
       }
-      console.log(JSON.parse(JSON.stringify(state.softwareList)))
     },
   },
   getters: {

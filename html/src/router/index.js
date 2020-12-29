@@ -7,6 +7,7 @@ import softwareProcess from '@/views/mainContent/softwareProcess'
 import monitoringRecords from '@/views/mainContent/monitoringRecords'
 import homePage from '@/views/mainContent/homePage'
 import monitoringHistory from '@/views/mainContent/monitoringHistory'
+import monitoringList from '@/views/mainContent/monitoringList'
 
 const originalReplace = Router.prototype.replace
 originalReplace.replace = function replace(location) {
@@ -66,7 +67,16 @@ export default new Router({
             leftContent:singleProcess,
             mainContent:monitoringHistory
           }
-        }
+        },
+        // 正在监听的程序
+        {
+          path: 'monitoringList',
+          name: 'monitoringList',
+          components:{
+            leftContent:softwareList,
+            mainContent:monitoringList
+          }
+        },
       ]
     }
   ]

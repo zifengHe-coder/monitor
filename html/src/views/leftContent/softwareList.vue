@@ -182,11 +182,19 @@
       getAll(){
         this.$store.dispatch('getSoftwareList');
         this.showMonitoringBtn = true;
+        this.$router.push({
+          path: '/index',
+          name: 'index'
+        })
       },
       async getMonitoringIds(){
         this.showMonitoringBtn = false;
         await this.$store.dispatch('getMonitoringIds');
         this.$forceUpdate();
+        this.$router.push({
+          path: '/monitoringList',
+          name: 'monitoringList',
+        })
       },
     }
   }

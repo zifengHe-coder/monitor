@@ -26,9 +26,16 @@
 
       <div v-if="tabContentOnff" class="records">
         <BaseSearchCom :comData="comData" :formLabel="searchLabels" :getData="getList" :labelWidth="labelWidth" />
-        <BaseTableCom :hadIndex='true' :tableData="tableData" :tableHeader="tableLabels" :getTableData="getList"
-          :totalItems="totalItems" :comData="comData" :hasOperationBtn="hasOperation"
-          :style="{height: 'calc(100% - 100px)'}" :tableStyle="{ height: 'calc(100% - 49px)', 'padding-top': '0'}">
+        <BaseTableCom 
+          :hadIndex='true' 
+          :tableData="tableData" 
+          :tableHeader="tableLabels" 
+          :getTableData="getList"
+          :totalItems="totalItems" 
+          :comData="comData" 
+          :hasOperationBtn="hasOperation"
+          :style="{height: 'calc(100% - 100px)'}" 
+          :tableStyle="{ height: 'calc(100% - 49px)', 'padding-top': '0'}">
           <template v-slot:operationBtn="data">
             <el-button v-if="showBtn(data.scope.row)" size="mini" type="primary"
               @click="changeClickEvent(data.scope.row,changeButtonText(data.scope.row))">

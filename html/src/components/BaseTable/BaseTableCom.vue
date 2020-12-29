@@ -248,7 +248,7 @@ export default {
     getTableData: {
       type: Function,
       default: () => {},
-      required: true
+      required: false
     }, // 获取table数据
     handleDataSelect: {
       type: Function,
@@ -381,13 +381,17 @@ export default {
   methods: {
     // 处理格仔中的文本
     handleRowText(row,prop){
-      let text = row[prop].split('/exe/')[0];
-      return text;
+      if(row[prop]){
+        let text = row[prop].split('/exe/')[0];
+        return text;
+      }
     },
     // 处理格仔中的图标
     handleRowImage(row,prop){
-      let img = row[prop].split('/exe/')[1];
-      return img;
+      if(row[prop]){
+        let img = row[prop].split('/exe/')[1];
+        return img;
+      }
     },
     //保存已修改的单元格的数据
     saveCellChange(data) {
