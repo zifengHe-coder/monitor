@@ -74,6 +74,7 @@
             }
           -->
           <el-select 
+            clearable
             v-else-if="item.type === 'select'" 
             v-model="formData[item.prop]"
             :placeholder="item.placeholder ? item.placeholder : '请选择'"
@@ -100,6 +101,7 @@
           -->
           <template v-else-if="item.type === 'area'">
             <el-select 
+              clearable
               v-model="area.province" 
               placeholder="省"
               v-show="item.type === 'area' && showProvince(item)"
@@ -114,6 +116,7 @@
               </el-option>
             </el-select>
             <el-select 
+              clearable
               v-model="area.city" placeholder="市"
               v-show="item.type === 'area' && showCity(item)"
               :style="{width: item.width}"
@@ -127,6 +130,7 @@
               </el-option>
             </el-select>
             <el-select 
+            clearable
               v-model="area.area" placeholder="区"
               :style="{width: item.width}"
               :size="formSize"

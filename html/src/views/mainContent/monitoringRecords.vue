@@ -222,13 +222,15 @@
       changeButtonText(row) {
         let text = '';
         if (this.currentTab === '2') {
-          if (row.opType === '读' || row.opType === '删除') {
+          if (row.opType === '读') {
             let platform = sessionStorage.getItem('system');
             if (platform === 'windows' && (location.origin.indexOf('127.0.0.1') > -1 || location.origin.indexOf('localhost') > -1)) {
               text = '打开文件位置';
             } else {
               text = '下载文件'
             }
+          } else if(row.opType === '删除'){
+            text = '下载文件'
           } else if (row.opType === '写') {
             text = '下载对比文件';
           }

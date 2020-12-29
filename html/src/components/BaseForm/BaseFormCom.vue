@@ -118,6 +118,7 @@
         
         <!-- 选择器 select -->
         <el-select 
+          clearable
           v-else-if="item.type === 'select'" 
           v-model="formData[item.prop]" 
           style="width: 100%"
