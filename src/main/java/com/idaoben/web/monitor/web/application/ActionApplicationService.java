@@ -502,6 +502,11 @@ public class ActionApplicationService {
 
     private Action setActionFileInfo(Action action, String pid){
         if(action.getType() == ActionType.FILE_OPEN){
+            //存在path空的情况，path为空时不做处理
+            if(StringUtils.isEmpty(action.getPath())){
+                return null;
+            }
+
             //获取path对应的文件名称
             action.setFileName(StringUtils.substringAfterLast(action.getPath(), SystemUtils.FILE_SEPARATOR));
 
