@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 public class DownloadUtils {
 
@@ -36,6 +37,29 @@ public class DownloadUtils {
             }
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
+        }
+    }
+
+    public static void sendErrorFileToClient(String error, HttpServletResponse response) throws IOException {
+        String fileName = "error.txt";
+        byte[] errorContent = error.getBytes(StandardCharsets.UTF_8);
+        String type = URLConnection.getFileNameMap().getContentTypeFor(fileName);
+        response.setContentType(type);
+        response.setContentLength(errorContent.length);
+        if(StringUtils.isNotEmpty(fileName)){
+            response.addHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", URLEncoder.encode(fileName, "UTF-8")));
+        }
+
+        BufferedInputStream in = null;
+        BufferedOutputStream out = null;
+        try{
+            in = new BufferedInputStream(new ByteArrayInputStream(errorContent));
+            out = new BufferedOutputStream(response.getOutputStream());
+            IOUtils.copy(in, out);
+            out.close();
+        } finally {
+            IOUtils.closeQuietly(in);
+            IOUtils.closeQuietly(out);
         }
     }
 }
