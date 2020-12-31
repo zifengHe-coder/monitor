@@ -249,11 +249,14 @@
         return text;
       },
       showBtn(row) {
+        console.log(row)
         const arr = ['1', '2', '4']
         if (arr.includes(this.currentTab)) {
           if (this.currentTab === '4' && row.type !== this.typeLists[20481]) {
             return false;
           }else if(this.currentTab === '1' && row.type === this.typeLists[4096]){
+            return false;
+          }else if(this.currentTab === '2' && row.fileName === ''){
             return false;
           } else {
             return true;
