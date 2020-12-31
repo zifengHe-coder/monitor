@@ -22,6 +22,7 @@ import com.idaoben.web.monitor.web.dto.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -288,7 +289,7 @@ public class ActionApplicationService {
         return zipFile;
     }
 
-    public void downloadDeleteFile(String uuid, HttpServletResponse response) throws IOException{
+    public Pair<File, String> downloadDeleteFile(String uuid, HttpServletResponse response) throws IOException{
         Action action = actionService.findStrictly(uuid);
         if(action.getActionGroup() != ActionGroup.FILE || (action.getType() != ActionType.FILE_DELETE_WINDOWS && action.getType() != ActionType.FILE_DELETE_LINUX)){
             throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
@@ -298,8 +299,7 @@ public class ActionApplicationService {
             folder = new File(ACTION_FOLDER, action.getPid());
         }
         File backupFile = new File(folder, StringUtils.substringAfterLast(action.getBackup(), SystemUtils.FILE_SEPARATOR));
-        DownloadUtils.sendFileToClient(backupFile, action.getFileName(), response);
-
+        return Pair.of(backupFile, action.getFileName());
     }
 
     private void compressZipFile(File backupFile, File writeFile, String fileName, File zipFile) throws IOException{

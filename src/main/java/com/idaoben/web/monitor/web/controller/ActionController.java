@@ -8,6 +8,7 @@ import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.validation.annotation.Validated;
@@ -71,20 +72,34 @@ public class ActionController {
     @ApiOperation("网络包下载")
     @GetMapping("downloadNetworkPackage")
     public void downloadNetworkPackage(String uuid, HttpServletResponse response) throws IOException {
-        File file = actionApplicationService.getNetworkFile(uuid);
-        DownloadUtils.sendFileToClient(file, response);
+        try {
+            File file = actionApplicationService.getNetworkFile(uuid);
+            DownloadUtils.sendFileToClient(file, response);
+        } catch (Exception e){
+            DownloadUtils.sendErrorFileToClient(e.getMessage(), response);
+        }
     }
 
     @ApiOperation("写对比文件下载")
     @GetMapping("downloadWriteFilePackage")
     public void downloadWriteFilePackage(String uuid, HttpServletResponse response) throws IOException {
-        File file = actionApplicationService.getWriteFile(uuid);
-        DownloadUtils.sendFileToClient(file, response);
+        try {
+            File file = actionApplicationService.getWriteFile(uuid);
+            DownloadUtils.sendFileToClient(file, response);
+        } catch (Exception e){
+            DownloadUtils.sendErrorFileToClient(e.getMessage(), response);
+        }
     }
 
     @ApiOperation("删除文件的备份下载")
     @GetMapping("downloadDeleteFile")
     public void downloadDeleteFile(String uuid, HttpServletResponse response) throws IOException {
-        actionApplicationService.downloadDeleteFile(uuid, response);
+        try {
+            Pair<File, String> result = actionApplicationService.downloadDeleteFile(uuid, response);
+            DownloadUtils.sendFileToClient(result.getLeft(), result.getRight(), response);
+        } catch (Exception e){
+            DownloadUtils.sendErrorFileToClient(e.getMessage(), response);
+        }
+
     }
 }
