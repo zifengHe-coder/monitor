@@ -83,7 +83,10 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
             logger.error(e.getMessage(), e);
         }
         for(File linkFile : linkFiles){
-            softwares.add(getSoftwareInfo(linkFile, linkFileJsonMap.get(linkFile.getPath())));
+            SoftwareDto software = getSoftwareInfo(linkFile, linkFileJsonMap.get(linkFile.getPath()));
+            if(software != null){
+                softwares.add(software);
+            }
         }
         return softwares;
     }
@@ -111,6 +114,10 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
         softwareDto.setSoftwareName(lnkFile.getName().replace(".lnk", ""));
         if(linkFileJson != null){
             File file = new File(linkFileJson.getPath());
+            //过滤不是exe文件的快捷方式
+            if(!file.getName().endsWith(".exe")){
+                return null;
+            }
             softwareDto.setCommandLine(linkFileJson.getPath() + linkFileJson.getArguments());
             softwareDto.setExePath(linkFileJson.getPath());
             softwareDto.setBase64Icon(getIconBase64(file));
@@ -125,6 +132,9 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
         ByteArrayOutputStream os = null;
         try {
             ImageIcon icon = (ImageIcon) fileSystemView.getSystemIcon(file);
+            if(icon == null){
+                return null;
+            }
             Image image = icon.getImage();
 
             // 获取 Image 对象的高度和宽度
