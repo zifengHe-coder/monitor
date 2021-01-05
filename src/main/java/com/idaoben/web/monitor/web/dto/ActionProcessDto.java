@@ -25,6 +25,18 @@ public interface ActionProcessDto extends ActionBaseDto{
     @Mapping
     String getPath();
 
+    @ApiModelProperty("消息发送目标的PID")
+    @Mapping
+    Long getDestPid();
+
+    @ApiModelProperty("目标进程名称")
+    @Mapping
+    String getDestPName();
+
+    @ApiModelProperty("目标窗口标题")
+    @Mapping
+    String getDestTitle();
+
     @ApiModelProperty("消息发送目标窗口的句柄")
     @Mapping
     Long getDestHwnd();
@@ -32,6 +44,10 @@ public interface ActionProcessDto extends ActionBaseDto{
     @ApiModelProperty("消息发送源窗口的句柄")
     @Mapping
     Long getSrcHwnd();
+
+    @ApiModelProperty("源窗口标题")
+    @Mapping
+    String getSrcTitle();
 
     @ApiModelProperty("发送数据(HEX编码)")
     @Mapping

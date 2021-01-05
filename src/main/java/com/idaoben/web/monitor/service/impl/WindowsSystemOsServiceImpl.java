@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
+import com.idaoben.web.monitor.dao.entity.enums.ActionType;
 import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
 import com.idaoben.web.monitor.dao.entity.enums.FileSensitivity;
 import com.idaoben.web.monitor.exception.ErrorCode;
@@ -51,6 +52,8 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     private static final String[] FILE_TYPE_SEPARATORS = new String[]{"\\??\\", "\\\\?\\"};
 
     private Map<Integer, Long> pidCpuTimeMap = new HashMap<>();
+
+    private List<ProcessJson> processCache;
 
     @PostConstruct
     public void init(){
@@ -179,7 +182,8 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
                 for(ProcessJson processJson : processListJson.getProcesses()){
                     processJson.setCpuTime(new BigDecimal(pidDeltaCpuTimeMap.get(processJson.getPid()) * 100).divide(new BigDecimal(deltaCpuTime), 1, RoundingMode.HALF_UP).toString());
                 }
-                return processListJson.getProcesses();
+                processCache = processListJson.getProcesses();
+                return processCache;
             }
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);
@@ -296,5 +300,17 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     @Override
     public void setActionProcessInfo(Action action, String pid) {
         action.setActionGroup(ActionGroup.PROCESS);
+        if(action.getType() == ActionType.PROCESS_MESSAGE_SEND){
+            //查询目标进程的名字并设置到action中
+            List<ProcessJson> tempProcessCache = processCache;
+            if(action.getDestPid() != null && tempProcessCache != null){
+                for(ProcessJson process : tempProcessCache){
+                    if(process.getPid().intValue() == action.getDestPid().intValue()){
+                        action.setDestPName(process.getImageName());
+                        break;
+                    }
+                }
+            }
+        }
     }
 }
