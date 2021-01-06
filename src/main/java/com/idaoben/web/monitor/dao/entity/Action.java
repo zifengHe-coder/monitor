@@ -164,13 +164,29 @@ public class Action {
     @Column
     private String threadEntryAddress;
 
+    @Description("消息发送目标的PID")
+    @Column
+    private Long destPid;
+
+    @Description("目标进程名称")
+    @Column
+    private String destPName;
+
     @Description("消息发送目标窗口的句柄")
     @Column
     private Long destHwnd;
 
+    @Description("目标窗口标题")
+    @Column
+    private String destTitle;
+
     @Description("消息发送源窗口的句柄")
     @Column
     private Long srcHwnd;
+
+    @Description("源窗口标题")
+    @Column
+    private String srcTitle;
 
     @Description("设备名称")
     @Column
@@ -482,6 +498,38 @@ public class Action {
 
     public void setThreadEntryAddress(String threadEntryAddress) {
         this.threadEntryAddress = threadEntryAddress;
+    }
+
+    public Long getDestPid() {
+        return destPid;
+    }
+
+    public void setDestPid(Long destPid) {
+        this.destPid = destPid;
+    }
+
+    public String getDestPName() {
+        return destPName;
+    }
+
+    public void setDestPName(String destPName) {
+        this.destPName = destPName;
+    }
+
+    public String getDestTitle() {
+        return destTitle;
+    }
+
+    public void setDestTitle(String destTitle) {
+        this.destTitle = destTitle;
+    }
+
+    public String getSrcTitle() {
+        return srcTitle;
+    }
+
+    public void setSrcTitle(String srcTitle) {
+        this.srcTitle = srcTitle;
     }
 
     public Long getDestHwnd() {
