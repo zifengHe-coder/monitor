@@ -76,7 +76,9 @@
                 slot="reference"
                 v-text="getCellWord(scope, item)"
                 class="word"
-              ></p>
+              >
+                
+              </p>
 
               <!-- 特殊元素 -->
               <slot
@@ -634,6 +636,10 @@ export default {
   }
   .el-table .cell {
     line-height: 32px;
+    button{
+      margin-left: 10px!important;
+      padding: 5px 8px;
+    }
   }
   .word {
     white-space: nowrap;

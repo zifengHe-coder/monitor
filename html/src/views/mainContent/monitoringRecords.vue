@@ -41,9 +41,30 @@
               @click="changeClickEvent(data.scope.row,changeButtonText(data.scope.row))">
               {{changeButtonText(data.scope.row)}}</el-button>
           </template>
+          <template v-slot:type="data">
+            {{data.scope.row.type}}
+            <el-button
+              v-if="data.scope.row.type==='消息通讯'"
+              type="primary"
+              size="mini"
+              @click="showMsg(data)">
+              查看</el-button>
+          </template>
         </BaseTableCom>
       </div>
     </div>
+    <el-dialog
+      title="详细信息"
+      :visible.sync="showMsgDialog">
+        <div class="table">
+          <template v-for="(item,index) in currentDataLabel">
+            <div :key="index" style="display:flex;padding:5px 5px">
+              <div class="label" style="width:100px;font-weight:bold;">{{item.label}}</div>：
+              <div class="value" style="margin-left:10px;width:calc(100% - 115px)">{{currentData[item.prop] || '- -'}}</div>
+            </div>
+          </template>
+        </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -131,7 +152,7 @@
           12294: '注册表设置值键',
           16384: '启动进程',
           20480: '创建远程线程',
-          20481: 'WM_COPYDATA发送',
+          20481: '消息通讯',
           24576: '修改对象安全描述符'
         }, // 操作类型code---text
         progressStatus: null,
@@ -139,7 +160,49 @@
           16384: '启动进程',
           20480: '进程注入',
           20481: '消息通讯'
-        }
+        },
+        showMsgDialog: false,
+        currentData: {},
+        currentDataLabel: [{
+          label: '完整命令行数据',
+          prop: 'cmdLine'
+        },{
+          label: '发送数据',
+          prop: 'data'
+        },{
+          label: '消息目标句柄',
+          prop: 'destHwnd'
+        },{
+          label: '注入dll',
+          prop: 'path'
+        },{
+          label: '进程ID',
+          prop: 'pid'
+        },{
+          label: '目标ID',
+          prop:'destPid'
+        },{
+          label: '目标进程名',
+          prop: 'destPName'
+        },{
+          label: '消息源句柄',
+          prop: 'srcHwnd'
+        },{
+          label: '任务ID',
+          prop: 'taskId'
+        },{
+          label: '函数地址',
+          prop: 'threadEntryAddress'
+        },{
+          label: '日志时间戳',
+          prop: 'timestamp'
+        },{
+          label: '进程调用类型',
+          prop: 'type'
+        },{
+          label: '标识符',
+          prop: 'uuid'
+        }]
       }
     },
     created() {
@@ -166,6 +229,11 @@
       }
     },
     methods: {
+      // 显示消息通讯
+      showMsg(data){
+        this.showMsgDialog = true
+        this.currentData = data.scope.row
+      },
       changeClickEvent(row, buttonText) {
         console.log(buttonText)
         if (this.currentTab == '2') {
@@ -249,7 +317,6 @@
         return text;
       },
       showBtn(row) {
-        console.log(row)
         const arr = ['1', '2', '4']
         if (arr.includes(this.currentTab)) {
           if (this.currentTab === '4' && row.type !== this.typeLists[20481]) {
@@ -578,7 +645,7 @@
               columnOperable: 'none',
               label: '调用时间'
             }, {
-              type: 'word',
+              isSpecial: true,
               prop: 'type',
               label: '调用类型'
             }, {
@@ -591,13 +658,23 @@
               label: '注入dll'
             }, {
               type: 'word',
-              prop: 'destHwnd',
-              label: '消息目标句柄'
+              prop: 'destPid',
+              label: '目标PID'
             }, {
               type: 'word',
-              prop: 'srcHwnd',
-              label: '消息源句柄'
+              prop: 'destPName',
+              label: '目标进程名'
             }, {
+              type: 'word',
+              prop: 'destHwnd',
+              label: '消息目标句柄'
+            }, 
+            // {
+            //   type: 'word',
+            //   prop: 'srcHwnd',
+            //   label: '消息源句柄'
+            // }, 
+            {
               type: 'word',
               prop: 'cmdLine',
               label: '命令行'
