@@ -24,4 +24,4 @@ monitor:
   tracer-debug: false
   linux-user:
   software:
-    map: {'腾讯QQ':'qq.exe'}
+    map: {'qq.exe':'腾讯QQ'}

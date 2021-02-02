@@ -342,7 +342,7 @@ public class SoftwareApplicationService {
                 Set<Map.Entry<String, SoftwareDto>> entries = softwareMap.entrySet();
                 for(Map.Entry<String, SoftwareDto> entry : entries){
                     //imageName 移除.exe后进行判断
-                    if(entry.getValue().getSoftwareName().equalsIgnoreCase(imageName.replace(".exe", "")) || Objects.equals(map.get(entry.getValue().getSoftwareName()), imageName)){
+                    if(entry.getValue().getSoftwareName().equalsIgnoreCase(imageName.replace(".exe", "")) || Objects.equals(map.get(imageName), entry.getValue().getSoftwareName())){
                         softwareId = entry.getKey();
                         break;
                     }
