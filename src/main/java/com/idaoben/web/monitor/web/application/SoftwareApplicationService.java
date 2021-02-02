@@ -332,10 +332,11 @@ public class SoftwareApplicationService {
             //如果没有父节点，而且softwareId找不到的，可能是启动进程已经关闭，这时就不能直接通过imageName查询，只能从相关软件信息中模糊搜索
             //例如Windows下TIM这个软件就有这种情况，快捷方式指向的是一个启动进程，启动后就会关闭
             if(softwareId == null && isRootNode){
-                //查询所有软件列表中，含有本进程名称的软件
+                //查询所有软件列表中，含有本进程名称的软件，除了进程名称还有通过进程描述进行判断
                 Set<Map.Entry<String, SoftwareDto>> entries = softwareMap.entrySet();
                 for(Map.Entry<String, SoftwareDto> entry : entries){
-                    if(imageName.startsWith(entry.getValue().getSoftwareName().toLowerCase())){
+                    //imageName 移除.exe后进行判断
+                    if(entry.getValue().getSoftwareName().toLowerCase().contains(imageName.replace(".exe", "")) ){
                         softwareId = entry.getKey();
                         break;
                     }
