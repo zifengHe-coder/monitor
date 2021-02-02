@@ -73,8 +73,8 @@ public class ActionController {
     @GetMapping("downloadNetworkPackage")
     public void downloadNetworkPackage(String uuid, HttpServletResponse response) throws IOException {
         try {
-            File file = actionApplicationService.getNetworkFile(uuid);
-            DownloadUtils.sendFileToClient(file, response);
+            Pair<File, String> file = actionApplicationService.getNetworkFile(uuid);
+            DownloadUtils.sendFileToClient(file.getLeft(), file.getRight(), response);
         } catch (Exception e){
             DownloadUtils.sendErrorFileToClient(e.getMessage(), response);
         }

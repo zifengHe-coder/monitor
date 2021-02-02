@@ -15,7 +15,6 @@ import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.MonitoringService;
 import com.idaoben.web.monitor.service.SystemOsService;
 import com.idaoben.web.monitor.service.TaskService;
-import com.idaoben.web.monitor.utils.DownloadUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
@@ -34,10 +33,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -149,24 +145,31 @@ public class ActionApplicationService {
         addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionNetworkDto.class).apply(actions, (domain, dto) -> {
-            //简单的协议分析
-            if(domain.getType() == ActionType.NETWORK_TCP_SEND || domain.getType() == ActionType.NETWORK_TCP_RECEIVE){
-                int port = domain.getPort() == null ? -1 : domain.getPort();
-                if(port == 443){
-                    dto.setProtocol("HTTPS");
-                } else if(port == 80) {
-                    dto.setProtocol("HTTP");
-                } else if(port == 53){
-                    dto.setProtocol("DNS");
-                } else {
-                    dto.setProtocol("TCP");
-                }
-            } else if(domain.getType() == ActionType.NETWORK_UDP_SEND || domain.getType() == ActionType.NETWORK_UDP_RECEIVE){
-                dto.setProtocol("UDP");
-            }
+            //设置协议
+            dto.setProtocol(getProtocol(domain));
 
             setActionUser(dto, pidUsers);
         });
+    }
+
+    private String getProtocol(Action action){
+        String protocol;
+        //简单的协议分析
+        if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
+            int port = action.getPort() == null ? -1 : action.getPort();
+            if(port == 443){
+                protocol = "HTTPS";
+            } else if(port == 80) {
+                protocol = "HTTP";
+            } else if(port == 53){
+                protocol = "DNS";
+            } else {
+                protocol = "TCP";
+            }
+        } else if(action.getType() == ActionType.NETWORK_UDP_SEND || action.getType() == ActionType.NETWORK_UDP_RECEIVE){
+            protocol = "UDP";
+        }
+        return null;
     }
 
     public Page<ActionDeviceDto> listByDeviceType(ActionDeviceListCommand command, Pageable pageable){
@@ -217,7 +220,7 @@ public class ActionApplicationService {
         }
     }
 
-    public File getNetworkFile(String uuid){
+    public Pair<File, String> getNetworkFile(String uuid){
         Action action = actionService.findStrictly(uuid);
         if(action.getActionGroup() != ActionGroup.NETWORK || action.getType() == ActionType.NETWORK_OPEN){
             throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
@@ -231,7 +234,13 @@ public class ActionApplicationService {
             fileName = fileName + "_recv";
         }
         File file = new File(folder, fileName);
-        return file;
+        String protocol = getProtocol(action);
+        if(Objects.equals("HTTP", protocol)){
+            fileName = fileName + ".txt";
+        } else {
+            fileName = fileName + ".raw";
+        }
+        return Pair.of(file, fileName);
     }
 
     public File getWriteFile(String uuid) throws IOException{
