@@ -67,13 +67,16 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
 
     @Override
     public List<SoftwareDto> getSystemSoftware() {
-        String startMenuHome = SystemUtils.getOsHome() + "\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs";
-        File startMenu = new File(startMenuHome);
+        String[] startMenuHomes = new String[]{SystemUtils.getOsHome() + "\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs", SystemUtils.getUserHome() + "\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs"};
         List<SoftwareDto> softwares = new ArrayList<>();
         List<File> linkFiles = new ArrayList<>();
-        if(startMenu.exists() && startMenu.isDirectory()){
-            for(File file : startMenu.listFiles()){
-                checkAndAddFile(file, linkFiles);
+        for(String startMenuHome : startMenuHomes){
+            File startMenu = new File(startMenuHome);
+
+            if(startMenu.exists() && startMenu.isDirectory()){
+                for(File file : startMenu.listFiles()){
+                    checkAndAddFile(file, linkFiles);
+                }
             }
         }
         List<String> linkPaths = linkFiles.stream().map(File::getPath).collect(Collectors.toList());
