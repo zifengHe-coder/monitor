@@ -141,7 +141,8 @@ public class ActionApplicationService {
         Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.NETWORK).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
                 .likeFuzzy(Action::getHost, command.getHost()).eq(Action::getPort, command.getPort()).eq(Action::getType, command.getType())
-                .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
+                .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime())
+                .ge(Action::getBytes, command.getBytesMin()).le(Action::getBytes, command.getBytesMax());
         addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionNetworkDto.class).apply(actions, (domain, dto) -> {

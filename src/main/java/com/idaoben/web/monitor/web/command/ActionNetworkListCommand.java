@@ -30,6 +30,12 @@ public class ActionNetworkListCommand {
     @ApiModelProperty("操作结束时间")
     private ZonedDateTime endTime;
 
+    @ApiModelProperty("最小网络流量")
+    private Long bytesMin;
+
+    @ApiModelProperty("最大网络流量")
+    private Long bytesMax;
+
     public Long getTaskId() {
         return taskId;
     }
@@ -92,5 +98,21 @@ public class ActionNetworkListCommand {
 
     public void setEndTime(ZonedDateTime endTime) {
         this.endTime = endTime;
+    }
+
+    public Long getBytesMin() {
+        return bytesMin;
+    }
+
+    public void setBytesMin(Long bytesMin) {
+        this.bytesMin = bytesMin;
+    }
+
+    public Long getBytesMax() {
+        return bytesMax;
+    }
+
+    public void setBytesMax(Long bytesMax) {
+        this.bytesMax = bytesMax;
     }
 }
