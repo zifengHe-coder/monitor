@@ -23,3 +23,5 @@ monitor:
   auto-open-browser: false
   tracer-debug: false
   linux-user:
+  software:
+    map: {'腾讯QQ':'qq.exe'}

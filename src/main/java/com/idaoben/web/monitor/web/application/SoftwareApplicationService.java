@@ -21,6 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -33,6 +35,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
+@ConfigurationProperties(prefix = "monitor.software")
 public class SoftwareApplicationService {
 
     private static final Logger logger = LoggerFactory.getLogger(SoftwareApplicationService.class);
@@ -57,6 +60,8 @@ public class SoftwareApplicationService {
 
     @Resource
     private ObjectMapper objectMapper;
+
+    private Map<String, String> map;
 
     private Map<String, SoftwareDto> softwareMap;
 
@@ -329,14 +334,14 @@ public class SoftwareApplicationService {
                 return null;
             }
             String softwareId = exeNameSoftwareIdMap.get(imageName);
-            //如果没有父节点，而且softwareId找不到的，可能是启动进程已经关闭，这时就不能直接通过imageName查询，只能从相关软件信息中模糊搜索
+            //如果没有父节点，而且softwareId找不到的，可能是启动进程已经关闭，这时就不能直接通过imageName查询，只能从相关软件信息中模糊搜索和配置进行匹配
             //例如Windows下TIM这个软件就有这种情况，快捷方式指向的是一个启动进程，启动后就会关闭
             if(softwareId == null && isRootNode){
                 //查询所有软件列表中，含有本进程名称的软件，除了进程名称还有通过进程描述进行判断
                 Set<Map.Entry<String, SoftwareDto>> entries = softwareMap.entrySet();
                 for(Map.Entry<String, SoftwareDto> entry : entries){
                     //imageName 移除.exe后进行判断
-                    if(entry.getValue().getSoftwareName().toLowerCase().contains(imageName.replace(".exe", "")) ){
+                    if(entry.getValue().getSoftwareName().equalsIgnoreCase(imageName.replace(".exe", "")) || Objects.equals(map.get(entry.getValue().getSoftwareName()), imageName)){
                         softwareId = entry.getKey();
                         break;
                     }
@@ -389,5 +394,13 @@ public class SoftwareApplicationService {
             return f1.getName().toLowerCase().compareTo(f2.getName().toLowerCase());
         });
         return files;
+    }
+
+    public Map<String, String> getMap() {
+        return map;
+    }
+
+    public void setMap(Map<String, String> map) {
+        this.map = map;
     }
 }
