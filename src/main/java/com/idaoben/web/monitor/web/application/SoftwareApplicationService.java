@@ -391,7 +391,7 @@ public class SoftwareApplicationService {
                     continue;
                 }
                 FileDto fileDto = new FileDto();
-                fileDto.setName(file.getName());
+                fileDto.setName(StringUtils.isEmpty(file.getName()) ? file.getPath() : file.getName());
                 fileDto.setPath(file.getPath());
                 fileDto.setDirectory(file.isDirectory());
                 files.add(fileDto);
