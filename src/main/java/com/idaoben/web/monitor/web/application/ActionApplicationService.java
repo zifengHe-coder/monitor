@@ -153,7 +153,7 @@ public class ActionApplicationService {
     }
 
     private String getProtocol(Action action){
-        String protocol;
+        String protocol = null;
         //简单的协议分析
         if(action.getType() == ActionType.NETWORK_TCP_SEND || action.getType() == ActionType.NETWORK_TCP_RECEIVE){
             int port = action.getPort() == null ? -1 : action.getPort();
@@ -169,7 +169,7 @@ public class ActionApplicationService {
         } else if(action.getType() == ActionType.NETWORK_UDP_SEND || action.getType() == ActionType.NETWORK_UDP_RECEIVE){
             protocol = "UDP";
         }
-        return null;
+        return protocol;
     }
 
     public Page<ActionDeviceDto> listByDeviceType(ActionDeviceListCommand command, Pageable pageable){
