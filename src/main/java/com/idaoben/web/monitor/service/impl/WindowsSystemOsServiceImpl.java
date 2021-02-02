@@ -53,6 +53,8 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
 
     private Map<Integer, Long> pidCpuTimeMap = new HashMap<>();
 
+    private Map<Integer, String> pidUserMape = new HashMap<>();
+
     private List<ProcessJson> processCache;
 
     @PostConstruct
@@ -182,11 +184,55 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
                     pidCpuTimeMap.put(processJson.getPid(), thisCpuTime);
                     pidDeltaCpuTimeMap.put(processJson.getPid(), pidDeltaCpuTime);
                 }
+
+                //如果是windows 7系统，需要重新设置用户信息，直接获取全部进程的方法获取不到
+                List<Integer> needGetUserPids = new ArrayList<>();
                 for(ProcessJson processJson : processListJson.getProcesses()){
+                    if(StringUtils.isEmpty(processJson.getUser())){
+                        String user = pidUserMape.get(processJson.getPid());
+                        if(user == null){
+                            needGetUserPids.add(processJson.getPid());
+                        } else {
+                            processJson.setUser(user);
+                        }
+                    }
                     processJson.setCpuTime(new BigDecimal(pidDeltaCpuTimeMap.get(processJson.getPid()) * 100).divide(new BigDecimal(deltaCpuTime), 1, RoundingMode.HALF_UP).toString());
+                }
+
+                if(!needGetUserPids.isEmpty()){
+                    List<ProcessJson> processUsers = getProcessByPids(needGetUserPids);
+                    if(processUsers != null){
+                        for(ProcessJson process : processUsers){
+                            pidUserMape.put(process.getPid(), process.getUser());
+                        }
+                    }
+                    //设置进程用户信息
+                    for(ProcessJson processJson : processListJson.getProcesses()){
+                        if(StringUtils.isEmpty(processJson.getUser())){
+                            String user = pidUserMape.get(processJson.getPid());
+                            if(user != null){
+                                processJson.setUser(user);
+                            }
+                        }
+                    }
                 }
                 processCache = processListJson.getProcesses();
                 return processCache;
+            }
+        } catch (JsonProcessingException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return null;
+    }
+
+    @Override
+    public List<ProcessJson> getProcessByPids(List<Integer> pids) {
+        String processDetailContent = jniService.queryProcessDetails(pids);
+        try {
+            ProcessDetailsJson processDetailsJson = objectMapper.readValue(processDetailContent, ProcessDetailsJson.class);
+            if(processDetailsJson != null){
+                List<ProcessJson> processes = processDetailsJson.getDetails();
+                return processes;
             }
         } catch (JsonProcessingException e) {
             logger.error(e.getMessage(), e);

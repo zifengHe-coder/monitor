@@ -121,6 +121,11 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     }
 
     @Override
+    public List<ProcessJson> getProcessByPids(List<Integer> pids) {
+        throw new UnsupportedOperationException("Linux 系统不支持该操作");
+    }
+
+    @Override
     public int startProcessWithHooks(String commandLine, String currentDirectory) {
         try {
             String cmd;

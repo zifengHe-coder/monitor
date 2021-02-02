@@ -1,6 +1,5 @@
 package com.idaoben.web.monitor.web.application;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
@@ -55,9 +54,6 @@ public class SoftwareApplicationService {
 
     @Resource
     private TaskService taskService;
-
-    @Resource
-    private JniService jniService;
 
     @Resource
     private ObjectMapper objectMapper;
@@ -303,9 +299,9 @@ public class SoftwareApplicationService {
             if(SystemUtils.isWindows() && monitoringService.isMonitoring(softwareId)
                     && !monitoringService.isPidMonitoringError(softwareId, pidStr) && !monitoringService.isPidMonitoring(softwareId, pidStr)){
                 String user = processJson.getUser();
-                //Windows平台如果当前processJson无user信息，则重新获取
-                if(user == null && SystemUtils.isWindows()){
-                    List<ProcessJson> pidUsers = getPidUsers(Collections.singletonList(processJson.getPid()));
+                //Windows平台如果当前processJson无user信息，则重新获取(针对win7下无用户信息的)
+                if(StringUtils.isEmpty(user) && SystemUtils.isWindows()){
+                    List<ProcessJson> pidUsers = systemOsService.getProcessByPids(Collections.singletonList(processJson.getPid()));
                     if(!CollectionUtils.isEmpty(pidUsers)){
                         user = pidUsers.get(0).getUser();
                     }
@@ -319,20 +315,6 @@ public class SoftwareApplicationService {
                 addProcessToSoftware(softwareId, child, softwareProcesses);
             }
         }
-    }
-
-    private List<ProcessJson> getPidUsers(List<Integer> pids){
-        String processDetailContent = jniService.queryProcessDetails(pids);
-        try {
-            ProcessDetailsJson processDetailsJson = objectMapper.readValue(processDetailContent, ProcessDetailsJson.class);
-            if(processDetailsJson != null){
-                List<ProcessJson> processes = processDetailsJson.getDetails();
-                return processes;
-            }
-        } catch (JsonProcessingException e) {
-            logger.error(e.getMessage(), e);
-        }
-        return null;
     }
 
     private String getSoftwareIdFromImageName(ProcessJson process, boolean isRootNode){

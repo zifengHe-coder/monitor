@@ -24,6 +24,8 @@ public class SystemUtils {
 
     private static String currentPid;
 
+    private static Boolean isWindows7;
+
     public static final String FILE_SEPARATOR = System.getProperty("file.separator");
 
     public static String getOsHome(){
@@ -89,5 +91,12 @@ public class SystemUtils {
 
     public static boolean isLinux(){
         return getSystemOs() == SystemOs.LINUX;
+    }
+
+    public static boolean isWindows7(){
+        if(isWindows7 == null){
+            isWindows7 = isWindows() && System.getProperty("os.version").startsWith("6.");
+        }
+        return isWindows7;
     }
 }
