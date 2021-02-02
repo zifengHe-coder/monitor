@@ -1,7 +1,9 @@
 package com.idaoben.web.monitor.web.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.common.api.bean.ApiPageRequest;
 import com.idaoben.web.common.api.bean.ApiPageResponse;
+import com.idaoben.web.common.excel.ExcelTool;
 import com.idaoben.web.monitor.utils.DownloadUtils;
 import com.idaoben.web.monitor.web.application.ActionApplicationService;
 import com.idaoben.web.monitor.web.command.*;
@@ -9,6 +11,7 @@ import com.idaoben.web.monitor.web.dto.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.validation.annotation.Validated;
@@ -27,11 +30,23 @@ public class ActionController {
     @Resource
     private ActionApplicationService actionApplicationService;
 
+    @Resource
+    private ObjectMapper objectMapper;
+
     @ApiOperation("查询文件读写行为")
     @PostMapping("/listByFileType")
     public ApiPageResponse<ActionFileDto> listByFileType(@RequestBody @Validated ApiPageRequest<ActionFileListCommand> request) {
         Page<ActionFileDto> result = actionApplicationService.listByFileType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "timestamp")));
         return ApiPageResponse.createPageSuccess(result);
+    }
+
+    @ApiOperation("导出文件读写行为")
+    @GetMapping("/exportByFileType")
+    public void exportByFileType(@RequestParam String json, HttpServletResponse response) throws Exception {
+        ActionFileListCommand command = objectMapper.readValue(json, ActionFileListCommand.class);
+        Workbook workbook = actionApplicationService.exportByFileType(command);
+        String fileName = "文件读写行为" + System.currentTimeMillis() + ".xlsx";
+        ExcelTool.exportWorkbook(workbook, fileName, response);
     }
 
     @ApiOperation("查询注册表行为")

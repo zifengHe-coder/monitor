@@ -3,6 +3,7 @@ package com.idaoben.web.monitor.web.application;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.common.entity.Filters;
+import com.idaoben.web.common.excel.ExcelTool;
 import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
@@ -10,6 +11,7 @@ import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
 import com.idaoben.web.monitor.dao.entity.enums.ActionType;
 import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
 import com.idaoben.web.monitor.dao.entity.enums.FileOpType;
+import com.idaoben.web.monitor.excel.ActionFileExcel;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.MonitoringService;
@@ -22,8 +24,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -111,6 +116,21 @@ public class ActionApplicationService {
             }
             setActionUser(dto, pidUsers);
         });
+    }
+
+    @Value("classpath:/action_file.xlsx")
+    private org.springframework.core.io.Resource actionFileTemplate;
+
+    public Workbook exportByFileType(ActionFileListCommand command) throws Exception {
+        Page<ActionFileDto> actionFiles = listByFileType(command, Pageable.unpaged());
+        List<ActionFileExcel> actionFileExcels = new ArrayList<>();
+        for(ActionFileDto actionFile : actionFiles){
+            ActionFileExcel excel = new ActionFileExcel();
+            BeanUtils.copyProperties(actionFile, excel);
+            excel.setTimestamp(actionFile.getTimestamp());
+            actionFileExcels.add(excel);
+        }
+        return ExcelTool.createXSSFExcel(actionFileExcels, actionFileTemplate.getInputStream(), 1, 0);
     }
 
     public Page<ActionRegistryDto> listByRegistryType(ActionRegistryListCommand command, Pageable pageable){
