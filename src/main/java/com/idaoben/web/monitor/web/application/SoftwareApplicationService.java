@@ -21,7 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -322,6 +321,8 @@ public class SoftwareApplicationService {
         }
     }
 
+    private final static List<String> IGNORE_SYSTEM_IMAGE_NAMES = Arrays.asList("csrss.exe", "wininit.exe", "explorer.exe", "winlogon.exe");
+
     private String getSoftwareIdFromImageName(ProcessJson process, boolean isRootNode){
         String imageName = process.getImageName();
         if(SystemUtils.isWindows()){
@@ -329,8 +330,8 @@ public class SoftwareApplicationService {
             //如firefox在管理员权限下获取到是\Device\HarddiskVolume4\Program Files\Mozilla Firefox\firefox.exe，普通用户下是firefox.exe
             String exeName = StringUtils.substringAfterLast(imageName, "\\");
             imageName = StringUtils.isNotEmpty(exeName) ? exeName.toLowerCase() : imageName.toLowerCase();
-            if(isRootNode && "explorer.exe".equals(imageName)){
-                //根进程为explorer.exe的不认为是系统对应软件
+            if(isRootNode && (StringUtils.isEmpty(imageName) || IGNORE_SYSTEM_IMAGE_NAMES.contains(imageName)) || !imageName.endsWith(".exe")){
+                //根进程为系统进程的不认为是对应软件
                 return null;
             }
             String softwareId = exeNameSoftwareIdMap.get(imageName);
