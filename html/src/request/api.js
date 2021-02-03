@@ -24,6 +24,7 @@ let apiArr = [
   "/api/action/downloadNetworkPackage", // 下载网络包
   "/api/action/downloadWriteFilePackage", // 下载对比文件
   '/api/action/downloadDeleteFile', // 删除文件的备份下载
+  "/api/action/exportByFileType", // 导出文件读写行为
 
   "system/getSystemOs", // 查询当前系统
   "system/openFileFolder", // 打开文件位置

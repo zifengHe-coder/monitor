@@ -143,6 +143,14 @@
               </el-option>
             </el-select>
           </template>
+
+          <template v-else-if="item.type === 'range'">
+            <div style="display:flex;align-items:center;">
+              <el-input v-model="formData[item.prop1]" size="mini" style="width: 147px"></el-input>
+              <div style="padding: 0 10px;">-</div>
+              <el-input v-model="formData[item.prop2]" size="mini" style="width: 147px"></el-input>
+            </div>
+          </template>
         </div>
       </div>
       <div class="formItem">
@@ -151,6 +159,9 @@
       </div>
     </div>
 
+    <div class="leftDiv">
+      <slot name="footLeft" :data="formData"></slot>
+    </div>
     <div class="rightDiv">
       <slot name="footRight"></slot>
     </div>
@@ -431,6 +442,9 @@ export default {
   }
   .el-button+.el-button{
     margin-left: 0;
+  }
+  .leftDiv{
+    float:left;
   }
   .rightDiv{
     float: right;
