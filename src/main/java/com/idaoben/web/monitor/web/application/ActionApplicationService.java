@@ -249,7 +249,7 @@ public class ActionApplicationService {
     public Page<ActionDeviceDto> listByDeviceType(ActionDeviceListCommand command, Pageable pageable){
         Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.DEVICE).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
-                .likeFuzzy(Action::getCmdLine, command.getDeviceName())
+                .likeFuzzy(Action::getDeviceName, command.getDeviceName())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
         addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
