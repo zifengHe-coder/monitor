@@ -156,12 +156,15 @@
       <div class="formItem">
         <el-button class="btn" :size="formSize" type="primary" @click="searchData">查询</el-button>
         <el-button class="btn" :size="formSize" type="primary" @click="clearFormData(true)" v-if="showResetBtn" plain>重置</el-button>
+        <!-- <div class="leftDiv"> -->
+          <slot name="footLeft" :data="formData"></slot>
+        <!-- </div> -->
       </div>
     </div>
 
-    <div class="leftDiv">
+    <!-- <div class="leftDiv">
       <slot name="footLeft" :data="formData"></slot>
-    </div>
+    </div> -->
     <div class="rightDiv">
       <slot name="footRight"></slot>
     </div>

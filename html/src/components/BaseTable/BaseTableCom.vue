@@ -106,10 +106,11 @@
                 >{{getCellWord(scope, item)}}</span>
                 <el-popover
                   placement="top-start"
-                  title="警告"
                   width="300"
                   trigger="hover"
-                  content="进程完整性级别为不可信级或应用容器级，无法加载监听功能。完整性级别是Windows系统的安全机制。运行于不可信级或应用容器级的进程，Windows系统将限制其访问资源能力，因而无法正常加载监控功能。">
+                  >
+                <p>可能原因1：进程做了自我注入，这是一种防止外部注入的防御措施，该措施会导致进程无法注入监听。</p>
+                <p>可能原因2：进程完整性级别为不可信级或应用容器级，无法加载监听功能。完整性级别是Windows系统的安全机制。运行于不可信级或应用容器级的进程，Windows系统将限制其访问资源能力，因而无法正常加载监控功能。</p>
                 <img
                   slot="reference"
                   v-if="scope.row.showIcon"

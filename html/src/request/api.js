@@ -28,7 +28,7 @@ let apiArr = [
   "/api/action/exportByProcessType", // 导出进程调用形成
   "/api/action/exportByRegistryType", // 导出注册表行为
   "/api/action/exportByDeviceType", // 导出设备控制行为
-  "/api/action/exportByNetwordType", // 导出网络访问行为
+  "/api/action/exportByNetworkType", // 导出网络访问行为
   "/api/action/exportBySecurityType", // 导出对象权限行为
 
   "system/getSystemOs", // 查询当前系统
