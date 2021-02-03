@@ -25,7 +25,11 @@
       </div>
 
       <div v-if="tabContentOnff" class="records">
-        <BaseSearchCom :comData="comData" :formLabel="searchLabels" :getData="getList" :labelWidth="labelWidth" />
+        <BaseSearchCom :comData="comData" :formLabel="searchLabels" :getData="getList" :labelWidth="labelWidth" style="margin-bottom: 0;padding:0;">
+          <template v-slot:footLeft="scope">
+            <el-button @click="exportData(scope)" size="mini" type="primary" style="margin-bottom: 15px;margin-top: 10px;">导出数据</el-button>
+          </template>
+        </BaseSearchCom>
         <BaseTableCom 
           :hadIndex='true' 
           :tableData="tableData" 
@@ -69,6 +73,7 @@
 </template>
 
 <script>
+// import { delete } from 'vue/types/umd';
   let timer = null; //定时器
   export default {
     data() {
@@ -229,6 +234,25 @@
       }
     },
     methods: {
+      // 导出excel
+      exportData(scope){
+        const data = {};
+        if(scope.data.operatingTime_date){
+          scope.data.startTime = this.$utils.funcData.formDateGMT(scope.data.operatingTime_date[0]);
+          scope.data.endTime = this.$utils.funcData.formDateGMT(scope.data.operatingTime_date[1]);
+          delete scope.data.operatingTime_date;
+          delete scope.data.operatingTimeStart;
+        }
+        for(let key in scope.data){
+          if(scope.data[key] != null && scope.data[key] !== ''){
+            data[key] = scope.data[key]
+          }
+        }
+        let string = encodeURIComponent(JSON.stringify(data))
+        let a = document.createElement('a');
+        a.href = window.location.origin + this.$api.actionExportByFileType + `?json=${string}`
+        a.click()
+      },
       // 显示消息通讯
       showMsg(data){
         this.showMsgDialog = true
@@ -393,6 +417,11 @@
               label: '操作时间',
               itemType: 'datetime',
               format: 'yyyy-MM-dd HH:mm:ss'
+            },{
+              type: 'range',
+              label: '网络流量',
+              prop1: 'bytesMin',
+              prop2: 'bytesMax'
             }]
             this.tableLabels = [{
                 type: 'word',
@@ -896,6 +925,7 @@
         }
       },
       getList(params) {
+        // console.log(params)
         let postParams = this.handleParams(params);
         // 处理时间
         if (params.data && params.data.operatingTime_date) {
@@ -911,6 +941,18 @@
         } else {
           // 如果没有historyId，就用软件详情的taskId
           postParams.data.taskId = this.softwareDetail.taskId
+        }
+        if(params.data.bytesMax){
+          params.data.bytesMax = Number(params.data.bytesMax)
+          if(typeof params.data.bytesMax !== 'number'){
+            this.$message.error('网络流量只能输入数字')
+          }
+        }
+        if(params.data.bytesMin){
+          params.data.bytesMin = Number(params.data.bytesMin)
+          if(typeof params.data.bytesMin !== 'number'){
+            this.$message.error('网络流量只能输入数字')
+          }
         }
         return new Promise((res, rej) => {
           this.$http({
