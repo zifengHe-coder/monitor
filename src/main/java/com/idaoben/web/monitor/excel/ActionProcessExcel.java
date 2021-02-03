@@ -10,7 +10,7 @@ public class ActionProcessExcel {
     @CellNum(index = 0)
     private String user;
 
-    @CellNum(index = 1)
+    @CellNum(index = 1, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private ZonedDateTime timestamp;
 
     @CellNum(index = 2)
