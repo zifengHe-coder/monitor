@@ -10,6 +10,7 @@ import com.idaoben.web.monitor.web.command.*;
 import com.idaoben.web.monitor.web.dto.*;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.data.domain.Page;
@@ -42,7 +43,7 @@ public class ActionController {
 
     @ApiOperation("导出文件读写行为")
     @GetMapping("/exportByFileType")
-    public void exportByFileType(@RequestParam String json, HttpServletResponse response) throws Exception {
+    public void exportByFileType(@ApiParam("与查询一样的参数json格式") @RequestParam String json, HttpServletResponse response) throws Exception {
         ActionFileListCommand command = objectMapper.readValue(json, ActionFileListCommand.class);
         Workbook workbook = actionApplicationService.exportByFileType(command);
         String fileName = "文件读写行为" + System.currentTimeMillis() + ".xlsx";
@@ -56,11 +57,29 @@ public class ActionController {
         return ApiPageResponse.createPageSuccess(result);
     }
 
+    @ApiOperation("导出注册表行为")
+    @GetMapping("/exportByRegistryType")
+    public void exportByRegistryType(@ApiParam("与查询一样的参数json格式") @RequestParam String json, HttpServletResponse response) throws Exception {
+        ActionRegistryListCommand command = objectMapper.readValue(json, ActionRegistryListCommand.class);
+        Workbook workbook = actionApplicationService.exportByRegistryType(command);
+        String fileName = "注册表行为" + System.currentTimeMillis() + ".xlsx";
+        ExcelTool.exportWorkbook(workbook, fileName, response);
+    }
+
     @ApiOperation("查询进程调用行为")
     @PostMapping("/listByProcessType")
     public ApiPageResponse<ActionProcessDto> listByProcessType(@RequestBody @Validated ApiPageRequest<ActionProcessListCommand> request) {
         Page<ActionProcessDto> result = actionApplicationService.listByProcessType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "timestamp")));
         return ApiPageResponse.createPageSuccess(result);
+    }
+
+    @ApiOperation("导出进程调用行为")
+    @GetMapping("/exportByProcessType")
+    public void exportByProcessType(@ApiParam("与查询一样的参数json格式") @RequestParam String json, HttpServletResponse response) throws Exception {
+        ActionProcessListCommand command = objectMapper.readValue(json, ActionProcessListCommand.class);
+        Workbook workbook = actionApplicationService.exportByProcessType(command);
+        String fileName = "进程调用行为" + System.currentTimeMillis() + ".xlsx";
+        ExcelTool.exportWorkbook(workbook, fileName, response);
     }
 
     @ApiOperation("查询网络访问行为")
@@ -115,6 +134,5 @@ public class ActionController {
         } catch (Exception e){
             DownloadUtils.sendErrorFileToClient(e.getMessage(), response);
         }
-
     }
 }
