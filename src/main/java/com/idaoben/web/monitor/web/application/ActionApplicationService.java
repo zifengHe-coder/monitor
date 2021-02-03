@@ -8,6 +8,7 @@ import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.*;
+import com.idaoben.web.monitor.excel.ActionDeviceExcel;
 import com.idaoben.web.monitor.excel.ActionFileExcel;
 import com.idaoben.web.monitor.excel.ActionProcessExcel;
 import com.idaoben.web.monitor.excel.ActionRegistryExcel;
@@ -242,6 +243,21 @@ public class ActionApplicationService {
         return DtoTransformer.asPage(ActionDeviceDto.class).apply(actions, (domain, dto) -> {
             setActionUser(dto, pidUsers);
         });
+    }
+
+    @Value("classpath:/action_device.xlsx")
+    private org.springframework.core.io.Resource actionDeviceTemplate;
+
+    public Workbook exportByDeviceType(ActionDeviceListCommand command) throws Exception {
+        Page<ActionDeviceDto> actions = listByDeviceType(command, Pageable.unpaged());
+        List<ActionDeviceExcel> excels = new ArrayList<>();
+        for(ActionDeviceDto action : actions){
+            ActionDeviceExcel excel = new ActionDeviceExcel();
+            BeanUtils.copyProperties(action, excel);
+            excel.setTimestamp(action.getTimestamp());
+            excels.add(excel);
+        }
+        return ExcelTool.createXSSFExcel(excels, actionDeviceTemplate.getInputStream(), 1, 0);
     }
 
     public Page<ActionSecurityDto> listBySecurityType(ActionSecurityListCommand command, Pageable pageable){

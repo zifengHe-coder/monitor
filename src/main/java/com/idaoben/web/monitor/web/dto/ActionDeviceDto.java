@@ -9,10 +9,6 @@ import io.swagger.annotations.ApiModelProperty;
 @EnableAssembling
 public interface ActionDeviceDto extends ActionBaseDto{
 
-    @ApiModelProperty("进程调用类型：16384:启动进程, 20480:进程注入, 20481：消息通讯")
-    @Mapping
-    Integer getType();
-
     @ApiModelProperty("设备名称")
     @Mapping
     String getDeviceName();

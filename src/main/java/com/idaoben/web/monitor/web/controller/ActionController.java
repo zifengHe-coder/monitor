@@ -96,6 +96,15 @@ public class ActionController {
         return ApiPageResponse.createPageSuccess(result);
     }
 
+    @ApiOperation("导出设备访问行为")
+    @GetMapping("/exportByDeviceType")
+    public void exportByDeviceType(@ApiParam("与查询一样的参数json格式") @RequestParam String json, HttpServletResponse response) throws Exception {
+        ActionDeviceListCommand command = objectMapper.readValue(json, ActionDeviceListCommand.class);
+        Workbook workbook = actionApplicationService.exportByDeviceType(command);
+        String fileName = "设备访问行为" + System.currentTimeMillis() + ".xlsx";
+        ExcelTool.exportWorkbook(workbook, fileName, response);
+    }
+
     @ApiOperation("查询对象权限行为")
     @PostMapping("/listBySecurityType")
     public ApiPageResponse<ActionSecurityDto> listBySecurityType(@RequestBody @Validated ApiPageRequest<ActionSecurityListCommand> request) {
