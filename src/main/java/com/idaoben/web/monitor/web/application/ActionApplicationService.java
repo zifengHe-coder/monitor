@@ -465,7 +465,7 @@ public class ActionApplicationService {
         handlePidAction(pid, taskId, thread, 0);
     }
 
-    private final static int MAX_RETRY_TIME = 10;
+    private final static int MAX_RETRY_TIME = 4;
 
     private void handlePidAction(String pid, Long taskId, ActionHanlderThread thread, int retry){
         File pidFolder = new File(ACTION_FOLDER, pid);
