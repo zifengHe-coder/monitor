@@ -7,11 +7,9 @@ import com.idaoben.web.common.excel.ExcelTool;
 import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
-import com.idaoben.web.monitor.dao.entity.enums.ActionGroup;
-import com.idaoben.web.monitor.dao.entity.enums.ActionType;
-import com.idaoben.web.monitor.dao.entity.enums.FileAccess;
-import com.idaoben.web.monitor.dao.entity.enums.FileOpType;
+import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.excel.ActionFileExcel;
+import com.idaoben.web.monitor.excel.ActionRegistryExcel;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.MonitoringService;
@@ -143,6 +141,26 @@ public class ActionApplicationService {
         return DtoTransformer.asPage(ActionRegistryDto.class).apply(actions, (domain, dto) -> {
             setActionUser(dto, pidUsers);
         });
+    }
+
+    @Value("classpath:/action_registry.xlsx")
+    private org.springframework.core.io.Resource actionRegistryTemplate;
+
+    public Workbook exportByRegistryType(ActionRegistryListCommand command) throws Exception {
+        Page<ActionRegistryDto> actionRegistries = listByRegistryType(command, Pageable.unpaged());
+        List<ActionRegistryExcel> actionRegistryExcels = new ArrayList<>();
+        for(ActionRegistryDto actionRegistry : actionRegistries){
+            ActionRegistryExcel excel = new ActionRegistryExcel();
+            BeanUtils.copyProperties(actionRegistry, excel, "type");
+            excel.setTimestamp(actionRegistry.getTimestamp());
+            for(ActionTypeEnum actionTypeEnum : ActionTypeEnum.values()){
+                if(Objects.equals(actionTypeEnum.value(), actionRegistry.getType())){
+                    excel.setType(actionTypeEnum);
+                }
+            }
+            actionRegistryExcels.add(excel);
+        }
+        return ExcelTool.createXSSFExcel(actionRegistryExcels, actionRegistryTemplate.getInputStream(), 1, 0);
     }
 
     public Page<ActionProcessDto> listByProcessType(ActionProcessListCommand command, Pageable pageable){
