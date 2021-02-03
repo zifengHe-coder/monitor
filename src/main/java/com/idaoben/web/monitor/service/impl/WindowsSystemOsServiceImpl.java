@@ -49,6 +49,8 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
 
     private static String[] sensitivityPaths;
 
+    private static String[] ignoreSensitivityPaths;
+
     private static final String[] FILE_TYPE_SEPARATORS = new String[]{"\\??\\", "\\\\?\\"};
 
     private Map<Integer, Long> pidCpuTimeMap = new HashMap<>();
@@ -60,6 +62,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
     @PostConstruct
     public void init(){
         sensitivityPaths = new String[]{(SystemUtils.getOsHome() + "\\WINDOWS\\").toLowerCase()};
+        ignoreSensitivityPaths = new String[]{(SystemUtils.getOsHome() + "\\WINDOWS\\Fonts\\").toLowerCase()};
     }
 
     @Override
@@ -303,7 +306,7 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
 
     @Override
     public FileSensitivity getFileSensitivity(String path) {
-        if(StringUtils.startsWithAny(path.toLowerCase(), sensitivityPaths)){
+        if(StringUtils.startsWithAny(path.toLowerCase(), sensitivityPaths) && !StringUtils.startsWithAny(path.toLowerCase(), ignoreSensitivityPaths)){
             return FileSensitivity.HIGH;
         }
         return FileSensitivity.LOW;

@@ -124,7 +124,6 @@ public class ActionApplicationService {
         for(ActionFileDto action : actions){
             ActionFileExcel excel = new ActionFileExcel();
             BeanUtils.copyProperties(action, excel);
-            excel.setTimestamp(action.getTimestamp());
             excels.add(excel);
         }
         return ExcelTool.createXSSFExcel(excels, actionFileTemplate.getInputStream(), 1, 0);
@@ -151,7 +150,6 @@ public class ActionApplicationService {
         for(ActionRegistryDto action : actions){
             ActionRegistryExcel excel = new ActionRegistryExcel();
             BeanUtils.copyProperties(action, excel, "type");
-            excel.setTimestamp(action.getTimestamp());
             for(ActionRegistryType type : ActionRegistryType.values()){
                 if(Objects.equals(type.value(), action.getType())){
                     excel.setType(type);
@@ -183,7 +181,6 @@ public class ActionApplicationService {
         for(ActionProcessDto action : actions){
             ActionProcessExcel excel = new ActionProcessExcel();
             BeanUtils.copyProperties(action, excel, "type");
-            excel.setTimestamp(action.getTimestamp());
             for(ActionProcessType type : ActionProcessType.values()){
                 if(Objects.equals(type.value(), action.getType())){
                     excel.setType(type);
@@ -239,7 +236,6 @@ public class ActionApplicationService {
         for(ActionNetworkDto action : actions){
             ActionNetworkExcel excel = new ActionNetworkExcel();
             BeanUtils.copyProperties(action, excel);
-            excel.setTimestamp(action.getTimestamp());
             for(ActionNetworkType type : ActionNetworkType.values()){
                 if(Objects.equals(type.value(), action.getType())){
                     excel.setType(type);
@@ -271,7 +267,6 @@ public class ActionApplicationService {
         for(ActionDeviceDto action : actions){
             ActionDeviceExcel excel = new ActionDeviceExcel();
             BeanUtils.copyProperties(action, excel);
-            excel.setTimestamp(action.getTimestamp());
             excels.add(excel);
         }
         return ExcelTool.createXSSFExcel(excels, actionDeviceTemplate.getInputStream(), 1, 0);
@@ -298,7 +293,6 @@ public class ActionApplicationService {
         for(ActionSecurityDto action : actions){
             ActionSecurityExcel excel = new ActionSecurityExcel();
             BeanUtils.copyProperties(action, excel);
-            excel.setTimestamp(action.getTimestamp());
             excels.add(excel);
         }
         return ExcelTool.createXSSFExcel(excels, actionSecurityTemplate.getInputStream(), 1, 0);
