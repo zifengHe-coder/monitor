@@ -249,7 +249,6 @@
           }
         }
         if(this.softwareDetail.taskId)data.taskId = this.softwareDetail.taskId;
-        console.log(data)
         let string = encodeURIComponent(JSON.stringify(data))
         let a = document.createElement('a');
         // 1网络访问 2文件读写 3注册表 4进程调用 5设备控制 6权限对象
@@ -755,7 +754,7 @@
               label: '用户名'
             },{
               type: 'input',
-              prop: 'fileName',
+              prop: 'deviceName',
               label: '设备名称'
             }, {
               type: 'datePicker',
