@@ -248,6 +248,8 @@
             data[key] = scope.data[key]
           }
         }
+        if(this.softwareDetail.taskId)data.taskId = this.softwareDetail.taskId;
+        console.log(data)
         let string = encodeURIComponent(JSON.stringify(data))
         let a = document.createElement('a');
         // 1网络访问 2文件读写 3注册表 4进程调用 5设备控制 6权限对象
@@ -271,6 +273,7 @@
             a.href = window.location.origin + this.$api.actionExportBySecurityType + `?json=${string}`;
             break;
         }
+        a.target = '_blank';
         a.click()
       },
       // 显示消息通讯
