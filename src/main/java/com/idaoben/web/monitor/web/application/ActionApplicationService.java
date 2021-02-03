@@ -289,6 +289,21 @@ public class ActionApplicationService {
         });
     }
 
+    @Value("classpath:/action_security.xlsx")
+    private org.springframework.core.io.Resource actionSecurityTemplate;
+
+    public Workbook exportBySecurityType(ActionSecurityListCommand command) throws Exception {
+        Page<ActionSecurityDto> actions = listBySecurityType(command, Pageable.unpaged());
+        List<ActionSecurityExcel> excels = new ArrayList<>();
+        for(ActionSecurityDto action : actions){
+            ActionSecurityExcel excel = new ActionSecurityExcel();
+            BeanUtils.copyProperties(action, excel);
+            excel.setTimestamp(action.getTimestamp());
+            excels.add(excel);
+        }
+        return ExcelTool.createXSSFExcel(excels, actionSecurityTemplate.getInputStream(), 1, 0);
+    }
+
     private void setActionUser(ActionBaseDto dto, Map<String, String> pidUsers){
         if(pidUsers != null && pidUsers.containsKey(dto.getPid())){
             dto.setUser(pidUsers.get(dto.getPid()));

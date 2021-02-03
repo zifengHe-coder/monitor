@@ -121,6 +121,15 @@ public class ActionController {
         return ApiPageResponse.createPageSuccess(result);
     }
 
+    @ApiOperation("导出对象权限行为")
+    @GetMapping("/exportBySecurityType")
+    public void exportBySecurityType(@ApiParam("与查询一样的参数json格式") @RequestParam String json, HttpServletResponse response) throws Exception {
+        ActionSecurityListCommand command = objectMapper.readValue(json, ActionSecurityListCommand.class);
+        Workbook workbook = actionApplicationService.exportBySecurityType(command);
+        String fileName = "对象权限行为" + System.currentTimeMillis() + ".xlsx";
+        ExcelTool.exportWorkbook(workbook, fileName, response);
+    }
+
     @ApiOperation("网络包下载")
     @GetMapping("downloadNetworkPackage")
     public void downloadNetworkPackage(String uuid, HttpServletResponse response) throws IOException {
