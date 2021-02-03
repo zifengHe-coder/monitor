@@ -9,6 +9,7 @@ import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.*;
 import com.idaoben.web.monitor.excel.ActionFileExcel;
+import com.idaoben.web.monitor.excel.ActionProcessExcel;
 import com.idaoben.web.monitor.excel.ActionRegistryExcel;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
@@ -120,15 +121,15 @@ public class ActionApplicationService {
     private org.springframework.core.io.Resource actionFileTemplate;
 
     public Workbook exportByFileType(ActionFileListCommand command) throws Exception {
-        Page<ActionFileDto> actionFiles = listByFileType(command, Pageable.unpaged());
-        List<ActionFileExcel> actionFileExcels = new ArrayList<>();
-        for(ActionFileDto actionFile : actionFiles){
+        Page<ActionFileDto> actions = listByFileType(command, Pageable.unpaged());
+        List<ActionFileExcel> excels = new ArrayList<>();
+        for(ActionFileDto action : actions){
             ActionFileExcel excel = new ActionFileExcel();
-            BeanUtils.copyProperties(actionFile, excel);
-            excel.setTimestamp(actionFile.getTimestamp());
-            actionFileExcels.add(excel);
+            BeanUtils.copyProperties(action, excel);
+            excel.setTimestamp(action.getTimestamp());
+            excels.add(excel);
         }
-        return ExcelTool.createXSSFExcel(actionFileExcels, actionFileTemplate.getInputStream(), 1, 0);
+        return ExcelTool.createXSSFExcel(excels, actionFileTemplate.getInputStream(), 1, 0);
     }
 
     public Page<ActionRegistryDto> listByRegistryType(ActionRegistryListCommand command, Pageable pageable){
@@ -147,20 +148,20 @@ public class ActionApplicationService {
     private org.springframework.core.io.Resource actionRegistryTemplate;
 
     public Workbook exportByRegistryType(ActionRegistryListCommand command) throws Exception {
-        Page<ActionRegistryDto> actionRegistries = listByRegistryType(command, Pageable.unpaged());
-        List<ActionRegistryExcel> actionRegistryExcels = new ArrayList<>();
-        for(ActionRegistryDto actionRegistry : actionRegistries){
+        Page<ActionRegistryDto> actions = listByRegistryType(command, Pageable.unpaged());
+        List<ActionRegistryExcel> excels = new ArrayList<>();
+        for(ActionRegistryDto action : actions){
             ActionRegistryExcel excel = new ActionRegistryExcel();
-            BeanUtils.copyProperties(actionRegistry, excel, "type");
-            excel.setTimestamp(actionRegistry.getTimestamp());
-            for(ActionTypeEnum actionTypeEnum : ActionTypeEnum.values()){
-                if(Objects.equals(actionTypeEnum.value(), actionRegistry.getType())){
-                    excel.setType(actionTypeEnum);
+            BeanUtils.copyProperties(action, excel, "type");
+            excel.setTimestamp(action.getTimestamp());
+            for(ActionRegistryType actionRegistryType : ActionRegistryType.values()){
+                if(Objects.equals(actionRegistryType.value(), action.getType())){
+                    excel.setType(actionRegistryType);
                 }
             }
-            actionRegistryExcels.add(excel);
+            excels.add(excel);
         }
-        return ExcelTool.createXSSFExcel(actionRegistryExcels, actionRegistryTemplate.getInputStream(), 1, 0);
+        return ExcelTool.createXSSFExcel(excels, actionRegistryTemplate.getInputStream(), 1, 0);
     }
 
     public Page<ActionProcessDto> listByProcessType(ActionProcessListCommand command, Pageable pageable){
@@ -173,6 +174,26 @@ public class ActionApplicationService {
         return DtoTransformer.asPage(ActionProcessDto.class).apply(actions, (domain, dto) -> {
             setActionUser(dto, pidUsers);
         });
+    }
+
+    @Value("classpath:/action_process.xlsx")
+    private org.springframework.core.io.Resource actionProcessTemplate;
+
+    public Workbook exportByProcessType(ActionProcessListCommand command) throws Exception {
+        Page<ActionProcessDto> actions = listByProcessType(command, Pageable.unpaged());
+        List<ActionProcessExcel> excels = new ArrayList<>();
+        for(ActionProcessDto action : actions){
+            ActionProcessExcel excel = new ActionProcessExcel();
+            BeanUtils.copyProperties(action, excel, "type");
+            excel.setTimestamp(action.getTimestamp());
+            for(ActionProcessType actionProcessType : ActionProcessType.values()){
+                if(Objects.equals(actionProcessType.value(), action.getType())){
+                    excel.setType(actionProcessType);
+                }
+            }
+            excels.add(excel);
+        }
+        return ExcelTool.createXSSFExcel(excels, actionRegistryTemplate.getInputStream(), 1, 0);
     }
 
     public Page<ActionNetworkDto> listByNetworkType(ActionNetworkListCommand command, Pageable pageable){

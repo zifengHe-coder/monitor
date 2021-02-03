@@ -73,6 +73,15 @@ public class ActionController {
         return ApiPageResponse.createPageSuccess(result);
     }
 
+    @ApiOperation("导出进程调用行为")
+    @GetMapping("/exportByProcessType")
+    public void exportByProcessType(@ApiParam("与查询一样的参数json格式") @RequestParam String json, HttpServletResponse response) throws Exception {
+        ActionProcessListCommand command = objectMapper.readValue(json, ActionProcessListCommand.class);
+        Workbook workbook = actionApplicationService.exportByProcessType(command);
+        String fileName = "进程调用行为" + System.currentTimeMillis() + ".xlsx";
+        ExcelTool.exportWorkbook(workbook, fileName, response);
+    }
+
     @ApiOperation("查询网络访问行为")
     @PostMapping("/listByNetworkType")
     public ApiPageResponse<ActionNetworkDto> listByNetworkType(@RequestBody @Validated ApiPageRequest<ActionNetworkListCommand> request) {

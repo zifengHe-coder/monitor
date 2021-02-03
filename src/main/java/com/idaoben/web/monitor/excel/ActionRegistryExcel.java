@@ -1,7 +1,7 @@
 package com.idaoben.web.monitor.excel;
 
 import com.idaoben.web.common.excel.CellNum;
-import com.idaoben.web.monitor.dao.entity.enums.ActionTypeEnum;
+import com.idaoben.web.monitor.dao.entity.enums.ActionRegistryType;
 
 import java.time.ZonedDateTime;
 
@@ -14,7 +14,7 @@ public class ActionRegistryExcel {
     private ZonedDateTime timestamp;
 
     @CellNum(index = 2)
-    private ActionTypeEnum type;
+    private ActionRegistryType type;
 
     @CellNum(index = 3)
     private String parent;
@@ -53,11 +53,11 @@ public class ActionRegistryExcel {
         this.timestamp = timestamp;
     }
 
-    public ActionTypeEnum getType() {
+    public ActionRegistryType getType() {
         return type;
     }
 
-    public void setType(ActionTypeEnum type) {
+    public void setType(ActionRegistryType type) {
         this.type = type;
     }
 
