@@ -89,6 +89,15 @@ public class ActionController {
         return ApiPageResponse.createPageSuccess(result);
     }
 
+    @ApiOperation("导出网络访问行为")
+    @GetMapping("/exportByNetworkType")
+    public void exportByNetworkType(@ApiParam("与查询一样的参数json格式") @RequestParam String json, HttpServletResponse response) throws Exception {
+        ActionNetworkListCommand command = objectMapper.readValue(json, ActionNetworkListCommand.class);
+        Workbook workbook = actionApplicationService.exportByNetworkType(command);
+        String fileName = "网络访问行为" + System.currentTimeMillis() + ".xlsx";
+        ExcelTool.exportWorkbook(workbook, fileName, response);
+    }
+
     @ApiOperation("查询设备访问行为")
     @PostMapping("/listByDeviceType")
     public ApiPageResponse<ActionDeviceDto> listByDeviceType(@RequestBody @Validated ApiPageRequest<ActionDeviceListCommand> request) {
@@ -96,11 +105,29 @@ public class ActionController {
         return ApiPageResponse.createPageSuccess(result);
     }
 
+    @ApiOperation("导出设备访问行为")
+    @GetMapping("/exportByDeviceType")
+    public void exportByDeviceType(@ApiParam("与查询一样的参数json格式") @RequestParam String json, HttpServletResponse response) throws Exception {
+        ActionDeviceListCommand command = objectMapper.readValue(json, ActionDeviceListCommand.class);
+        Workbook workbook = actionApplicationService.exportByDeviceType(command);
+        String fileName = "设备访问行为" + System.currentTimeMillis() + ".xlsx";
+        ExcelTool.exportWorkbook(workbook, fileName, response);
+    }
+
     @ApiOperation("查询对象权限行为")
     @PostMapping("/listBySecurityType")
     public ApiPageResponse<ActionSecurityDto> listBySecurityType(@RequestBody @Validated ApiPageRequest<ActionSecurityListCommand> request) {
         Page<ActionSecurityDto> result = actionApplicationService.listBySecurityType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "timestamp")));
         return ApiPageResponse.createPageSuccess(result);
+    }
+
+    @ApiOperation("导出对象权限行为")
+    @GetMapping("/exportBySecurityType")
+    public void exportBySecurityType(@ApiParam("与查询一样的参数json格式") @RequestParam String json, HttpServletResponse response) throws Exception {
+        ActionSecurityListCommand command = objectMapper.readValue(json, ActionSecurityListCommand.class);
+        Workbook workbook = actionApplicationService.exportBySecurityType(command);
+        String fileName = "对象权限行为" + System.currentTimeMillis() + ".xlsx";
+        ExcelTool.exportWorkbook(workbook, fileName, response);
     }
 
     @ApiOperation("网络包下载")
