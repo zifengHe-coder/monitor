@@ -571,7 +571,7 @@ public class ActionApplicationService {
             } else if(ActionType.isDeviceType(action.getType())){
                 action = setActionDeviceInfo(action, pid);
             } else if(ActionType.isRegistryType(action.getType())){
-                setActionRegistryInfo(action, pid);
+                action = setActionRegistryInfo(action, pid);
             } else if(ActionType.isProcessType(action.getType())){
                 systemOsService.setActionProcessInfo(action, pid);
             } else if(ActionType.isSecurity(action.getType())){
@@ -773,8 +773,12 @@ public class ActionApplicationService {
         return action;
     }
 
-    private void setActionRegistryInfo(Action action, String pid){
+    private Action setActionRegistryInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.REGISTRY);
+        if(action.getType() == ActionType.REGISTRY_DELETE_KEY && StringUtils.isEmpty(action.getKey())){
+            return null;
+        }
+        return action;
     }
 
     private Action setActionSecurityInfo(Action action, String pid){
