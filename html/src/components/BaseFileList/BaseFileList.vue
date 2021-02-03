@@ -23,7 +23,7 @@
           <div>
             <img :src="item.isDirectory?iconUrl[0]:iconUrl[1]" width="40px" height="40px">
           </div>
-          <div class="title">{{ item.path }}</div>
+          <div class="title">{{ item.name }}</div>
         </div>
       </div>
     </div>
