@@ -8,10 +8,7 @@ import com.idaoben.web.common.exception.ServiceException;
 import com.idaoben.web.common.util.DtoTransformer;
 import com.idaoben.web.monitor.dao.entity.Action;
 import com.idaoben.web.monitor.dao.entity.enums.*;
-import com.idaoben.web.monitor.excel.ActionDeviceExcel;
-import com.idaoben.web.monitor.excel.ActionFileExcel;
-import com.idaoben.web.monitor.excel.ActionProcessExcel;
-import com.idaoben.web.monitor.excel.ActionRegistryExcel;
+import com.idaoben.web.monitor.excel.*;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.ActionService;
 import com.idaoben.web.monitor.service.MonitoringService;
@@ -155,9 +152,9 @@ public class ActionApplicationService {
             ActionRegistryExcel excel = new ActionRegistryExcel();
             BeanUtils.copyProperties(action, excel, "type");
             excel.setTimestamp(action.getTimestamp());
-            for(ActionRegistryType actionRegistryType : ActionRegistryType.values()){
-                if(Objects.equals(actionRegistryType.value(), action.getType())){
-                    excel.setType(actionRegistryType);
+            for(ActionRegistryType type : ActionRegistryType.values()){
+                if(Objects.equals(type.value(), action.getType())){
+                    excel.setType(type);
                 }
             }
             excels.add(excel);
@@ -187,9 +184,9 @@ public class ActionApplicationService {
             ActionProcessExcel excel = new ActionProcessExcel();
             BeanUtils.copyProperties(action, excel, "type");
             excel.setTimestamp(action.getTimestamp());
-            for(ActionProcessType actionProcessType : ActionProcessType.values()){
-                if(Objects.equals(actionProcessType.value(), action.getType())){
-                    excel.setType(actionProcessType);
+            for(ActionProcessType type : ActionProcessType.values()){
+                if(Objects.equals(type.value(), action.getType())){
+                    excel.setType(type);
                 }
             }
             excels.add(excel);
@@ -231,6 +228,26 @@ public class ActionApplicationService {
             protocol = "UDP";
         }
         return protocol;
+    }
+
+    @Value("classpath:/action_network.xlsx")
+    private org.springframework.core.io.Resource actionNetworkTemplate;
+
+    public Workbook exportByNetworkType(ActionNetworkListCommand command) throws Exception {
+        Page<ActionNetworkDto> actions = listByNetworkType(command, Pageable.unpaged());
+        List<ActionNetworkExcel> excels = new ArrayList<>();
+        for(ActionNetworkDto action : actions){
+            ActionNetworkExcel excel = new ActionNetworkExcel();
+            BeanUtils.copyProperties(action, excel);
+            excel.setTimestamp(action.getTimestamp());
+            for(ActionNetworkType type : ActionNetworkType.values()){
+                if(Objects.equals(type.value(), action.getType())){
+                    excel.setType(type);
+                }
+            }
+            excels.add(excel);
+        }
+        return ExcelTool.createXSSFExcel(excels, actionNetworkTemplate.getInputStream(), 1, 0);
     }
 
     public Page<ActionDeviceDto> listByDeviceType(ActionDeviceListCommand command, Pageable pageable){

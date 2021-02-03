@@ -89,6 +89,15 @@ public class ActionController {
         return ApiPageResponse.createPageSuccess(result);
     }
 
+    @ApiOperation("导出网络访问行为")
+    @GetMapping("/exportByNetworkType")
+    public void exportByNetworkType(@ApiParam("与查询一样的参数json格式") @RequestParam String json, HttpServletResponse response) throws Exception {
+        ActionNetworkListCommand command = objectMapper.readValue(json, ActionNetworkListCommand.class);
+        Workbook workbook = actionApplicationService.exportByNetworkType(command);
+        String fileName = "网络访问行为" + System.currentTimeMillis() + ".xlsx";
+        ExcelTool.exportWorkbook(workbook, fileName, response);
+    }
+
     @ApiOperation("查询设备访问行为")
     @PostMapping("/listByDeviceType")
     public ApiPageResponse<ActionDeviceDto> listByDeviceType(@RequestBody @Validated ApiPageRequest<ActionDeviceListCommand> request) {
