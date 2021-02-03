@@ -57,7 +57,9 @@ public class MonitoringServiceImpl implements MonitoringService {
     @Override
     public void removeMonitoringTask(String softwareId) {
         MonitoringTask task = monitoringSoftwareTaskMap.remove(softwareId);
-        task.getPids().forEach( pid -> pidSoftwareIdMap.remove(pid));
+        if(task != null){
+            task.getPids().forEach( pid -> pidSoftwareIdMap.remove(pid));
+        }
     }
 
     @Override

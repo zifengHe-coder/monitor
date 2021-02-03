@@ -1,6 +1,5 @@
 package com.idaoben.web.monitor.web.application;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.common.entity.Filters;
 import com.idaoben.web.common.exception.ServiceException;
@@ -22,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
+@ConfigurationProperties(prefix = "monitor.software")
 public class SoftwareApplicationService {
 
     private static final Logger logger = LoggerFactory.getLogger(SoftwareApplicationService.class);
@@ -57,10 +58,9 @@ public class SoftwareApplicationService {
     private TaskService taskService;
 
     @Resource
-    private JniService jniService;
-
-    @Resource
     private ObjectMapper objectMapper;
+
+    private Map<String, String> map;
 
     private Map<String, SoftwareDto> softwareMap;
 
@@ -303,9 +303,9 @@ public class SoftwareApplicationService {
             if(SystemUtils.isWindows() && monitoringService.isMonitoring(softwareId)
                     && !monitoringService.isPidMonitoringError(softwareId, pidStr) && !monitoringService.isPidMonitoring(softwareId, pidStr)){
                 String user = processJson.getUser();
-                //Windows平台如果当前processJson无user信息，则重新获取
-                if(user == null && SystemUtils.isWindows()){
-                    List<ProcessJson> pidUsers = getPidUsers(Collections.singletonList(processJson.getPid()));
+                //Windows平台如果当前processJson无user信息，则重新获取(针对win7下无用户信息的)
+                if(StringUtils.isEmpty(user) && SystemUtils.isWindows()){
+                    List<ProcessJson> pidUsers = systemOsService.getProcessByPids(Collections.singletonList(processJson.getPid()));
                     if(!CollectionUtils.isEmpty(pidUsers)){
                         user = pidUsers.get(0).getUser();
                     }
@@ -321,19 +321,7 @@ public class SoftwareApplicationService {
         }
     }
 
-    private List<ProcessJson> getPidUsers(List<Integer> pids){
-        String processDetailContent = jniService.queryProcessDetails(pids);
-        try {
-            ProcessDetailsJson processDetailsJson = objectMapper.readValue(processDetailContent, ProcessDetailsJson.class);
-            if(processDetailsJson != null){
-                List<ProcessJson> processes = processDetailsJson.getDetails();
-                return processes;
-            }
-        } catch (JsonProcessingException e) {
-            logger.error(e.getMessage(), e);
-        }
-        return null;
-    }
+    private final static List<String> IGNORE_SYSTEM_IMAGE_NAMES = Arrays.asList("csrss.exe", "wininit.exe", "explorer.exe", "winlogon.exe");
 
     private String getSoftwareIdFromImageName(ProcessJson process, boolean isRootNode){
         String imageName = process.getImageName();
@@ -342,18 +330,22 @@ public class SoftwareApplicationService {
             //如firefox在管理员权限下获取到是\Device\HarddiskVolume4\Program Files\Mozilla Firefox\firefox.exe，普通用户下是firefox.exe
             String exeName = StringUtils.substringAfterLast(imageName, "\\");
             imageName = StringUtils.isNotEmpty(exeName) ? exeName.toLowerCase() : imageName.toLowerCase();
-            if(isRootNode && "explorer.exe".equals(imageName)){
-                //根进程为explorer.exe的不认为是系统对应软件
+            if(isRootNode && (StringUtils.isEmpty(imageName) || IGNORE_SYSTEM_IMAGE_NAMES.contains(imageName)) || !imageName.endsWith(".exe")){
+                //根进程为系统进程的不认为是对应软件
                 return null;
             }
             String softwareId = exeNameSoftwareIdMap.get(imageName);
-            //如果没有父节点，而且softwareId找不到的，可能是启动进程已经关闭，这时就不能直接通过imageName查询，只能从相关软件信息中模糊搜索
+            //如果没有父节点，而且softwareId找不到的，可能是启动进程已经关闭，这时就不能直接通过imageName查询，只能从相关软件信息中模糊搜索和配置进行匹配
             //例如Windows下TIM这个软件就有这种情况，快捷方式指向的是一个启动进程，启动后就会关闭
             if(softwareId == null && isRootNode){
-                //查询所有软件列表中，含有本进程名称的软件
+                //查询所有软件列表中，含有本进程名称的软件，除了进程名称还有通过进程描述进行判断
                 Set<Map.Entry<String, SoftwareDto>> entries = softwareMap.entrySet();
                 for(Map.Entry<String, SoftwareDto> entry : entries){
-                    if(imageName.startsWith(entry.getValue().getSoftwareName().toLowerCase())){
+                    //imageName 移除.exe后进行判断
+                    SoftwareDto software = entry.getValue();
+                    String imageNameWithoutExe = imageName.replace(".exe", "");
+                    //通过软件名字，或者软件exe名称，或者map配置中的软件进程名称对应进行匹配
+                    if(imageNameWithoutExe.equalsIgnoreCase(software.getSoftwareName()) || imageNameWithoutExe.equalsIgnoreCase(software.getExeName()) || Objects.equals(map.get(imageName), entry.getValue().getSoftwareName())){
                         softwareId = entry.getKey();
                         break;
                     }
@@ -391,7 +383,7 @@ public class SoftwareApplicationService {
                     continue;
                 }
                 FileDto fileDto = new FileDto();
-                fileDto.setName(file.getName());
+                fileDto.setName(StringUtils.isEmpty(file.getName()) ? file.getPath() : file.getName());
                 fileDto.setPath(file.getPath());
                 fileDto.setDirectory(file.isDirectory());
                 files.add(fileDto);
@@ -406,5 +398,13 @@ public class SoftwareApplicationService {
             return f1.getName().toLowerCase().compareTo(f2.getName().toLowerCase());
         });
         return files;
+    }
+
+    public Map<String, String> getMap() {
+        return map;
+    }
+
+    public void setMap(Map<String, String> map) {
+        this.map = map;
     }
 }

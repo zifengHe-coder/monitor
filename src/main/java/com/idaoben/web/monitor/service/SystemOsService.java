@@ -39,6 +39,13 @@ public interface SystemOsService {
     List<ProcessJson> listAllProcesses();
 
     /**
+     * 获取指定pid的详细信息（带有用户名）
+     * @param pids
+     * @return
+     */
+    List<ProcessJson> getProcessByPids(List<Integer> pids);
+
+    /**
      * Start process with hook
      * @param commandLine
      * @param currentDirectory
