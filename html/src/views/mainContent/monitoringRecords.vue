@@ -250,7 +250,27 @@
         }
         let string = encodeURIComponent(JSON.stringify(data))
         let a = document.createElement('a');
-        a.href = window.location.origin + this.$api.actionExportByFileType + `?json=${string}`
+        // 1网络访问 2文件读写 3注册表 4进程调用 5设备控制 6权限对象
+        switch(this.currentTab){
+          case '1':
+            a.href = window.location.origin + this.$api.actionExportByNetworkType + `?json=${string}`;
+            break;
+          case '2':
+            a.href = window.location.origin + this.$api.actionExportByFileType + `?json=${string}`;
+            break;
+          case '3':
+            a.href = window.location.origin + this.$api.actionExportByRegistryType + `?json=${string}`;
+            break;
+          case '4':
+            a.href = window.location.origin + this.$api.actionExportByProcessType + `?json=${string}`;
+            break;
+          case '5':
+            a.href = window.location.origin + this.$api.actionExportByDeviceType + `?json=${string}`;
+            break;
+          case '6':
+            a.href = window.location.origin + this.$api.actionExportBySecurityType + `?json=${string}`;
+            break;
+        }
         a.click()
       },
       // 显示消息通讯
