@@ -53,6 +53,7 @@ export default {
           if(list[k][j].favorite === true){
             list['常用程序'].push(list[k][j])
             list[k].splice(j,1);
+            --j;
           }
         }
       }
