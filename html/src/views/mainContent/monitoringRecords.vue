@@ -438,7 +438,8 @@
               prop: 'operatingTime',
               label: '操作时间',
               itemType: 'datetime',
-              format: 'yyyy-MM-dd HH:mm:ss'
+              format: 'yyyy-MM-dd HH:mm:ss',
+              minWidth: '120px'
             },{
               type: 'range',
               label: '网络流量',
@@ -453,7 +454,8 @@
                 type: 'timestamp',
                 prop: 'timestamp',
                 columnOperable: 'none',
-                label: '访问时间'
+                label: '访问时间',
+                minWidth: '120px'
               }, {
                 type: 'word',
                 prop: 'type',
@@ -539,7 +541,8 @@
               type: 'timestamp',
               prop: 'timestamp',
               columnOperable: 'none',
-              label: '读写时间'
+              label: '读写时间',
+              minWidth: '120px'
             }, {
               type: 'word',
               prop: 'fileName',
@@ -602,7 +605,8 @@
               prop: 'operatingTime',
               label: '操作时间',
               itemType: 'datetime',
-              format: 'yyyy-MM-dd HH:mm:ss'
+              format: 'yyyy-MM-dd HH:mm:ss',
+              minWidth: '120px'
             }]
             this.tableLabels = [{
                 type: 'word',
@@ -612,7 +616,8 @@
               type: 'timestamp',
               prop: 'timestamp',
               columnOperable: 'none',
-              label: '操作时间'
+              label: '操作时间',
+              minWidth: '120px'
             }, {
               type: 'word',
               prop: 'type',
@@ -694,7 +699,8 @@
               type: 'timestamp',
               prop: 'timestamp',
               columnOperable: 'none',
-              label: '调用时间'
+              label: '调用时间',
+              minWidth: '120px'
             }, {
               isSpecial: true,
               prop: 'type',
@@ -761,7 +767,8 @@
               prop: 'operatingTime',
               label: '操作时间',
               itemType: 'datetime',
-              format: 'yyyy-MM-dd HH:mm:ss'
+              format: 'yyyy-MM-dd HH:mm:ss',
+              minWidth: '120px'
             }]
             this.tableLabels = [{
                 type: 'word',
@@ -771,15 +778,16 @@
               type: 'timestamp',
               prop: 'timestamp',
               columnOperable: 'none',
-              label: '操作时间'
+              label: '操作时间',
+              minWidth: '120px'
             }, {
               type: 'word',
               prop: 'deviceName',
-              label: '设备名称'
+              label: '访问设备名称'
             }, {
               type: 'word',
               prop: 'deviceId',
-              label: '设备ID'
+              label: '访问设备ID'
             }]
             this.hasOperation = false
             this.labelWidth = 60;
@@ -803,7 +811,8 @@
               type: 'timestamp',
               prop: 'timestamp',
               columnOperable: 'none',
-              label: '操作时间'
+              label: '操作时间',
+              minWidth: '120px'
             }, {
               type: 'word',
               prop: 'daclSdString',

@@ -181,18 +181,30 @@
                 }
                 this.processList = [];
                 if (r.data.processes) {
-                  this.processList = r.data.processes.map((item, index) => {
-                    let obj = {};
-                    obj.id = Number(index) > 9 ? Number(index) + 1 : '0' + (Number(index) + 1);
-                    obj.processName = this.system === 'linux' ?  item.name : item.name + '/exe/' + r.data.base64Icon;
-                    obj.pid = item.pid;
-                    obj.wsPrivateBytes = Math.floor(item.memory);
-                    obj.user = item.user;
-                    obj.cpu = item.cpu;
-                    obj.status = this.monitorStatus[item.monitorStatus - 1];
-                    item.monitorStatus === 3 ? obj.showIcon = true : obj.showIcon = false;
-                    return obj;
+                  r.data.processes.forEach((item,index) => {
+                    this.processList.push({
+                      id: Number(index) > 9 ? Number(index) + 1 : '0' + (Number(index)+1),
+                      processName: this.system === 'linux' ? item.name : item.name + '/exe/' + r.data.base64Icon,
+                      pid: item.pid,
+                      wsPrivateBytes: Math.floor(item.memory),
+                      user: item.user,
+                      cpu: item.cpu,
+                      status: this.monitorStatus[item.monitorStatus - 1],
+                      showIcon: item.monitorStatus === 3 ? true : false
+                    })
                   })
+                  // this.processList = r.data.processes.map((item, index) => {
+                  //   let obj = {};
+                  //   obj.id = Number(index) > 9 ? Number(index) + 1 : '0' + (Number(index) + 1);
+                  //   obj.processName = this.system === 'linux' ?  item.name : item.name + '/exe/' + r.data.base64Icon;
+                  //   obj.pid = item.pid;
+                  //   obj.wsPrivateBytes = Math.floor(item.memory);
+                  //   obj.user = item.user;
+                  //   obj.cpu = item.cpu;
+                  //   obj.status = this.monitorStatus[item.monitorStatus - 1];
+                  //   item.monitorStatus === 3 ? obj.showIcon = true : obj.showIcon = false;
+                  //   return obj;
+                  // })
                 }
                 resolve();
               }
