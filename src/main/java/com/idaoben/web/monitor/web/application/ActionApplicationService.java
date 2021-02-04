@@ -249,7 +249,7 @@ public class ActionApplicationService {
     public Page<ActionDeviceDto> listByDeviceType(ActionDeviceListCommand command, Pageable pageable){
         Map<String, String> pidUsers = command.getTaskId() != null ? taskService.findStrictly(command.getTaskId()).getPidUsers() : null;
         Filters filters = Filters.query().eq(Action::getActionGroup, ActionGroup.DEVICE).eq(Action::getTaskId, command.getTaskId()).eq(Action::getPid, command.getPid())
-                .likeFuzzy(Action::getCmdLine, command.getDeviceName())
+                .likeFuzzy(Action::getDeviceName, command.getDeviceName())
                 .ge(Action::getTimestamp, command.getStartTime()).le(Action::getTimestamp, command.getEndTime());
         addUserFilter(filters, pidUsers, command.getUser());
         Page<Action> actions = actionService.findPage(filters, pageable);
@@ -459,7 +459,7 @@ public class ActionApplicationService {
         handlePidAction(pid, taskId, thread, 0);
     }
 
-    private final static int MAX_RETRY_TIME = 4;
+    private final static int MAX_RETRY_TIME = 3;
 
     private void handlePidAction(String pid, Long taskId, ActionHanlderThread thread, int retry){
         File pidFolder = new File(ACTION_FOLDER, pid);
@@ -571,7 +571,7 @@ public class ActionApplicationService {
             } else if(ActionType.isDeviceType(action.getType())){
                 action = setActionDeviceInfo(action, pid);
             } else if(ActionType.isRegistryType(action.getType())){
-                setActionRegistryInfo(action, pid);
+                action = setActionRegistryInfo(action, pid);
             } else if(ActionType.isProcessType(action.getType())){
                 systemOsService.setActionProcessInfo(action, pid);
             } else if(ActionType.isSecurity(action.getType())){
@@ -773,8 +773,12 @@ public class ActionApplicationService {
         return action;
     }
 
-    private void setActionRegistryInfo(Action action, String pid){
+    private Action setActionRegistryInfo(Action action, String pid){
         action.setActionGroup(ActionGroup.REGISTRY);
+        if(action.getType() == ActionType.REGISTRY_DELETE_KEY && StringUtils.isEmpty(action.getKey())){
+            return null;
+        }
+        return action;
     }
 
     private Action setActionSecurityInfo(Action action, String pid){

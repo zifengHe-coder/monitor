@@ -77,7 +77,7 @@
                 v-text="getCellWord(scope, item)"
                 class="word"
               >
-                
+
               </p>
 
               <!-- 特殊元素 -->

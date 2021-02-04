@@ -30,15 +30,15 @@
             <el-button @click="exportData(scope)" size="mini" type="primary" style="margin-bottom: 15px;margin-top: 10px;">导出数据</el-button>
           </template>
         </BaseSearchCom>
-        <BaseTableCom 
-          :hadIndex='true' 
-          :tableData="tableData" 
-          :tableHeader="tableLabels" 
+        <BaseTableCom
+          :hadIndex='true'
+          :tableData="tableData"
+          :tableHeader="tableLabels"
           :getTableData="getList"
-          :totalItems="totalItems" 
-          :comData="comData" 
+          :totalItems="totalItems"
+          :comData="comData"
           :hasOperationBtn="hasOperation"
-          :style="{height: 'calc(100% - 100px)'}" 
+          :style="{height: 'calc(100% - 100px)'}"
           :tableStyle="{ height: 'calc(100% - 49px)', 'padding-top': '0'}">
           <template v-slot:operationBtn="data">
             <el-button v-if="showBtn(data.scope.row)" size="mini" type="primary"
@@ -117,7 +117,7 @@
           //  {
           //   label: '注册表',
           //   value: '3'
-          // }, 
+          // },
           {
             label: '进程调用',
             value: '4'
@@ -248,7 +248,14 @@
             data[key] = scope.data[key]
           }
         }
-        if(this.softwareDetail.taskId)data.taskId = this.softwareDetail.taskId;
+        // 添加taskId
+        if (this.$route.params.historyId) {
+          // 从历史进去，taskId是historyId
+          data.taskId = Number(this.$route.params.historyId)
+        } else {
+          // 如果没有historyId，就用软件详情的taskId
+          data.taskId = this.softwareDetail.taskId
+        }
         let string = encodeURIComponent(JSON.stringify(data))
         let a = document.createElement('a');
         // 1网络访问 2文件读写 3注册表 4进程调用 5设备控制 6权限对象
@@ -477,7 +484,7 @@
               //   type: 'word',
               //   prop: 'warningParams ',
               //   label: '敏感数据字段'
-              // }, 
+              // },
               {
                 type: 'word',
                 prop: 'bytes',
@@ -725,12 +732,12 @@
               type: 'word',
               prop: 'destHwnd',
               label: '消息目标句柄'
-            }, 
+            },
             // {
             //   type: 'word',
             //   prop: 'srcHwnd',
             //   label: '消息源句柄'
-            // }, 
+            // },
             {
               type: 'word',
               prop: 'cmdLine',
