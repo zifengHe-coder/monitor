@@ -376,7 +376,7 @@
             return false;
           }else if(this.currentTab === '1' && row.type === this.typeLists[4096]){
             return false;
-          }else if(this.currentTab === '2' && row.fileName === ''){
+          }else if(this.currentTab === '2' && (row.fileName === '' || row.backup === '')){
             return false;
           } else {
             return true;
