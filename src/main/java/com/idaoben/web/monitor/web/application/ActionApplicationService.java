@@ -402,7 +402,7 @@ public class ActionApplicationService {
 
     public Pair<File, String> downloadDeleteFile(String uuid, HttpServletResponse response) throws IOException{
         Action action = actionService.findStrictly(uuid);
-        if(action.getActionGroup() != ActionGroup.FILE || (action.getType() != ActionType.FILE_DELETE_WINDOWS && action.getType() != ActionType.FILE_DELETE_LINUX)){
+        if(action.getActionGroup() != ActionGroup.FILE || (action.getType() != ActionType.FILE_DELETE_WINDOWS && action.getType() != ActionType.FILE_DELETE_LINUX) || StringUtils.isEmpty(action.getBackup())){
             throw ServiceException.of(ErrorCode.CODE_REQUESE_PARAM_ERROR);
         }
         File folder = new File(String.format(ACTION_BACKUP_FOLDER_PATH, action.getTaskId(), action.getPid()));

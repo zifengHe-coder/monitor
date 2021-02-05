@@ -23,6 +23,10 @@ public interface ActionFileDto extends ActionBaseDto{
     @Mapping
     FileSensitivity getSensitivity();
 
+    @ApiModelProperty("备份路径，删除文件时有值才能下载")
+    @Mapping
+    String getBackup();
+
     @ApiModelProperty("读写类型")
     FileOpType getOpType();
 
