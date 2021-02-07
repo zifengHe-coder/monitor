@@ -20,6 +20,10 @@ public class Action {
     @Description("唯一标识符")
     private String uuid;
 
+    @Column(unique = true, nullable = false)
+    @Description("百度雪花uid")
+    private Long uid;
+
     @Description("日志时间戳")
     @Column(nullable = false)
     private ZonedDateTime timestamp;
@@ -218,6 +222,14 @@ public class Action {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public Long getUid() {
+        return uid;
+    }
+
+    public void setUid(Long uid) {
+        this.uid = uid;
     }
 
     public ZonedDateTime getTimestamp() {
