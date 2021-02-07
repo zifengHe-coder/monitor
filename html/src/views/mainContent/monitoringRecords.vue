@@ -446,7 +446,6 @@
               label: '操作时间',
               itemType: 'datetime',
               format: 'yyyy-MM-dd HH:mm:ss',
-              minWidth: '120px'
             },{
               type: 'range',
               label: '网络流量',
@@ -462,7 +461,7 @@
                 prop: 'timestamp',
                 columnOperable: 'none',
                 label: '访问时间',
-                minWidth: '120px'
+                minWidth: '170px'
               }, {
                 type: 'word',
                 prop: 'type',
@@ -549,7 +548,7 @@
               prop: 'timestamp',
               columnOperable: 'none',
               label: '读写时间',
-              minWidth: '120px'
+              minWidth: '170px'
             }, {
               type: 'word',
               prop: 'fileName',
@@ -613,7 +612,6 @@
               label: '操作时间',
               itemType: 'datetime',
               format: 'yyyy-MM-dd HH:mm:ss',
-              minWidth: '120px'
             }]
             this.tableLabels = [{
                 type: 'word',
@@ -624,7 +622,7 @@
               prop: 'timestamp',
               columnOperable: 'none',
               label: '操作时间',
-              minWidth: '120px'
+              minWidth: '170px'
             }, {
               type: 'word',
               prop: 'type',
@@ -707,7 +705,7 @@
               prop: 'timestamp',
               columnOperable: 'none',
               label: '调用时间',
-              minWidth: '120px'
+              minWidth: '170px'
             }, {
               isSpecial: true,
               prop: 'type',
@@ -775,7 +773,6 @@
               label: '操作时间',
               itemType: 'datetime',
               format: 'yyyy-MM-dd HH:mm:ss',
-              minWidth: '120px'
             }]
             this.tableLabels = [{
                 type: 'word',
@@ -786,7 +783,7 @@
               prop: 'timestamp',
               columnOperable: 'none',
               label: '操作时间',
-              minWidth: '120px'
+              minWidth: '170px'
             }, {
               type: 'word',
               prop: 'deviceName',
@@ -819,7 +816,7 @@
               prop: 'timestamp',
               columnOperable: 'none',
               label: '操作时间',
-              minWidth: '120px'
+              minWidth: '170px'
             }, {
               type: 'word',
               prop: 'daclSdString',
