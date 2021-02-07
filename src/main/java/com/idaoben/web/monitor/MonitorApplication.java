@@ -1,5 +1,6 @@
 package com.idaoben.web.monitor;
 
+import com.baidu.fsg.uid.impl.CachedUidGenerator;
 import com.google.common.base.Predicates;
 import com.idaoben.web.common.dao.impl.BaseRepositoryImpl;
 import com.idaoben.web.monitor.dao.entity.Action;
@@ -36,6 +37,18 @@ public class MonitorApplication {
                         PathSelectors.ant("/api/**")))
                 .build();
         return docket;
+    }
+
+    @Bean
+    public CachedUidGenerator cachedUidGenerator(){
+        CachedUidGenerator cachedUidGenerator = new CachedUidGenerator();
+        cachedUidGenerator.setTimeBits(29);
+        cachedUidGenerator.setWorkerBits(21);
+        cachedUidGenerator.setSeqBits(13);
+        cachedUidGenerator.setEpochStr("2021-02-07");
+        cachedUidGenerator.setBoostPower(3);
+        cachedUidGenerator.setWorkerIdAssigner(new MyWorkerIdAssigner());
+        return cachedUidGenerator;
     }
 
 }

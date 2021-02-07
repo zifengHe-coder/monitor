@@ -1,5 +1,6 @@
 package com.idaoben.web.monitor.web.application;
 
+import com.baidu.fsg.uid.impl.CachedUidGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.idaoben.web.common.entity.Filters;
@@ -63,6 +64,9 @@ public class ActionApplicationService {
 
     @Resource
     private TaskService taskService;
+
+    @Resource
+    private CachedUidGenerator cachedUidGenerator;
 
     private Map<String, ActionHanlderThread> handlingThreads = new ConcurrentHashMap<>();
 
@@ -556,6 +560,7 @@ public class ActionApplicationService {
         try {
             ActionJson actionJson = objectMapper.readValue(json, ActionJson.class);
             Action action = actionJson.getAction();
+            action.setUid(cachedUidGenerator.getUID());
             action.setUuid(actionJson.getUuid());
             action.setTimestamp(actionJson.getTimestamp());
             action.setWithAttachment(actionJson.getWithAttachment());
