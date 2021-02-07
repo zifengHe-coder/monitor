@@ -14,6 +14,7 @@ import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,7 +37,7 @@ public class ActionController {
     @ApiOperation("查询文件读写行为")
     @PostMapping("/listByFileType")
     public ApiPageResponse<ActionFileDto> listByFileType(@RequestBody @Validated ApiPageRequest<ActionFileListCommand> request) {
-        Page<ActionFileDto> result = actionApplicationService.listByFileType(request.getPayload(), request.getPageable());
+        Page<ActionFileDto> result = actionApplicationService.listByFileType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "id")));
         return ApiPageResponse.createPageSuccess(result);
     }
 
@@ -52,7 +53,7 @@ public class ActionController {
     @ApiOperation("查询注册表行为")
     @PostMapping("/listByRegistryType")
     public ApiPageResponse<ActionRegistryDto> listByRegistryType(@RequestBody @Validated ApiPageRequest<ActionRegistryListCommand> request) {
-        Page<ActionRegistryDto> result = actionApplicationService.listByRegistryType(request.getPayload(), request.getPageable());
+        Page<ActionRegistryDto> result = actionApplicationService.listByRegistryType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "id")));
         return ApiPageResponse.createPageSuccess(result);
     }
 
@@ -68,7 +69,7 @@ public class ActionController {
     @ApiOperation("查询进程调用行为")
     @PostMapping("/listByProcessType")
     public ApiPageResponse<ActionProcessDto> listByProcessType(@RequestBody @Validated ApiPageRequest<ActionProcessListCommand> request) {
-        Page<ActionProcessDto> result = actionApplicationService.listByProcessType(request.getPayload(), request.getPageable());
+        Page<ActionProcessDto> result = actionApplicationService.listByProcessType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "id")));
         return ApiPageResponse.createPageSuccess(result);
     }
 
@@ -84,7 +85,7 @@ public class ActionController {
     @ApiOperation("查询网络访问行为")
     @PostMapping("/listByNetworkType")
     public ApiPageResponse<ActionNetworkDto> listByNetworkType(@RequestBody @Validated ApiPageRequest<ActionNetworkListCommand> request) {
-        Page<ActionNetworkDto> result = actionApplicationService.listByNetworkType(request.getPayload(), request.getPageable());
+        Page<ActionNetworkDto> result = actionApplicationService.listByNetworkType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "id")));
         return ApiPageResponse.createPageSuccess(result);
     }
 
@@ -100,7 +101,7 @@ public class ActionController {
     @ApiOperation("查询设备访问行为")
     @PostMapping("/listByDeviceType")
     public ApiPageResponse<ActionDeviceDto> listByDeviceType(@RequestBody @Validated ApiPageRequest<ActionDeviceListCommand> request) {
-        Page<ActionDeviceDto> result = actionApplicationService.listByDeviceType(request.getPayload(), request.getPageable());
+        Page<ActionDeviceDto> result = actionApplicationService.listByDeviceType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "id")));
         return ApiPageResponse.createPageSuccess(result);
     }
 
@@ -116,7 +117,7 @@ public class ActionController {
     @ApiOperation("查询对象权限行为")
     @PostMapping("/listBySecurityType")
     public ApiPageResponse<ActionSecurityDto> listBySecurityType(@RequestBody @Validated ApiPageRequest<ActionSecurityListCommand> request) {
-        Page<ActionSecurityDto> result = actionApplicationService.listBySecurityType(request.getPayload(), request.getPageable());
+        Page<ActionSecurityDto> result = actionApplicationService.listBySecurityType(request.getPayload(), request.getPageable(Sort.by(Sort.Direction.DESC, "id")));
         return ApiPageResponse.createPageSuccess(result);
     }
 
