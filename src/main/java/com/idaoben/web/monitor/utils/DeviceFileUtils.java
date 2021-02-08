@@ -37,7 +37,8 @@ public class DeviceFileUtils {
     public static FileAccess getLinuxFileAccess(Long accessLong){
         if(accessLong != null){
             long access = accessLong.longValue();
-            boolean read = access == 0 || (access & LINUX_READ_WRITE) > 0;
+            //读权限不设置掩码位，意思是都可以读
+            boolean read = true;
             boolean write = (access & LINUX_FILE_WRITE_ACCESS) > 0;
             if(read && write){
                 return FileAccess.READ_AND_WRITE;
