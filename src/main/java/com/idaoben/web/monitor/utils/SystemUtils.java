@@ -54,6 +54,10 @@ public class SystemUtils {
         return systemOs;
     }
 
+    public static void setSystemOs(SystemOs dummyOs){
+        systemOs = dummyOs;
+    }
+
     public static String getCurrentPid(){
         if(currentPid == null){
             currentPid = ManagementFactory.getRuntimeMXBean().getSystemProperties().get("PID");
