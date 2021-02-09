@@ -23,7 +23,7 @@ echo "Logging path: ${LOG_DIR}"
 echo "Project JAR: ${JAR_FILE}"
 
 (LOG_FILE_DIR="${LOG_DIR}" APP_DATA_DIR=${DATA_DIR} \
-nohup java -Xms512m -Xmx1024m \
+nohup ${BASE_DIR}/jre/bin/java -Xms512m -Xmx1024m \
     -Djava.security.egd=file:/dev/./urandom \
     -Djava.io.tmpdir=${TEMP_DIR} \
     -jar ${JAR_FILE} \
