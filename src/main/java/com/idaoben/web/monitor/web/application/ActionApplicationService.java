@@ -612,7 +612,7 @@ public class ActionApplicationService {
                 }
             } else if(action.getWhere() == 2){
                 //2 - 从文件末尾向前偏移， 暂时不支持，默认为末尾写入
-                logger.error("出现从文件末尾向前偏移，暂时不支持这种记录!!! TaskID: {}, PID: {}, UUID: {}", action.getTaskId(), pid, action.getUuid());
+                logger.info("出现从文件末尾向前偏移，暂时不支持这种记录!!! TaskID: {}, PID: {}, UUID: {}", action.getTaskId(), pid, action.getUuid());
                 offset = null;
             }
         }
