@@ -114,4 +114,18 @@ public interface SystemOsService {
      * @param pid
      */
     void setActionProcessInfo(Action action, String pid);
+
+    /**
+     * Get system user name by id
+     * @param userId
+     * @return
+     */
+    String getUserById(String userId);
+
+    /**
+     * Get system group name by id
+     * @param groupId
+     * @return
+     */
+    String getGroupById(String groupId);
 }

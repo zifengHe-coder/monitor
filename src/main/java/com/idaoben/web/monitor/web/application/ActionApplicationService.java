@@ -285,6 +285,12 @@ public class ActionApplicationService {
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionSecurityDto.class).apply(actions, (domain, dto) -> {
             setActionUser(dto, pidUsers);
+            dto.setOwner(systemOsService.getUserById(domain.getOwner()));
+            dto.setGroup(systemOsService.getGroupById(domain.getGroup()));
+            //Linux security desc need to change to octal String
+            if(SystemUtils.isLinux() && StringUtils.isNotEmpty(dto.getDaclSdString())){
+                dto.setDaclSdString(Long.toOctalString(Long.parseLong(dto.getDaclSdString())));
+            }
         });
     }
 
@@ -608,7 +614,7 @@ public class ActionApplicationService {
                 }
             } else if(action.getWhere() == 2){
                 //2 - 从文件末尾向前偏移， 暂时不支持，默认为末尾写入
-                logger.error("出现从文件末尾向前偏移，暂时不支持这种记录!!! TaskID: {}, PID: {}, UUID: {}", action.getTaskId(), pid, action.getUuid());
+                logger.info("出现从文件末尾向前偏移，暂时不支持这种记录!!! TaskID: {}, PID: {}, UUID: {}", action.getTaskId(), pid, action.getUuid());
                 offset = null;
             }
         }

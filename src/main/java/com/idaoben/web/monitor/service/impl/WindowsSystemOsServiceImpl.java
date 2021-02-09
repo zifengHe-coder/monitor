@@ -365,4 +365,14 @@ public class WindowsSystemOsServiceImpl implements SystemOsService {
             }
         }
     }
+
+    @Override
+    public String getUserById(String userId) {
+        return userId;
+    }
+
+    @Override
+    public String getGroupById(String groupId) {
+        return groupId;
+    }
 }

@@ -13,6 +13,7 @@ import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.dto.DeviceInfoJson;
 import com.idaoben.web.monitor.web.dto.ProcessJson;
 import com.idaoben.web.monitor.web.dto.SoftwareDto;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -26,9 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LinuxSystemOsServiceImpl implements SystemOsService {
@@ -51,6 +50,10 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     private static final String PRINTER_DEVICE_KEYWORD = "cups.so";
 
+    private Map<String, String> userIdMap;
+
+    private Map<String, String> groupIdMap;
+
     @Resource
     private MonitoringService monitoringService;
 
@@ -62,7 +65,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
 
     @PostConstruct
     public void init(){
-        sensitivityPaths = new String[]{"/bin", "/boot", "/data", "/root", "/sbin", "/sys"};
+        sensitivityPaths = new String[]{"/bin", "/boot", "/data", "/sbin", "/sys"};
     }
 
     @Override
@@ -129,11 +132,16 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     public int startProcessWithHooks(String commandLine, String currentDirectory) {
         try {
             String cmd;
+            //centos use root account need to use --username root
+            String userName = linuxUser;
+            if(StringUtils.isEmpty(userName) && Objects.equals(SystemUtils.getUserName(), "root")){
+                userName = "root";
+            }
             if(tracerDebug){
-                cmd = StringUtils.isNotEmpty(linuxUser) ? String.format("%s -d %s -v 10 -H --username %s -- %s", TRACER_CMD, String.format(TRACER_DEBUG_LOG, System.currentTimeMillis()), linuxUser, commandLine)
+                cmd = StringUtils.isNotEmpty(userName) ? String.format("%s -d %s -v 10 -H --username %s -- %s", TRACER_CMD, String.format(TRACER_DEBUG_LOG, System.currentTimeMillis()), userName, commandLine)
                         : String.format("%s -- %s", TRACER_CMD, commandLine);
             } else {
-                cmd = StringUtils.isNotEmpty(linuxUser) ? String.format("%s -H --username %s -- %s", TRACER_CMD, linuxUser, commandLine)
+                cmd = StringUtils.isNotEmpty(userName) ? String.format("%s -H --username %s -- %s", TRACER_CMD, userName, commandLine)
                         : String.format("%s -- %s", TRACER_CMD, commandLine);
             }
             logger.info("startProcessWithHooks cmd: {}", cmd);
@@ -292,6 +300,42 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
         if(action.getType() == ActionType.PROCESS_OPEN_LINUX){
             action.setType(ActionType.PROCESS_OPEN);
             action.setCmdLine(String.format("%s %s", action.getCmd(), StringUtils.join(action.getArgs(), " ")));
+        }
+    }
+
+    @Override
+    public String getUserById(String userId) {
+        if(userIdMap == null){
+            userIdMap = new HashMap<>();
+            setNameIdMap(userIdMap, true);
+        }
+        return userIdMap.containsKey(userId) ? userIdMap.get(userId) : userId;
+    }
+
+    @Override
+    public String getGroupById(String groupId) {
+        if(groupIdMap == null){
+            groupIdMap = new HashMap<>();
+            setNameIdMap(groupIdMap, false);
+        }
+        return groupIdMap.containsKey(groupId) ? groupIdMap.get(groupId) : groupId;
+    }
+
+    private void setNameIdMap(Map<String, String> nameIdMap, boolean isUser){
+        //Get all user from /etc/passwd,  get all group from /etc/group
+        File file = new File(isUser ? "/etc/passwd" : "/etc/group");
+        try {
+            List<String> lines = FileUtils.readLines(file);
+            if(lines != null){
+                for(String line : lines){
+                    String[] split = line.split(":");
+                    if(split.length >= 3){
+                        nameIdMap.put(split[2], split[0]);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
         }
     }
 }
