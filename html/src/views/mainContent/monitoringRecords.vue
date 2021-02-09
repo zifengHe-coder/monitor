@@ -756,7 +756,6 @@
             this.hasOperation = false
             this.labelWidth = 60;
             break;
-            break;
           case 5:
             this.funcApi = this.$api.actionListByDeviceType;
             this.searchLabels = [{
@@ -839,6 +838,7 @@
             } else {
               this.tableLabels[2].label = '安全描述符'
             }
+            this.hasOperation = false
             break;
           default:
             this.$router.push('/')
