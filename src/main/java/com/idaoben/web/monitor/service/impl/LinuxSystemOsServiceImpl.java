@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LinuxSystemOsServiceImpl implements SystemOsService {
@@ -129,11 +130,16 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
     public int startProcessWithHooks(String commandLine, String currentDirectory) {
         try {
             String cmd;
+            //centos use root account need to use --username root
+            String userName = linuxUser;
+            if(Objects.equals(SystemUtils.getUserName(), "root")){
+                userName = "root";
+            }
             if(tracerDebug){
-                cmd = StringUtils.isNotEmpty(linuxUser) ? String.format("%s -d %s -v 10 -H --username %s -- %s", TRACER_CMD, String.format(TRACER_DEBUG_LOG, System.currentTimeMillis()), linuxUser, commandLine)
+                cmd = StringUtils.isNotEmpty(userName) ? String.format("%s -d %s -v 10 -H --username %s -- %s", TRACER_CMD, String.format(TRACER_DEBUG_LOG, System.currentTimeMillis()), userName, commandLine)
                         : String.format("%s -- %s", TRACER_CMD, commandLine);
             } else {
-                cmd = StringUtils.isNotEmpty(linuxUser) ? String.format("%s -H --username %s -- %s", TRACER_CMD, linuxUser, commandLine)
+                cmd = StringUtils.isNotEmpty(userName) ? String.format("%s -H --username %s -- %s", TRACER_CMD, userName, commandLine)
                         : String.format("%s -- %s", TRACER_CMD, commandLine);
             }
             logger.info("startProcessWithHooks cmd: {}", cmd);
