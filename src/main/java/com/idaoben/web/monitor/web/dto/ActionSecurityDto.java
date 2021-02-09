@@ -17,9 +17,13 @@ public interface ActionSecurityDto extends ActionBaseDto{
     @Mapping
     String getOwner();
 
+    void setOwner(String owner);
+
     @ApiModelProperty("目标用户组")
     @Mapping
     String getGroup();
+
+    void setGroup(String group);
 
     @ApiModelProperty("Windows：安全描述符；Linux：文件权限")
     @Mapping
