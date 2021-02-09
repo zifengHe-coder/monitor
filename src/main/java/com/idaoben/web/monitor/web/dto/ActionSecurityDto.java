@@ -25,4 +25,6 @@ public interface ActionSecurityDto extends ActionBaseDto{
     @Mapping
     String getDaclSdString();
 
+    void setDaclSdString(String daclSdString);
+
 }

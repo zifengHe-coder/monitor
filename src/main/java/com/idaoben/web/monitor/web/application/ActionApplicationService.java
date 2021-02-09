@@ -285,6 +285,10 @@ public class ActionApplicationService {
         Page<Action> actions = actionService.findPage(filters, pageable);
         return DtoTransformer.asPage(ActionSecurityDto.class).apply(actions, (domain, dto) -> {
             setActionUser(dto, pidUsers);
+            //Linux security desc need to change to octal String
+            if(SystemUtils.isLinux() && StringUtils.isNotEmpty(dto.getDaclSdString())){
+                dto.setDaclSdString(Long.toOctalString(Long.parseLong(dto.getDaclSdString())));
+            }
         });
     }
 
