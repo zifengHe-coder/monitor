@@ -132,7 +132,7 @@ public class LinuxSystemOsServiceImpl implements SystemOsService {
             String cmd;
             //centos use root account need to use --username root
             String userName = linuxUser;
-            if(Objects.equals(SystemUtils.getUserName(), "root")){
+            if(StringUtils.isEmpty(userName) && Objects.equals(SystemUtils.getUserName(), "root")){
                 userName = "root";
             }
             if(tracerDebug){
