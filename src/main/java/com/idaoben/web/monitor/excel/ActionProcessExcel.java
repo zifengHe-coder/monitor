@@ -35,7 +35,7 @@ public class ActionProcessExcel {
     private String destTitle;
 
     @CellNum(index = 9)
-    private String data;
+    private String cmdLine;
 
     public String getUser() {
         return user;
@@ -109,11 +109,11 @@ public class ActionProcessExcel {
         this.destTitle = destTitle;
     }
 
-    public String getData() {
-        return data;
+    public String getCmdLine() {
+        return cmdLine;
     }
 
-    public void setData(String data) {
-        this.data = data;
+    public void setCmdLine(String cmdLine) {
+        this.cmdLine = cmdLine;
     }
 }
