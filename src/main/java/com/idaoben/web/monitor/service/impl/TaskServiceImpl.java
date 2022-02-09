@@ -8,10 +8,12 @@ import com.idaoben.web.monitor.dao.repository.ActionRepository;
 import com.idaoben.web.monitor.dao.repository.TaskRepository;
 import com.idaoben.web.monitor.exception.ErrorCode;
 import com.idaoben.web.monitor.service.TaskService;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,6 +58,14 @@ public class TaskServiceImpl extends BaseServiceExImpl<TaskRepository, Task, Lon
             deleteBySoftwareId(softwareId);
             actionRepository.deleteByTaskIdIn(taskIds);
         }
+    }
+
+    @Override
+    public List<Task> listSyncTask(ZonedDateTime lastSyncTime) {
+        if(lastSyncTime == null){
+            return getRepository().findAll(Sort.by("id"));
+        }
+        return getRepository().listSyncTask(lastSyncTime);
     }
 
 }

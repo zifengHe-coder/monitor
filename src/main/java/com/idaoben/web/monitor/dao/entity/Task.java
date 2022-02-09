@@ -1,7 +1,7 @@
 package com.idaoben.web.monitor.dao.entity;
 
 import com.idaoben.web.common.entity.Description;
-import com.idaoben.web.common.entity.IdentifiableObject;
+import com.idaoben.web.common.entity.TrackableObject;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.Column;
@@ -13,7 +13,7 @@ import java.util.*;
 @Entity
 @Table(name = "t_task")
 @Description("任务")
-public class Task extends IdentifiableObject {
+public class Task extends TrackableObject {
 
     @Description("启动时间")
     @Column(nullable = false)

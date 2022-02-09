@@ -3,6 +3,9 @@ package com.idaoben.web.monitor.service;
 import com.idaoben.web.common.service.BaseService;
 import com.idaoben.web.monitor.dao.entity.Task;
 
+import java.time.ZonedDateTime;
+import java.util.List;
+
 /**
  *
  * 任务服务service
@@ -16,4 +19,6 @@ public interface TaskService extends BaseService<Task, Long> {
     void deleteTaskAndAction(Long taskId);
 
     void deleteTaskAndActionBySoftwareId(String softwareId);
+
+    List<Task> listSyncTask(ZonedDateTime lastSyncTime);
 }

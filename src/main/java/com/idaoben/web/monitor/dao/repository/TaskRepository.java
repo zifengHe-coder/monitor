@@ -2,6 +2,10 @@ package com.idaoben.web.monitor.dao.repository;
 
 import com.idaoben.web.common.dao.BaseRepository;
 import com.idaoben.web.monitor.dao.entity.Task;
+import org.springframework.data.jpa.repository.Query;
+
+import java.time.ZonedDateTime;
+import java.util.List;
 
 /**
 *
@@ -12,4 +16,7 @@ import com.idaoben.web.monitor.dao.entity.Task;
 public interface TaskRepository extends BaseRepository<Task, Long> {
 
     void deleteBySoftwareId(String softwareId);
+
+    @Query("select task from Task task where task.updateTime > ?1")
+    List<Task> listSyncTask(ZonedDateTime lastSyncTime);
 }
