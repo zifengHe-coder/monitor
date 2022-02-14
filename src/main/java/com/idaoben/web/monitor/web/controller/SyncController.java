@@ -3,7 +3,9 @@ package com.idaoben.web.monitor.web.controller;
 import com.idaoben.web.common.api.bean.ApiRequest;
 import com.idaoben.web.common.api.bean.ApiResponse;
 import com.idaoben.web.monitor.web.application.SyncApplicationService;
+import com.idaoben.web.monitor.web.command.ActionSyncCommand;
 import com.idaoben.web.monitor.web.command.TaskSyncCommand;
+import com.idaoben.web.monitor.web.dto.ActionSyncDto;
 import com.idaoben.web.monitor.web.dto.TaskDto;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -28,6 +30,13 @@ public class SyncController {
     @PostMapping("/syncTask")
     public ApiResponse<List<TaskDto>> syncTask(@RequestBody @Validated ApiRequest<TaskSyncCommand> request){
         List<TaskDto> result = syncApplicationService.syncTask(request.getPayload());
+        return ApiResponse.createSuccess(result);
+    }
+
+    @ApiOperation("行为同步")
+    @PostMapping("/syncAction")
+    public ApiResponse<List<ActionSyncDto>> syncAction(@RequestBody @Validated ApiRequest<ActionSyncCommand> request){
+        List<ActionSyncDto> result = syncApplicationService.syncAction(request.getPayload());
         return ApiResponse.createSuccess(result);
     }
 }
