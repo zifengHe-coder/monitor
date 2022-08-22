@@ -41,6 +41,9 @@ public class AfterApplicationRunner {
     @Value("${monitor.encode-rules}")
     private String encodeRules;
 
+    @Value("${monitor.valid-time-range:10}")
+    private long validTimeRange;
+
     @EventListener({ApplicationReadyEvent.class})
     public void openBrowser() {
         try{
@@ -114,7 +117,7 @@ public class AfterApplicationRunner {
                 return false;
             }
             Duration duration = Duration.between(beginTime, endTime);
-            if (duration.toMinutes() < 1) return false;
+            if (duration.toMinutes() > validTimeRange) return false;
         } catch (Exception e) {
             return false;
         }
