@@ -53,6 +53,7 @@ public class AfterApplicationRunner {
             } else {
                 File file = new File(activationFilePath);
                 if (!file.exists()) {
+                    System.out.println("激活文件不存在，请先执行激活码脚本");
                     exit = true;
                 } else {
                     BufferedReader reader = null;
