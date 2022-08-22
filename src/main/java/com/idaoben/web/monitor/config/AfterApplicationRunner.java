@@ -20,6 +20,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
@@ -40,9 +41,6 @@ public class AfterApplicationRunner {
 
     @Value("${monitor.encode-rules}")
     private String encodeRules;
-
-    @Value("${monitor.valid-time-range:10}")
-    private long validTimeRange;
 
     @EventListener({ApplicationReadyEvent.class})
     public void openBrowser() {
@@ -109,16 +107,12 @@ public class AfterApplicationRunner {
         String content = AESDecode(key);
         if (!content.startsWith("Company:")) return false;
         try {
-            String beginStr = content.substring(content.indexOf("&") + 1, content.indexOf("~"));
-            String endStr = content.substring(content.indexOf("~") + 1, content.lastIndexOf("&&"));
-            LocalDateTime beginTime = LocalDateTime.parse(beginStr, DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
-            LocalDateTime endTime = LocalDateTime.parse(endStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            if (LocalDateTime.now().isAfter(endTime)) {
+            String endStr = content.substring(content.indexOf("&") + 1, content.indexOf("&&"));
+            LocalDate endDate = LocalDate.parse(endStr);
+            if (LocalDate.now().isAfter(endDate)) {
                 System.out.println("激活文件已过期，请重新生成激活文件");
                 return false;
             }
-            Duration duration = Duration.between(beginTime, endTime);
-            if (duration.toMinutes() > validTimeRange) return false;
         } catch (Exception e) {
             return false;
         }
