@@ -23,5 +23,7 @@ monitor:
   auto-open-browser: false
   tracer-debug: false
   linux-user:
+  activation-file-path: C:/Users/daoben-pc/IdeaProjects/springbootTest/target/classes/register.key
+  encode-rules: daoben
   software:
     map: {'qq.exe':'腾讯QQ'}
