@@ -155,9 +155,10 @@ public class AfterApplicationRunner {
             record.setNumber(1);
             registerRecordService.save(record);
         } else {
-            if (record.getCount() < record.getNumber() + 1) {
+            if (c < record.getNumber() + 1) {
                 return false;
             } else {
+                record.setCount(c);
                 record.setModifyTime(LocalDateTime.now());
                 record.setNumber(record.getNumber() + 1);
                 registerRecordService.save(record);
