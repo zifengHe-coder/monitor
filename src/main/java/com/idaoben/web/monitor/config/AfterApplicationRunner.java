@@ -53,12 +53,12 @@ public class AfterApplicationRunner {
     @EventListener({ApplicationReadyEvent.class})
     public void openBrowser() {
         try{
-            String registerCode = "";
             boolean exit = false;
             try {
-                if (readRegisterCode(registerCodePath,registerCode)) {
+                String registerCode = readRegisterCode(registerCodePath);
+                if (StringUtils.isNotBlank(registerCode)) {
                     //注册文件校验通过,开始解析并校验注册码
-                    String[] split = registerCode.split(":");
+                    String[] split = registerCode.split(";");
                     if (split.length != 5) {
                         System.out.println("激活码校验失败!");
                         exit = true;
@@ -75,18 +75,19 @@ public class AfterApplicationRunner {
                             exit = true;
                         }
                     }
+                } else {
+                    exit = true;
                 }
-
-
             } catch (Exception e) {
-
+                e.printStackTrace();
+                exit = true;
             }
-
-
-            while (exit) {
+            if (exit) {
                 System.out.println("10秒后自动关闭程序!");
                 Thread.sleep(10000);
                 System.exit(0);
+            } else {
+                System.out.println("注册码文件校验通过!");
             }
 
 
@@ -115,16 +116,16 @@ public class AfterApplicationRunner {
 
     }
 
-    private boolean readRegisterCode(String registerCodePath, String registerCode) throws Exception {
+    private String readRegisterCode(String registerCodePath) throws Exception {
         File registerFile = new File(registerCodePath);
         if (!registerFile.exists()) {
             System.out.println("注册文件不存在，请先生成注册文件!");
-            return true;
+            return null;
         } else {
             long fileSize = registerFile.length();
             if (fileSize > Integer.MAX_VALUE) {
                 System.out.println("file too big...");
-                return true;
+                return null;
             }
             FileInputStream file = new FileInputStream(registerFile);
             byte[] buffer= new byte[(int) fileSize];
@@ -136,10 +137,9 @@ public class AfterApplicationRunner {
             if (offset != buffer.length) {
                 System.out.println("could not completely read file" + registerCodePath);
                 file.close();
-                return true;
+                return null;
             }
-            registerCode = AESUtils.AESDecodeByBytes(encodeRules, buffer);
-            return true;
+            return AESUtils.AESDecodeByBytes(encodeRules, buffer);
         }
     }
 

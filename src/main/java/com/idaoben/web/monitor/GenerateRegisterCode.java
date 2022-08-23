@@ -121,7 +121,7 @@ public class GenerateRegisterCode {
         }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String creationTime = formatter.format(LocalDateTime.now());
-        String registerCode = String.format("%s:%s:%s:%s:%s", companyName, creationTime, key.substring(key.indexOf("#") + 1), cpuId, mac);
+        String registerCode = String.format("%s;%s;%s;%s;%s", companyName, creationTime, key.substring(key.indexOf("@") + 1), cpuId, mac);
         byte[] aesEncode = AESUtils.AESEncode(encodeRules, registerCode);
         OutputStream fos = null;
         File file = new File(registerPath);

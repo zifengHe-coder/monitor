@@ -53,9 +53,9 @@ public class AESUtils {
 
     public static String AESDecodeByBytes(String encodeRules, byte[] bytes) {
         try {
-            String AES_decode = new String(bytes, "utf-8");
+            String AES_decode = new String(Base64.getEncoder().encode(bytes));
             return AESDecode(encodeRules, AES_decode);
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         //如果有错就返加null
