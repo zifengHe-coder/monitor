@@ -4,6 +4,7 @@ import com.idaoben.common.generator.config.Configuration;
 import com.idaoben.common.generator.framework.Application;
 import com.idaoben.common.generator.task.*;
 import com.idaoben.web.monitor.dao.entity.Action;
+import com.idaoben.web.monitor.dao.entity.RegisterRecord;
 
 public class GeneratorApplication {
 
@@ -25,7 +26,7 @@ public class GeneratorApplication {
     public class EntityTask extends SimpleEntityTask {
         @Override
         protected Class<?>[] getEntityClasses() {
-            return new Class[]{Action.class};
+            return new Class[]{RegisterRecord.class};
         }
     }
 }

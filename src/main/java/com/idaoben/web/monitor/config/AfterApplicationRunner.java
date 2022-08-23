@@ -1,5 +1,9 @@
 package com.idaoben.web.monitor.config;
 
+import com.idaoben.web.monitor.GenerateRegisterCode;
+import com.idaoben.web.monitor.dao.entity.RegisterRecord;
+import com.idaoben.web.monitor.service.RegisterRecordService;
+import com.idaoben.web.monitor.utils.AESUtils;
 import com.idaoben.web.monitor.utils.SystemUtils;
 import com.idaoben.web.monitor.web.application.ActionApplicationService;
 import org.apache.commons.lang3.StringUtils;
@@ -11,6 +15,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Base64Utils;
 
+import javax.annotation.Resource;
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import java.awt.*;
@@ -36,40 +41,47 @@ public class AfterApplicationRunner {
     @Value("${server.port:8080}")
     private int port;
 
-    @Value("${monitor.activation-file-path}")
-    private String activationFilePath;
+    @Value("${register-code-path}")
+    private String registerCodePath;
 
-    @Value("${monitor.encode-rules}")
+    @Value("${encode-rules}")
     private String encodeRules;
+
+    @Resource
+    private RegisterRecordService registerRecordService;
 
     @EventListener({ApplicationReadyEvent.class})
     public void openBrowser() {
         try{
+            String registerCode = "";
             boolean exit = false;
-            if (StringUtils.isBlank(activationFilePath)) {
-                exit = true;
-            } else {
-                File file = new File(activationFilePath);
-                if (!file.exists()) {
-                    System.out.println("激活文件不存在，请先执行激活码脚本");
-                    exit = true;
-                } else {
-                    BufferedReader reader = null;
-                    StringBuilder key = new StringBuilder();
-                    try {
-                        reader = new BufferedReader(new FileReader(file));
-                        String tempStr = null;
-                        while ((tempStr = reader.readLine()) != null) {
-                            key.append(tempStr);
+            try {
+                if (readRegisterCode(registerCodePath,registerCode)) {
+                    //注册文件校验通过,开始解析并校验注册码
+                    String[] split = registerCode.split(":");
+                    if (split.length != 5) {
+                        System.out.println("激活码校验失败!");
+                        exit = true;
+                    } else {
+                        if (!GenerateRegisterCode.getCupId().equals(split[3])) {
+                            System.out.println("cpuId validate error");
+                            exit = true;
+                        } else if (!GenerateRegisterCode.getMac().equals(split[4])) {
+                            System.out.println("mac address validate error");
+                            exit = true;
+                        } else if (!consumeRegisterCode(split[0], split[1], split[2])){
+                            //校验通过，数据库冗余当前使用次数
+                            System.out.println("注册码剩余使用次数不足，请重新生成激活码以生成新注册文件");
+                            exit = true;
                         }
-                        if (!validateKey(key.toString())) exit = true;
-                        if (!exit) System.out.println("激活码校验通过!");
-                        else System.out.println("激活码校验失败!");
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
                 }
+
+
+            } catch (Exception e) {
+
             }
+
 
             while (exit) {
                 System.out.println("10秒后自动关闭程序!");
@@ -103,53 +115,55 @@ public class AfterApplicationRunner {
 
     }
 
-    private boolean validateKey(String key) {
-        String content = AESDecode(key);
-        if (!content.startsWith("Company:")) return false;
-        try {
-            String endStr = content.substring(content.indexOf("&") + 1, content.indexOf("&&"));
-            LocalDate endDate = LocalDate.parse(endStr);
-            if (LocalDate.now().isAfter(endDate)) {
-                System.out.println("激活文件已过期，请重新生成激活文件");
-                return false;
+    private boolean readRegisterCode(String registerCodePath, String registerCode) throws Exception {
+        File registerFile = new File(registerCodePath);
+        if (!registerFile.exists()) {
+            System.out.println("注册文件不存在，请先生成注册文件!");
+            return true;
+        } else {
+            long fileSize = registerFile.length();
+            if (fileSize > Integer.MAX_VALUE) {
+                System.out.println("file too big...");
+                return true;
             }
-        } catch (Exception e) {
-            return false;
+            FileInputStream file = new FileInputStream(registerFile);
+            byte[] buffer= new byte[(int) fileSize];
+            int offset = 0;
+            int numRead = 0;
+            while (offset < buffer.length && (numRead = file.read(buffer, offset, buffer.length - offset)) >= 0) {
+                offset += numRead;
+            }
+            if (offset != buffer.length) {
+                System.out.println("could not completely read file" + registerCodePath);
+                file.close();
+                return true;
+            }
+            registerCode = AESUtils.AESDecodeByBytes(encodeRules, buffer);
+            return true;
         }
-        return true;
     }
 
-
-    public String AESDecode(String content) {
-        try {
-            KeyGenerator keygen = KeyGenerator.getInstance("AES");
-            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-            random.setSeed(encodeRules.getBytes());
-            keygen.init(128, random);
-            SecretKey original_key = keygen.generateKey();
-            byte[] raw = original_key.getEncoded();
-            SecretKey key = new SecretKeySpec(raw, "AES");
-            Cipher cipher = Cipher.getInstance("AES");
-            cipher.init(Cipher.DECRYPT_MODE, key);
-            byte[] byte_content = Base64Utils.decodeFromString(content);
-            byte[] byte_decode = cipher.doFinal(byte_content);
-            String AES_decode = new String(byte_decode, "utf-8");
-            return AES_decode;
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
+    private boolean consumeRegisterCode(String companyName, String creationTime, String count) {
+        int c = Integer.parseInt(count);
+        RegisterRecord record = registerRecordService.findByCompanyAndCT(companyName, creationTime);
+        if (record == null) {
+            record = new RegisterRecord();
+            record.setCompanyName(companyName);
+            record.setCreationTime(creationTime);
+            record.setModifyTime(LocalDateTime.now());
+            record.setCount(c);
+            record.setNumber(1);
+            registerRecordService.save(record);
+        } else {
+            if (record.getCount() < record.getNumber() + 1) {
+                return false;
+            } else {
+                record.setModifyTime(LocalDateTime.now());
+                record.setNumber(record.getNumber() + 1);
+                registerRecordService.save(record);
+            }
         }
-        //如果有错就返加nulll
-        return null;
+        return true;
     }
 
 }

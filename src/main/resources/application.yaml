@@ -23,7 +23,10 @@ monitor:
   auto-open-browser: false
   tracer-debug: false
   linux-user:
-  activation-file-path: C:\Users\daoben-pc\Desktop\x360\register.key
-  encode-rules: daoben
   software:
     map: {'qq.exe':'腾讯QQ'}
+
+#激活码加密种子&激活码存放路径
+encode-rules: daoben
+activation-file-path: C:\Users\daoben-pc\Desktop\x360\register.key
+register-code-path: C:\Users\daoben-pc\Desktop\x360\registerCode.key
