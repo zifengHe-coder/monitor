@@ -100,7 +100,8 @@ public class MonitorApplication {
                 //注册文件不存在,需要激活码激活生成注册文件
                 Map<String, String> tmpMap = new HashMap<>();
                 String instrumentCode = createInstrumentCode(encodeRules);
-                System.out.println(String.format("本监控模块还未激活，机器码为：%s，请先通过机器码获取激活码。 请输入激活码:", instrumentCode));
+                System.out.println(String.format("本监控模块还未激活，机器码为:%s", instrumentCode));
+                System.out.println("请先通过机器码获取激活码激活码:");
                 Scanner input = new Scanner(System.in);
                 while (CollectionUtils.isEmpty(tmpMap = validateActivateCode(encodeRules, input.next()))) {
                     System.out.println("请重新输入激活码:");
