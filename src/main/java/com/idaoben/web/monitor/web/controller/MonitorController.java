@@ -21,10 +21,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Set;
 
 @Api(tags="监控进程相关")
@@ -43,7 +40,7 @@ public class MonitorController {
 
     @ApiOperation("开始监控软件")
     @PostMapping("/startMonitor")
-    public ApiResponse<Void> startMonitor(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
+    public ApiResponse<Void> startMonitor(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request) throws IOException {
         //读取注册文件并校验次数
         String registerCode = readRegisterCode(encodeRules, registerPath);
         //校验注册码
@@ -85,19 +82,15 @@ public class MonitorController {
     }
 
     //注册码格式{companyName};{cpuId};{mac};{count};{number}
-    private void validateRegisterCode(String registerCode) {
+    private void validateRegisterCode(String registerCode) throws IOException {
         String[] split = registerCode.split(";");
-        try {
-            if (!AESUtils.getCupId().equals(split[1]) || !AESUtils.getMac().equals(split[2])) {
-                throw ServiceException.of(ErrorCode.INSTRUMENT_VALID_ERROR);
-            }
-            int count = Integer.parseInt(split[3]);
-            int number = Integer.parseInt(split[4]);
-            if (count < number + 1) {
-                throw ServiceException.of(ErrorCode.MONITOR_TIMES_NOT_ENOUGH);
-            }
-        } catch (Exception e) {
-            throw ServiceException.of(ErrorCode.REGISTER_CODE_VALID_ERROR);
+        if (!AESUtils.getCupId().equals(split[1]) || !AESUtils.getMac().equals(split[2])) {
+            throw ServiceException.of(ErrorCode.INSTRUMENT_VALID_ERROR);
+        }
+        int count = Integer.parseInt(split[3]);
+        int number = Integer.parseInt(split[4]);
+        if (count < number + 1) {
+            throw ServiceException.of(ErrorCode.MONITOR_TIMES_NOT_ENOUGH);
         }
     }
 
