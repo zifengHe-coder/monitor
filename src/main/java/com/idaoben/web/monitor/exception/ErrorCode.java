@@ -15,4 +15,10 @@ public class ErrorCode extends CommonErrorCode {
     public static final String SOFTWARE_REMOVE_MONITORING_ERROR = "2009";
     public static final String TASK_DELETE_RUNING_ERROR = "2010";
     public static final String MONITOR_STOP_PARTIAL_ERROR = "2011";
+    public static final String MONITOR_TIMES_NOT_ENOUGH = "2012";
+    public static final String INSTRUMENT_VALID_ERROR = "2013";
+    public static final String REGISTER_CODE_VALID_ERROR = "2014";
+    public static final String REGISTER_CODE_ANALYSIS_ERROR = "2015";
+    public static final String REGISTER_FILE_NOT_EXIST = "2016";
+    public static final String REFRESH_REGISTER_FILE_ERROR = "2017";
 }

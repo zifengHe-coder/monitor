@@ -57,12 +57,12 @@ public class MonitorController {
     private String readRegisterCode(String rules,String filePath) {
         File registerFile = new File(filePath);
         if (!registerFile.exists()) {
-            throw new RuntimeException("注册码文件不存在，请重启系统!");
+            throw ServiceException.of(ErrorCode.REGISTER_FILE_NOT_EXIST);
         }
         try {
             long fileSize = registerFile.length();
             if (fileSize > Integer.MAX_VALUE) {
-                throw new RuntimeException("file too big");
+                throw ServiceException.of(ErrorCode.REGISTER_CODE_ANALYSIS_ERROR);
             }
             FileInputStream file = new FileInputStream(registerFile);
             byte[] buffer= new byte[(int) fileSize];
@@ -73,13 +73,14 @@ public class MonitorController {
             }
             if (offset != buffer.length) {
                 file.close();
-                throw new RuntimeException("could not completely read file" + filePath);
+                throw ServiceException.of(ErrorCode.REGISTER_CODE_ANALYSIS_ERROR);
             }
+            file.close();
             //注册码格式{companyName};{cpuId};{mac};{count};{number}
             String registerCode = AESUtils.AESDecodeByBytes(rules, buffer);
             return registerCode;
         } catch (Exception e) {
-            throw new RuntimeException("注册文件解析失败!");
+            throw ServiceException.of(ErrorCode.REGISTER_CODE_ANALYSIS_ERROR);
         }
     }
 
@@ -88,15 +89,15 @@ public class MonitorController {
         String[] split = registerCode.split(";");
         try {
             if (!AESUtils.getCupId().equals(split[1]) || !AESUtils.getMac().equals(split[2])) {
-                throw new RuntimeException("机器信息核对失败，请重新申请激活码更换注册文件!");
+                throw ServiceException.of(ErrorCode.INSTRUMENT_VALID_ERROR);
             }
             int count = Integer.parseInt(split[3]);
             int number = Integer.parseInt(split[4]);
             if (count < number + 1) {
-                throw new RuntimeException("监控次数已用完，请重新申请激活码!");
+                throw ServiceException.of(ErrorCode.MONITOR_TIMES_NOT_ENOUGH);
             }
         } catch (Exception e) {
-            throw new RuntimeException("注册码校验失败!");
+            throw ServiceException.of(ErrorCode.REGISTER_CODE_VALID_ERROR);
         }
     }
 
@@ -114,7 +115,7 @@ public class MonitorController {
             fos.flush();
             fos.close();
         } catch (Exception e) {
-            throw new RuntimeException("刷新注册文件失败!");
+            throw ServiceException.of(ErrorCode.REFRESH_REGISTER_FILE_ERROR);
         }
     }
 
