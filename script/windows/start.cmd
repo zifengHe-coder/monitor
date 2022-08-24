@@ -1,3 +1,3 @@
 set projPath=%~dp0
 cd %projPath%
-mshta vbscript:createobject("shell.application").shellexecute("%projPath%jre\bin\java","-Xms512m -Xmx1024m -Dfile.encoding=UTF-8 -Djava.io.tmpdir=%projPath%temp -jar %projPath%monitor-1.1.0-SNAPSHOT.jar --spring.config.location=%projPath%config\application.yaml --logging.config=%projPath%config\logback.xml --registerFilePath=%projPath%registerCode.key","","runas",1)(window.close)
+%projPath%jre\bin\java -jar %projPath%monitor-1.1.0-SNAPSHOT.jar --spring.config.location=%projPath%config\application.yaml --registerFilePath=%projPath%registerCode.key

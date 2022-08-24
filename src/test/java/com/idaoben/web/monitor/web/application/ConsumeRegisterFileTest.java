@@ -18,7 +18,7 @@ import java.io.OutputStream;
  */
 
 public class ConsumeRegisterFileTest {
-    private static final String filePath = "C:\\Users\\daoben-pc\\Desktop\\x360\\registerCode.key";
+    private static final String filePath = "C:\\Users\\daoben-pc\\Desktop\\工业软件\\registerCode.key";
     private static final String encodeRules = "daoben";
 
     @Test
