@@ -47,6 +47,10 @@ public class MonitorApplication {
                 }
             }
         }
+        if ("".equals(registerFilePath)) {
+            System.out.println("请配置注册文件路径!");
+            return;
+        }
 
         readRegisterFile(registerFilePath);
 
