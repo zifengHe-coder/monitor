@@ -29,4 +29,6 @@ public class GeneratorApplication {
             return new Class[]{RegisterRecord.class};
         }
     }
+
+
 }

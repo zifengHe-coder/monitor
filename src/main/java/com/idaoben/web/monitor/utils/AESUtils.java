@@ -7,11 +7,15 @@ import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Scanner;
 
 /**
  * @author hezifeng
@@ -62,6 +66,11 @@ public class AESUtils {
         return null;
     }
 
+    public static String AESEncodeStr(String encodeRules, String content) {
+        byte[] bytes = AESEncode(encodeRules, content);
+        return new String(Base64.getEncoder().encode(bytes));
+    }
+
     public static byte[] AESEncode(String encodeRules, String content) {
         try {
             KeyGenerator keygen = KeyGenerator.getInstance("AES");
@@ -91,5 +100,45 @@ public class AESUtils {
         }
         //如果有错就返加null
         return null;
+    }
+
+    /**
+     * 获取cpu序列
+     * @return
+     * @throws IOException
+     */
+    public static String getCupId() throws IOException {
+        Process process = Runtime.getRuntime().exec(new String[]{"wmic", "cpu", "get", "ProcessorId"});
+        process.getOutputStream().close();
+        Scanner sc = new Scanner(process.getInputStream());
+        String property = sc.next();
+        String serial = sc.next();
+        return serial;
+    }
+
+    /**
+     * 获取mac地址
+     * @return
+     * @throws IOException
+     */
+    public static String getMac() throws IOException {
+        InetAddress ip4 = Inet4Address.getLocalHost();
+        byte[] mac = NetworkInterface.getByInetAddress(ip4).getHardwareAddress();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < mac.length; i++) {
+            if (i!=0) {
+                sb.append("-");
+            }
+            //字节转整数
+            int temp = mac[i]&0xff;
+            //把无符号整数参数锁表示的值转换成十六进制表示的字符串
+            String str = Integer.toHexString(temp);
+            if (str.length() == 1) {
+                sb.append("0"+str);
+            }else {
+                sb.append(str);
+            }
+        }
+        return sb.toString();
     }
 }

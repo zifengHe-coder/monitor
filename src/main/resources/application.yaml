@@ -26,7 +26,6 @@ monitor:
   software:
     map: {'qq.exe':'腾讯QQ'}
 
-#激活码加密种子&激活码存放路径
+#注册码加密种子&注册码存放路径
 encode-rules: daoben
-activation-file-path: C:\Users\daoben-pc\Desktop\x360\register.key
 register-code-path: C:\Users\daoben-pc\Desktop\x360\registerCode.key
