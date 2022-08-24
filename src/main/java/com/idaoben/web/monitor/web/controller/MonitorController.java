@@ -46,9 +46,8 @@ public class MonitorController {
     public ApiResponse<Void> startMonitor(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
         //读取注册文件并校验次数
         String registerCode = readRegisterCode(encodeRules, registerPath);
-        if (!validateUseNumber(registerCode)) {
-            throw new RuntimeException("监控次数已用完，请重新申请激活码!");
-        }
+        //校验注册码
+        validateRegisterCode(registerCode);
         monitorApplicationService.startMonitor(request.getPayload());
         //校验次数通过后，刷新注册文件
         markRegisterFile(encodeRules, registerPath, registerCode);
@@ -84,14 +83,21 @@ public class MonitorController {
         }
     }
 
-    private boolean validateUseNumber(String registerCode) {
+    //注册码格式{companyName};{cpuId};{mac};{count};{number}
+    private void validateRegisterCode(String registerCode) {
         String[] split = registerCode.split(";");
-        int count = Integer.parseInt(split[3]);
-        int number = Integer.parseInt(split[4]);
-        if (count < number + 1) {
-            return false;
+        try {
+            if (!AESUtils.getCupId().equals(split[1]) || !AESUtils.getMac().equals(split[2])) {
+                throw new RuntimeException("机器信息核对失败，请重新申请激活码更换注册文件!");
+            }
+            int count = Integer.parseInt(split[3]);
+            int number = Integer.parseInt(split[4]);
+            if (count < number + 1) {
+                throw new RuntimeException("监控次数已用完，请重新申请激活码!");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("注册码校验失败!");
         }
-        return true;
     }
 
     private void markRegisterFile(String rules,String filePath, String registerCode) {
