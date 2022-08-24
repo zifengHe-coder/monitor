@@ -44,13 +44,18 @@ public class MonitorController {
     @ApiOperation("开始监控软件")
     @PostMapping("/startMonitor")
     public ApiResponse<Void> startMonitor(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
-        consumeRegisterFile(encodeRules, registerPath);
+        //读取注册文件并校验次数
+        String registerCode = readRegisterCode(encodeRules, registerPath);
+        if (!validateUseNumber(registerCode)) {
+            throw new RuntimeException("监控次数已用完，请重新申请激活码!");
+        }
         monitorApplicationService.startMonitor(request.getPayload());
+        //校验次数通过后，刷新注册文件
+        markRegisterFile(encodeRules, registerPath, registerCode);
         return ApiResponse.createSuccess();
     }
 
-    //读取注册文件，并更新注册文件使用次数
-    private void consumeRegisterFile(String rules,String filePath) {
+    private String readRegisterCode(String rules,String filePath) {
         File registerFile = new File(filePath);
         if (!registerFile.exists()) {
             throw new RuntimeException("注册码文件不存在，请重启系统!");
@@ -73,23 +78,37 @@ public class MonitorController {
             }
             //注册码格式{companyName};{cpuId};{mac};{count};{number}
             String registerCode = AESUtils.AESDecodeByBytes(rules, buffer);
-            String strPrefix = registerCode.substring(0, registerCode.lastIndexOf(";") + 1);
-            String[] split = registerCode.split(";");
-            int count = Integer.parseInt(split[3]);
-            int number = Integer.parseInt(split[4]);
-            number++;
-            if (count < number) {
-                throw new RuntimeException("监控次数已用完，请重新申请激活码!");
-            } else {
-                strPrefix += number;
-                byte[] aesEncode = AESUtils.AESEncode(rules, strPrefix);
-                OutputStream fos = new FileOutputStream(registerFile);
-                fos.write(aesEncode);
-                fos.flush();
-                fos.close();
-            }
+            return registerCode;
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException("注册文件解析失败!");
+        }
+    }
+
+    private boolean validateUseNumber(String registerCode) {
+        String[] split = registerCode.split(";");
+        int count = Integer.parseInt(split[3]);
+        int number = Integer.parseInt(split[4]);
+        if (count < number + 1) {
+            return false;
+        }
+        return true;
+    }
+
+    private void markRegisterFile(String rules,String filePath, String registerCode) {
+        File registerFile = new File(filePath);
+        String strPrefix = registerCode.substring(0, registerCode.lastIndexOf(";") + 1);
+        String[] split = registerCode.split(";");
+        int number = Integer.parseInt(split[4]);
+        number++;
+        registerCode = strPrefix + number;
+        try {
+            byte[] aesEncode = AESUtils.AESEncode(rules, registerCode);
+            OutputStream fos = new FileOutputStream(registerFile);
+            fos.write(aesEncode);
+            fos.flush();
+            fos.close();
+        } catch (Exception e) {
+            throw new RuntimeException("刷新注册文件失败!");
         }
     }
 
