@@ -95,10 +95,6 @@ public class MonitorApplication {
                 System.out.println("生成注册内容:" + registerCode);
 
                 byte[] aesEncode = AESUtils.AESEncode(encodeRules, registerCode);
-                if(!file.getParentFile().exists() && !file.getParentFile().mkdir()) {
-                    System.out.println("注册文件创建失败!");
-                    throw new RuntimeException("注册文件创建失败!");
-                }
                 OutputStream fos = new FileOutputStream(file);
                 fos.write(aesEncode);
                 fos.flush();
