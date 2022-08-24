@@ -38,13 +38,17 @@ import java.util.Scanner;
 public class MonitorApplication {
 
     public static void main(String[] args) {
+        String registerFilePath = "";
         if (args != null) {
             for (String arg : args) {
-                System.out.println(arg);
+                if (arg.startsWith("-registerFilePath")) {
+                    registerFilePath = arg.substring(arg.indexOf("=")+1);
+                    System.out.println("注册文件路径:" + registerFilePath);
+                }
             }
         }
 
-        readRegisterFile();
+        readRegisterFile(registerFilePath);
 
         //校验通过后启动程序
         SpringApplication.run(MonitorApplication.class, args);
@@ -73,19 +77,15 @@ public class MonitorApplication {
         return cachedUidGenerator;
     }
 
-    private static void readRegisterFile() {
+    private static void readRegisterFile(String registerFilePath) {
         Yaml yaml = new Yaml();
         Map<String, Object> map = yaml.load(MonitorApplication.class.getClassLoader().getResourceAsStream("application.yaml"));
         if (!map.containsKey("encode-rules")) {
             throw new RuntimeException("请配置: encode-rules");
         }
-        if (!map.containsKey("register-code-path")) {
-            throw new RuntimeException("请配置: register-code-path（注册码文件路径）");
-        }
-        String registerPath = (String) map.get("register-code-path");
         String encodeRules = (String) map.get("encode-rules");
         try {
-            File file = new File(registerPath);
+            File file = new File(registerFilePath);
             if (!file.exists()) {
                 //注册文件不存在,需要激活码激活生成注册文件
                 Map<String, String> tmpMap = new HashMap<>();
