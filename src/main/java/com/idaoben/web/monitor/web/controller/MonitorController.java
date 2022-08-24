@@ -124,8 +124,14 @@ public class MonitorController {
 
     @ApiOperation("开启并监听软件")
     @PostMapping("/startAndMonitor")
-    public ApiResponse<Void> startAndMonitor(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request){
+    public ApiResponse<Void> startAndMonitor(@RequestBody @Validated ApiRequest<SoftwareIdCommand> request) throws IOException {
+        //读取注册文件并校验次数
+        String registerCode = readRegisterCode(encodeRules, registerPath);
+        //校验注册码
+        validateRegisterCode(registerCode);
         monitorApplicationService.startAndMonitor(request.getPayload());
+        //校验次数通过后，刷新注册文件
+        markRegisterFile(encodeRules, registerPath, registerCode);
         return ApiResponse.createSuccess();
     }
 
