@@ -38,6 +38,12 @@ import java.util.Scanner;
 public class MonitorApplication {
 
     public static void main(String[] args) {
+        if (args != null) {
+            for (String arg : args) {
+                System.out.println(arg);
+            }
+        }
+
         readRegisterFile();
 
         //校验通过后启动程序
