@@ -37,8 +37,9 @@ import java.util.Scanner;
 @EnableScheduling
 public class MonitorApplication {
 
+    private static String registerFilePath = "";
+
     public static void main(String[] args) {
-        String registerFilePath = "";
         if (args != null) {
             for (String arg : args) {
                 if (arg.startsWith("--registerFilePath")) {
@@ -56,6 +57,11 @@ public class MonitorApplication {
 
         //校验通过后启动程序
         SpringApplication.run(MonitorApplication.class, args);
+    }
+
+    @Bean(name = "registerPath")
+    public String registerPath() {
+        return this.registerFilePath;
     }
 
     @Bean

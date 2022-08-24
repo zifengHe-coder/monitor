@@ -26,15 +26,6 @@ public class AfterApplicationRunner {
     @Value("${server.port:8080}")
     private int port;
 
-    @Value("${register-code-path}")
-    private String registerCodePath;
-
-    @Value("${encode-rules}")
-    private String encodeRules;
-
-    @Resource
-    private RegisterRecordService registerRecordService;
-
     @EventListener({ApplicationReadyEvent.class})
     public void openBrowser() {
         try{

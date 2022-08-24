@@ -35,7 +35,7 @@ public class MonitorController {
     @Resource
     private MonitorApplicationService monitorApplicationService;
 
-    @Value("${register-code-path}")
+    @Resource(name = "registerPath")
     private String registerPath;
 
     @Value("${encode-rules}")
