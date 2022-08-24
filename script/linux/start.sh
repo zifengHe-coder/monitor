@@ -29,5 +29,6 @@ nohup ${BASE_DIR}/jre/bin/java -Xms512m -Xmx1024m \
     -jar ${JAR_FILE} \
     --spring.config.location=${BASE_DIR}/config/application.yaml \
     --logging.config=file://${BASE_DIR}/config/logback.xml \
+    --registerFilePath=file://${BASE_DIR}/registerCode.key \
    > ${LOG_DIR}/console.log 2>&1 < /dev/null & )
 echo Application started

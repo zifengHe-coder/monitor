@@ -41,7 +41,7 @@ public class MonitorApplication {
         String registerFilePath = "";
         if (args != null) {
             for (String arg : args) {
-                if (arg.startsWith("-registerFilePath")) {
+                if (arg.startsWith("--registerFilePath")) {
                     registerFilePath = arg.substring(arg.indexOf("=")+1);
                     System.out.println("注册文件路径:" + registerFilePath);
                 }
