@@ -5,10 +5,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -111,15 +108,87 @@ public class AESUtils {
      * @return
      * @throws IOException
      */
-    public static String getCupId() throws IOException {
-        String[] linux = {"dmidecode", "-t", "processor", "|", "grep", "ID"};
-        String[] windows = {"wmic", "cpu", "get", "ProcessorId"};
+//    public static String getCupId() throws IOException {
+//        String[] linux = {"dmidecode", "-t", "processor", "|", "grep", "ID"};
+//        String[] windows = {"wmic", "cpu", "get", "ProcessorId"};
+//        String property = System.getProperty("os.name");
+//        Process process = Runtime.getRuntime().exec(property.contains("Window")? windows : linux);
+//        process.getOutputStream().close();
+//        Scanner sc = new Scanner(process.getInputStream(), "utf-8");
+//        sc.next();
+//        String cpuId = sc.next();
+//        return cpuId;
+//    }
+
+    public static String getCpuId() throws IOException {
         String property = System.getProperty("os.name");
-        Process process = Runtime.getRuntime().exec(property.contains("Window")? windows : linux);
-        process.getOutputStream().close();
-        Scanner sc = new Scanner(process.getInputStream(), "utf-8");
-        sc.next();
-        return sc.next();
+        if (property.contains("Window")) return getCPUID_Windows();
+        return getCPUID_linux();
+    }
+
+    /**
+     * 获取CPU序列号 Windows
+     *
+     * @return
+     */
+    public static String getCPUID_Windows() {
+        String result = "";
+        try {
+            File file = File.createTempFile("tmp", ".vbs");
+            file.deleteOnExit();
+            FileWriter fw = new java.io.FileWriter(file);
+            String vbs = "Set objWMIService = GetObject(\"winmgmts:\\\\.\\root\\cimv2\")\n"
+                    + "Set colItems = objWMIService.ExecQuery _ \n" + "   (\"Select * from Win32_Processor\") \n"
+                    + "For Each objItem in colItems \n" + "    Wscript.Echo objItem.ProcessorId \n"
+                    + "    exit for  ' do the first cpu only! \n" + "Next \n";
+
+            fw.write(vbs);
+            fw.close();
+            Process p = Runtime.getRuntime().exec("cscript //NoLogo " + file.getPath());
+            BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line;
+            while ((line = input.readLine()) != null) {
+                result += line;
+            }
+            input.close();
+            file.delete();
+        } catch (Exception e) {
+            System.out.print("获取cpu序列信息误");
+        }
+        return result.trim();
+    }
+
+
+
+    /**
+     * 获取CPU序列号 linux
+     *
+     * @return
+     */
+    public static String getCPUID_linux() {
+        String result = "";
+        String CPU_ID_CMD = "dmidecode";
+        BufferedReader bufferedReader = null;
+        Process p = null;
+        try {
+            p = Runtime.getRuntime().exec(new String[] { "sh", "-c", CPU_ID_CMD });// 管道
+            bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line = null;
+            int index = -1;
+            while ((line = bufferedReader.readLine()) != null) {
+                // 寻找标示字符串[hwaddr]
+                index = line.toLowerCase().indexOf("uuid");
+                if (index >= 0) {// 找到了
+                    // 取出mac地址并去除2边空格
+                    result = line.substring(index + "uuid".length() + 1).trim();
+                    break;
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.print("获取cpu序列信息错误");
+        }
+        return result.trim();
     }
 
 

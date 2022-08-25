@@ -84,7 +84,7 @@ public class MonitorController {
     //注册码格式{companyName};{cpuId};{mac};{count};{number}
     private void validateRegisterCode(String registerCode) throws IOException {
         String[] split = registerCode.split(";");
-        if (!AESUtils.getCupId().equals(split[1]) || !AESUtils.getMac().equals(split[2])) {
+        if (!AESUtils.getCpuId().equals(split[1]) || !AESUtils.getMac().equals(split[2])) {
             throw ServiceException.of(ErrorCode.INSTRUMENT_VALID_ERROR);
         }
         int count = Integer.parseInt(split[3]);

@@ -26,6 +26,19 @@ public class ConsumeRegisterFileTest {
         consumeRegisterFile(encodeRules, filePath);
     }
 
+    @Test
+    public void getCpuIdTest() {
+        try {
+            String serial1 = AESUtils.getCpuId();
+            String serial2 = AESUtils.getCpuId();
+            System.out.println("序列1"+serial1);
+            System.out.println("序列2"+serial2);
+        } catch (Exception e) {
+
+        }
+
+    }
+
 
     private void consumeRegisterFile(String rules,String filePath) {
         File registerFile = new File(filePath);

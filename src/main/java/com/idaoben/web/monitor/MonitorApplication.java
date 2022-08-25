@@ -103,15 +103,10 @@ public class MonitorApplication {
                 System.out.println(String.format("本监控模块还未激活，机器码为:%s", instrumentCode));
                 System.out.println("请先通过机器码获取激活码激活码:");
                 Scanner input = new Scanner(System.in);
-                while (input.hasNext()) {
-                    if (CollectionUtils.isEmpty(tmpMap = validateActivateCode(encodeRules, input.next()))) {
-                        System.out.println("请重新输入激活码:");
-                    } else break;
+                while (CollectionUtils.isEmpty(tmpMap = validateActivateCode(encodeRules, input.next()))) {
+                    System.out.println("请重新输入激活码:");
                 }
-//                while (CollectionUtils.isEmpty(tmpMap = validateActivateCode(encodeRules, input.next()))) {
-//                    System.out.println("请重新输入激活码:");
-//                }
-
+                input.close();
                 //首次生成注册文件,格式{companyName};{cpuId};{mac};{count};{number} 其中number为使用次数,初始为0
                 String registerCode = String.format("%s;%s;%s;%s;%s", tmpMap.get("companyName"), tmpMap.get("cpuId"), tmpMap.get("mac"), tmpMap.get("count"),  "0");
                 System.out.println("生成注册内容:" + registerCode);
@@ -135,7 +130,7 @@ public class MonitorApplication {
 
     //生成激活码 cpuId;mac;有效期
     private static String createInstrumentCode(String encodeRules) throws IOException {
-        String cupId = AESUtils.getCupId();
+        String cupId = AESUtils.getCpuId();
         String mac = AESUtils.getMac();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String creationTime = formatter.format(LocalDateTime.now().plusDays(1));
@@ -152,7 +147,7 @@ public class MonitorApplication {
             String[] split = txt.split(";");
             String cpuId = split[0];
             String mac = split[1];
-            if (!AESUtils.getCupId().equals(cpuId) || !AESUtils.getMac().equals(mac)) {
+            if (!AESUtils.getCpuId().equals(cpuId) || !AESUtils.getMac().equals(mac)) {
                 System.out.println("机器信息核对失败，激活码无效!");
                 return null;
             }
