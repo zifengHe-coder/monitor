@@ -5,7 +5,9 @@ import org.yaml.snakeyaml.Yaml;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -16,6 +18,8 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author hezifeng
@@ -118,12 +122,22 @@ public class AESUtils {
         return sc.next();
     }
 
+
+    public static String getMac() throws IOException {
+        String property = System.getProperty("os.name");
+        if (property.contains("Window")) {
+            return getWindowsMac();
+        } else {
+            return getLinuxMac();
+        }
+    }
+
     /**
      * 获取mac地址
      * @return
      * @throws IOException
      */
-    public static String getMac() throws IOException {
+    public static String getWindowsMac() throws IOException {
         InetAddress ia = InetAddress.getLocalHost();
         InetAddress[] inetAddressArr = InetAddress.getAllByName(ia.getHostName());
         for (int i = 0; i < inetAddressArr.length; i++) {
@@ -153,5 +167,21 @@ public class AESUtils {
             }
         }
         return sb.toString();
+    }
+
+    public static String getLinuxMac() throws IOException {
+        String mac = "";
+        Process p = new ProcessBuilder("ifconfig").start();
+        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        String line;
+        while ((line = br.readLine()) != null) {
+            Pattern pat = Pattern.compile("\\b\\w+:\\w+:\\w+:\\w+:\\w+:\\w+\\b");
+            Matcher mat = pat.matcher(line);
+            if (mat.find()) {
+                mac = mat.group();
+            }
+        }
+        br.close();
+        return mac;
     }
 }
