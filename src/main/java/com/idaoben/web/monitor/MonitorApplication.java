@@ -103,9 +103,14 @@ public class MonitorApplication {
                 System.out.println(String.format("本监控模块还未激活，机器码为:%s", instrumentCode));
                 System.out.println("请先通过机器码获取激活码激活码:");
                 Scanner input = new Scanner(System.in);
-                while (CollectionUtils.isEmpty(tmpMap = validateActivateCode(encodeRules, input.next()))) {
-                    System.out.println("请重新输入激活码:");
+                while (input.hasNext()) {
+                    if (CollectionUtils.isEmpty(tmpMap = validateActivateCode(encodeRules, input.next()))) {
+                        System.out.println("请重新输入激活码:");
+                    } else break;
                 }
+//                while (CollectionUtils.isEmpty(tmpMap = validateActivateCode(encodeRules, input.next()))) {
+//                    System.out.println("请重新输入激活码:");
+//                }
 
                 //首次生成注册文件,格式{companyName};{cpuId};{mac};{count};{number} 其中number为使用次数,初始为0
                 String registerCode = String.format("%s;%s;%s;%s;%s", tmpMap.get("companyName"), tmpMap.get("cpuId"), tmpMap.get("mac"), tmpMap.get("count"),  "0");
