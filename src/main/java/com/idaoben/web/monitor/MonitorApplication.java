@@ -40,11 +40,14 @@ public class MonitorApplication {
     private static String registerFilePath = "";
 
     public static void main(String[] args) {
+        boolean isRegister = false;
         if (args != null) {
             for (String arg : args) {
                 if (arg.startsWith("--registerFilePath")) {
                     registerFilePath = arg.substring(arg.indexOf("=")+1);
                     System.out.println("注册文件路径:" + registerFilePath);
+                } else if (arg.startsWith("--isRegister")) {
+                    isRegister = "1".equals(arg.substring(arg.indexOf("=")+1));
                 }
             }
         }
@@ -54,6 +57,8 @@ public class MonitorApplication {
         }
 
         readRegisterFile(registerFilePath);
+        //linux环境注册后自动退出
+        if (isRegister) System.exit(0);
 
         //校验通过后启动程序
         SpringApplication.run(MonitorApplication.class, args);
@@ -112,6 +117,7 @@ public class MonitorApplication {
                 System.out.println("生成注册内容:" + registerCode);
 
                 byte[] aesEncode = AESUtils.AESEncode(encodeRules, registerCode);
+                file.createNewFile();
                 OutputStream fos = new FileOutputStream(file);
                 fos.write(aesEncode);
                 fos.flush();
