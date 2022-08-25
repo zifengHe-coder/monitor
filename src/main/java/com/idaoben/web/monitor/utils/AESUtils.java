@@ -124,8 +124,19 @@ public class AESUtils {
      * @throws IOException
      */
     public static String getMac() throws IOException {
-        InetAddress ip4 = Inet4Address.getLocalHost();
-        byte[] mac = NetworkInterface.getByInetAddress(ip4).getHardwareAddress();
+        InetAddress ia = InetAddress.getLocalHost();
+        InetAddress[] inetAddressArr = InetAddress.getAllByName(ia.getHostName());
+        for (int i = 0; i < inetAddressArr.length; i++) {
+            if (inetAddressArr[i].getHostAddress() != null) {
+                String ip = inetAddressArr[i].getHostAddress();
+                if (!(ip.endsWith(".1")|| ip.endsWith(".0") || ip.endsWith(".255"))) {
+                    ia = inetAddressArr[i];
+                    break;
+                }
+            }
+        }
+
+        byte[] mac = NetworkInterface.getByInetAddress(ia).getHardwareAddress();
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < mac.length; i++) {
             if (i!=0) {
