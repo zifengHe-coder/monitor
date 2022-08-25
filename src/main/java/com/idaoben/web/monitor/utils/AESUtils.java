@@ -108,12 +108,14 @@ public class AESUtils {
      * @throws IOException
      */
     public static String getCupId() throws IOException {
-        Process process = Runtime.getRuntime().exec(new String[]{"wmic", "cpu", "get", "ProcessorId"});
+        String[] linux = {"dmidecode", "-t", "processor", "|", "grep", "ID"};
+        String[] windows = {"wmic", "cpu", "get", "ProcessorId"};
+        String property = System.getProperty("os.name");
+        Process process = Runtime.getRuntime().exec(property.contains("Window")? windows : linux);
         process.getOutputStream().close();
-        Scanner sc = new Scanner(process.getInputStream());
-        String property = sc.next();
-        String serial = sc.next();
-        return serial;
+        Scanner sc = new Scanner(process.getInputStream(), "utf-8");
+        sc.next();
+        return sc.next();
     }
 
     /**
