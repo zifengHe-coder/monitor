@@ -29,7 +29,7 @@ ${BASE_DIR}/jre/bin/java -Xms512m -Xmx1024m \
     -jar ${JAR_FILE} \
     --spring.config.location=${BASE_DIR}/config/application.yaml \
     --logging.config=file://${BASE_DIR}/config/logback.xml \
-    --registerFilePath=file://${BASE_DIR}/registerCode.key \
+    --registerFilePath=${BASE_DIR}/registerCode.key \
     --isRegister=1
 )
 
